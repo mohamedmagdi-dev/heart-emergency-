@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 // Common
 import '../features/common/screens/landing_page.dart';
-import '../features/common/screens/test_dashboard.dart';
+import '../features/common/screens/login_page.dart';
 
 // Auth
 import '../features/auth/screens/doctor_auth_screen.dart';
@@ -30,7 +30,7 @@ final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) =>  LandingPage()),
-    GoRoute(path: '/test', builder: (context, state) => const TestDashboard()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
 
     // Auth
     GoRoute(path: '/doctor/auth', builder: (context, state) => const DoctorAuthScreen()),
