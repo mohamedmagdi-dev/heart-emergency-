@@ -18,7 +18,7 @@ class CardOfImageText extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Image.asset(imagePath),
+          SizedBox( height: 300 ,child: Image.asset(imagePath , fit: BoxFit.cover,)),
           SizedBox(
             height:
             MediaQuery.of(context).size.height *
@@ -28,7 +28,7 @@ class CardOfImageText extends StatelessWidget {
             textOne,
             // textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.black,
+              color: Colors.black87,
               fontFamily: 'Janna',
               fontWeight: FontWeight.w700,
               fontSize: 24,
@@ -40,7 +40,7 @@ class CardOfImageText extends StatelessWidget {
               textTwo!,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Colors.black,
+                color: Colors.black87,
                 fontFamily: 'Janna',
                 fontWeight: FontWeight.w700,
                 fontSize: 20,

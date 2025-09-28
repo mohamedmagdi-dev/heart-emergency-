@@ -43,31 +43,36 @@ class _LandingPageState extends State<LandingPage> {
                   controller: _pageController,
                   children: const [
                     CardOfImageText(
-                      imagePath: AppImages.logo,
+                      imagePath: AppImages.welcomeLogo,
                       textOne:'مرحبا بك في تطبيقنا',
-                      textTwo:'من قلب الطوارئ',
+                      textTwo:'نقدم خدمة طبية متكاملة بأعلى معايير الجودة والأمان',
                     ),
                     CardOfImageText(
-                      imagePath: 'assets/images/onboarding/mosque.png',
-                      textOne: 'Welcome To Islami',
+                      imagePath: AppImages.map,
+                      textOne: 'تحديد موقع دقيق',
                       textTwo:
-                      'We Are Very Excited To Have You In Our Community',
+                      'نظام متطور لتحديد موقعك بدقة وإرسال أقرب طبيب إليك',
                     ),
                     CardOfImageText(
-                      imagePath: 'assets/images/onboarding/quran.png',
-                      textOne: 'Reading the Quran',
-                      textTwo: 'Read, and your Lord is the Most Generous',
+                      imagePath: AppImages.shield,
+                      textOne: 'أطباء معتمدون',
+                      textTwo: 'جميع الأطباء حاصلون على شهادات معتمدة ورخص مزاولة صالحة',
                     ),
                     CardOfImageText(
-                      imagePath: 'assets/images/onboarding/seb7a.png',
-                      textOne: 'Bearish',
-                      textTwo: 'Praise the name of your Lord, the Most High',
+                      imagePath: AppImages.timer,
+                      textOne: 'استجابة سريعة',
+                      textTwo: 'وقت استجابة أقل من 15 دقيقة في معظم المناطق',
                     ),
                     CardOfImageText(
-                      imagePath: 'assets/images/onboarding/microphone.png',
-                      textOne: 'Holy Quran Radio',
+                      imagePath: AppImages.wallet,
+                      textOne: 'محفظة إلكترونية',
                       textTwo:
-                      'You can listen to the Holy Quran Radio through the application for free and easily',
+                      'نظام دفع آمن ومحفظة إلكترونية لسهولة المعاملات',
+                    ),CardOfImageText(
+                      imagePath: AppImages.users,
+                      textOne: 'دعم 24/7',
+                      textTwo:
+                      'فريق دعم فني متاح على مدار الساعة لمساعدتك',
                     ),
                   ],
                 ),
@@ -93,7 +98,7 @@ class _LandingPageState extends State<LandingPage> {
                       child: const Text(
                         'Back',
                         style: TextStyle(
-                          color: Color(0xFFE2BE7F),
+                          color: Color(0xFF00008B),
                           fontFamily: 'Janna',
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -106,7 +111,7 @@ class _LandingPageState extends State<LandingPage> {
 
                   TextButton(
                     onPressed: () {
-                      if (_currentPage == 4) {
+                      if (_currentPage == 5) {
                         context.go('/test');
                         return;
                       }
@@ -118,9 +123,9 @@ class _LandingPageState extends State<LandingPage> {
                       });
                     },
                     child: Text(
-                      _currentPage == 4 ? 'Finsh' : 'next',
+                      _currentPage == 5 ? 'Finsh' : 'next',
                       style: const TextStyle(
-                        color: Color(0xFFE2BE7F),
+                        color: Color(0xFF00008B),
                         fontFamily: 'Janna',
                         fontSize: 16,
                         fontWeight: FontWeight.w700,

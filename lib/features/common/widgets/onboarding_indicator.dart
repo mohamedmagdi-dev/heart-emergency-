@@ -8,7 +8,7 @@ class IndcatorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: List.generate(
-        5,
+        6,
             (index) => Padding(
           padding: const EdgeInsets.symmetric(horizontal: 11),
           child: Container(
@@ -16,7 +16,7 @@ class IndcatorWidget extends StatelessWidget {
             height: 7,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
-              color: Color(activeIndex == index ? 0xFFFFD482 : 0xFF707070),
+              color: Color(activeIndex == index ? 0xFF00008B : 0xFF707070),
             ),
           ),
         ),
