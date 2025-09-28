@@ -112,7 +112,7 @@ class _LandingPageState extends State<LandingPage> {
                   TextButton(
                     onPressed: () {
                       if (_currentPage == 5) {
-                        context.go('/test');
+                        context.go('/login');
                         return;
                       }
                       setState(() {
