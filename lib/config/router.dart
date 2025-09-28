@@ -35,10 +35,10 @@ final GoRouter appRouter = GoRouter(
 
     // Auth
     GoRoute(path: '/doctor/auth', builder: (context, state) => const DoctorAuthScreen()),
-    GoRoute(path: '/doctor/register', builder: (context, state) => const DoctorRegistrationScreen()),
+    GoRoute(path: '/doctor/login', builder: (context, state) =>  DoctorLoginPage()),
     GoRoute(path: '/doctor/dashboard', builder: (context, state) => const DoctorDashboardScreen()),
 
-    GoRoute(path: '/patient/login', builder: (context, state) => const PatientLoginPage()),
+    GoRoute(path: '/patient/login', builder: (context, state) =>  PatientLoginPage()),
     GoRoute(path: '/patient/auth', builder: (context, state) => const PatientAuthScreen()),
     GoRoute(path: '/patient/dashboard', builder: (context, state) => const PatientDashboardScreen()),
     GoRoute(path: '/patient/payment', builder: (context, state) => const PatientPaymentScreen()),

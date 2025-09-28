@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class PatientLoginPage extends StatelessWidget {
-  const PatientLoginPage({super.key});
-
+  PatientLoginPage({super.key});
+  final ValueNotifier<bool> obscureNotifier = ValueNotifier<bool>(true);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,7 +19,7 @@ class PatientLoginPage extends StatelessWidget {
                   // Back to home button
                   GestureDetector(
                     onTap: () {
-                      // Navigate to home
+                      context.pop();
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -48,10 +49,7 @@ class PatientLoginPage extends StatelessWidget {
                     height: 80,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          Colors.red[500]!,
-                          Colors.red[600]!,
-                        ],
+                        colors: [Colors.red[500]!, Colors.red[800]!],
                       ),
                       shape: BoxShape.circle,
                     ),
@@ -69,14 +67,16 @@ class PatientLoginPage extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.grey[900],
+                      fontFamily: 'janna',
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'أدخل بياناتك للوصول إلى الخدمات الطبية',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: Colors.grey[800],
                       fontSize: 14,
+                      fontFamily: 'janna',
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -92,6 +92,7 @@ class PatientLoginPage extends StatelessWidget {
                             Text(
                               'البريد الإلكتروني',
                               style: TextStyle(
+                                fontFamily: 'janna',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.grey[700],
@@ -99,7 +100,6 @@ class PatientLoginPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
-                              initialValue: 'mo@mo.mo',
                               keyboardType: TextInputType.emailAddress,
                               decoration: InputDecoration(
                                 hintText: 'patient@example.com',
@@ -121,7 +121,6 @@ class PatientLoginPage extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 16),
-
                         // Password field
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,39 +128,46 @@ class PatientLoginPage extends StatelessWidget {
                             Text(
                               'كلمة المرور',
                               style: TextStyle(
+                                fontFamily: 'janna',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.grey[700],
                               ),
                             ),
                             const SizedBox(height: 8),
-                            TextFormField(
-                              obscureText: true,
-                              decoration: InputDecoration(
-                                hintText: '••••••••',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[300]!,
+                            ValueListenableBuilder<bool>(
+                              valueListenable: obscureNotifier,
+                              builder: (context, obscure, child) {
+                                return TextFormField(
+                                  obscureText: obscure,
+                                  decoration: InputDecoration(
+                                    hintText: "Password",
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey[300]!,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: Colors.red[600]!,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        Icons.visibility,
+                                        color: Colors.grey[400],
+                                      ),
+                                      onPressed: () {
+                                        obscureNotifier.value =
+                                            !obscureNotifier.value;
+                                      },
+                                    ),
                                   ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                    color: Colors.red[600]!,
-                                    width: 2,
-                                  ),
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    Icons.visibility,
-                                    color: Colors.grey[400],
-                                  ),
-                                  onPressed: () {
-                                    // Toggle password visibility
-                                  },
-                                ),
-                              ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -186,7 +192,10 @@ class PatientLoginPage extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: const Text('دخول'),
+                            child: const Text(
+                              'دخول',
+                              style: TextStyle(fontFamily: 'janna'),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -199,6 +208,7 @@ class PatientLoginPage extends StatelessWidget {
                           child: Text(
                             'مسح البيانات المخزنة',
                             style: TextStyle(
+                              fontFamily: 'janna',
                               color: Colors.red[600],
                               fontSize: 14,
                             ),
@@ -218,6 +228,7 @@ class PatientLoginPage extends StatelessWidget {
                     child: Text(
                       'لا تمتلك حساب؟ سجل الآن',
                       style: TextStyle(
+                        fontFamily: 'janna',
                         color: Colors.red[600],
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -240,15 +251,12 @@ class PatientLoginPage extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.favorite,
-                          color: Colors.red[600],
-                          size: 16,
-                        ),
+                        Icon(Icons.favorite, color: Colors.red[600], size: 18),
                         const SizedBox(width: 8),
                         Text(
                           'طلب طوارئ فوري',
                           style: TextStyle(
+                            fontFamily: 'janna',
                             color: Colors.red[600],
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
