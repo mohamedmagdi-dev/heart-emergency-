@@ -17,6 +17,7 @@ import '../features/doctor/screens/doctor_registration.dart';
 // Patient
 import '../features/patient/screens/patient_dashboard.dart';
 import '../features/patient/screens/emergency_request.dart';
+import '../features/patient/screens/patient_login.dart';
 import '../features/patient/screens/patient_payment.dart';
 import '../features/patient/screens/patient_appointment.dart';
 
@@ -37,6 +38,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/doctor/register', builder: (context, state) => const DoctorRegistrationScreen()),
     GoRoute(path: '/doctor/dashboard', builder: (context, state) => const DoctorDashboardScreen()),
 
+    GoRoute(path: '/patient/login', builder: (context, state) => const PatientLoginPage()),
     GoRoute(path: '/patient/auth', builder: (context, state) => const PatientAuthScreen()),
     GoRoute(path: '/patient/dashboard', builder: (context, state) => const PatientDashboardScreen()),
     GoRoute(path: '/patient/payment', builder: (context, state) => const PatientPaymentScreen()),
