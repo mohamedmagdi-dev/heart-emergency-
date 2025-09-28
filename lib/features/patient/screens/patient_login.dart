@@ -19,7 +19,7 @@ class PatientLoginPage extends StatelessWidget {
                   // Back to home button
                   GestureDetector(
                     onTap: () {
-                      context.pop();
+                      GoRouter.of(context).go('login');
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -30,12 +30,17 @@ class PatientLoginPage extends StatelessWidget {
                           size: 30,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          'العودة للرئيسية',
-                          style: TextStyle(
-                            color: Colors.red[600],
-                            fontSize: 18,
-                            fontFamily: 'janna',
+                        GestureDetector(
+                          onTap: () {
+                           Navigator.pop(context);
+                          },
+                          child: Text(
+                            'العودة للرئيسية',
+                            style: TextStyle(
+                              color: Colors.red[600],
+                              fontSize: 18,
+                              fontFamily: 'janna',
+                            ),
                           ),
                         ),
                       ],
