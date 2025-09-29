@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heart_emergency/core/constants/app_strings.dart';
+import 'package:heart_emergency/features/patient/screens/patient_login.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../doctor/screens/doctor_registration.dart';
@@ -35,6 +36,7 @@ class LoginScreen extends StatelessWidget {
             Text(
               "ابدأ رحلتك معنا الآن",
               style: TextStyle(
+                fontFamily: 'janna',
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -43,6 +45,7 @@ class LoginScreen extends StatelessWidget {
             Text(
               "اختر نوع حسابك للوصول إلى الخدمات المتاحة",
               style: TextStyle(
+                fontFamily: 'janna',
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
                 color: Colors.white,
@@ -68,7 +71,7 @@ class LoginScreen extends StatelessWidget {
                     buttonText: AppStrings.loginText,
                     iconColor:Colors.red,
                     onPressed: () {
-                      GoRouter.of(context).go('/patient/login');
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => PatientLoginPage(),));
                     },
 
                   ),

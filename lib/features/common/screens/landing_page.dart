@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:heart_emergency/core/cache/shared_pref_cache.dart';
 import 'package:heart_emergency/core/utils/helpers.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/onboarding_cards.dart';
@@ -112,6 +113,7 @@ class _LandingPageState extends State<LandingPage> {
                   TextButton(
                     onPressed: () {
                       if (_currentPage == 5) {
+                        SharedPreference.saveBool("isFirst", false);
                         context.go('/login');
                         return;
                       }

@@ -27,8 +27,8 @@ import '../features/admin/screens/admin_dashboard.dart';
 // Wallet
 import '../features/wallet/screens/wallet_screen.dart';
 
-final GoRouter appRouter = GoRouter(
-  initialLocation: '/',
+GoRouter createAppRouter({required bool isFirst}) => GoRouter(
+  initialLocation: isFirst ? '/' : '/login',
   routes: [
     GoRoute(path: '/', builder: (context, state) =>  LandingPage()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),

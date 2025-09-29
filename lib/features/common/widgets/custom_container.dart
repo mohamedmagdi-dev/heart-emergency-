@@ -39,8 +39,10 @@ class CustomContainer extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
 
+
         children: [
-          const SizedBox(height: 40),
+          //const SizedBox(height: 40),
+          Spacer(),
           CircleAvatar(
             radius: 50,
             backgroundColor: circleAvatarIconColor,
@@ -58,7 +60,7 @@ class CustomContainer extends StatelessWidget {
             title,
             textAlign:TextAlign.end,
             style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800,
-
+              fontFamily: 'janna',
             ),
           ),
           const SizedBox(height: 10),
@@ -66,12 +68,13 @@ class CustomContainer extends StatelessWidget {
             description,
             textAlign:TextAlign.center,
             style: TextStyle(
-              fontSize: 24,
+              fontFamily: 'janna',
+              fontSize: 22,
               fontWeight: FontWeight.w500,
               color: Colors.grey,
             ),
           ),
-          const SizedBox(height: 40),
+          Spacer(),
           ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
@@ -85,9 +88,10 @@ class CustomContainer extends StatelessWidget {
             child: Text(
               buttonText,
 
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(fontFamily: 'janna',fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ),
+          Spacer()
         ],
       ),
     );
