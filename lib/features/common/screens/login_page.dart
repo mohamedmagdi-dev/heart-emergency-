@@ -111,31 +111,7 @@ class LoginScreen extends StatelessWidget {
                     },
 
                   ),
-                  // CustomContainer(
-                  //   buttonColor: ,
-                  //   onPressed: () {
-                  //     context.go('/patient/login');
-                  //   },
-                  //   image: "assets/images/stethoscope.svg",
-                  //
-                  //   width: screenWidth * 0.8,
-                  //   height: 480,
-                  //   title: 'طبيب',
-                  //   description:
-                  //       '  انضم إلى شبكة الأطباء واحصل على طلبات العلاج المنزلي',
-                  //   buttonText: AppStrings.loginText,
-                  //   iconColor: AppColor.containerButtonColor2,
-                  // ),
-                  // const SizedBox(width: 16),
-                  // CustomContainer(
-                  //   image: "assets/images/shield.svg",
-                  //   width: screenWidth * 0.8,
-                  //   height: 480,
-                  //   title: '',
-                  //   description: 'إدارة النظام والأطباء ومراقبة جميع العمليات ',
-                  //   buttonText: '',
-                  //   iconColor: AppColor.containerButtonColor3,
-                  // ),
+
                 ],
               ),
             ),

@@ -12,12 +12,12 @@ import '../features/auth/screens/Admin_login_page.dart';
 
 // Doctor
 import '../features/doctor/screens/doctor_dashboard.dart';
-import '../features/doctor/screens/doctor_registration.dart';
+import '../features/doctor/screens/doctor_registration.dart' hide DoctorLoginPage;
 
 // Patient
 import '../features/patient/screens/patient_dashboard.dart';
 import '../features/patient/screens/emergency_request.dart';
-import '../features/patient/screens/patient_login.dart';
+
 import '../features/patient/screens/patient_payment.dart';
 import '../features/patient/screens/patient_appointment.dart';
 
@@ -34,12 +34,12 @@ GoRouter createAppRouter({required bool isFirst}) => GoRouter(
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
 
     // Auth
-    GoRoute(path: '/doctor/auth', builder: (context, state) => const DoctorAuthScreen()),
+    // GoRoute(path: '/doctor/auth', builder: (context, state) => const DoctorAuthScreen()),
     GoRoute(path: '/doctor/login', builder: (context, state) =>  DoctorLoginPage()),
     GoRoute(path: '/doctor/dashboard', builder: (context, state) => const DoctorDashboardScreen()),
 
     GoRoute(path: '/patient/login', builder: (context, state) =>  PatientLoginPage()),
-    GoRoute(path: '/patient/auth', builder: (context, state) => const PatientAuthScreen()),
+    // GoRoute(path: '/patient/auth', builder: (context, state) => const PatientAuthScreen()),
     GoRoute(path: '/patient/dashboard', builder: (context, state) => const PatientDashboardScreen()),
     GoRoute(path: '/patient/payment', builder: (context, state) => const PatientPaymentScreen()),
     GoRoute(path: '/patient/appointment', builder: (context, state) => const PatientAppointmentScreen()),
