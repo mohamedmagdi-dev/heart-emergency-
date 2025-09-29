@@ -71,7 +71,8 @@ class LoginScreen extends StatelessWidget {
                     buttonText: AppStrings.loginText,
                     iconColor:Colors.red,
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => PatientLoginPage(),));
+                      context.push('/patient/login');
+                     // Navigator.push(context, MaterialPageRoute(builder: (context) => PatientLoginPage(),));
                     },
 
                   ),
@@ -88,7 +89,8 @@ class LoginScreen extends StatelessWidget {
                     buttonText: AppStrings.loginText,
                     iconColor:AppColor.containerButtonColor2,
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => DoctorLoginPage(),));
+                      context.push('/doctor/login');
+                      //Navigator.push(context, MaterialPageRoute(builder: (context) => DoctorLoginPage(),));
                     },
 
                   ),
@@ -105,7 +107,7 @@ class LoginScreen extends StatelessWidget {
                     buttonText:"لوحة التحكم",
                     iconColor:AppColor.containerButtonColor3,
                     onPressed: () {
-                      GoRouter.of(context).go('/login');
+                      context.push('/admin/login');
                     },
 
                   ),

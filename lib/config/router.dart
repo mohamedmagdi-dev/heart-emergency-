@@ -8,7 +8,7 @@ import '../features/common/screens/login_page.dart';
 // Auth
 import '../features/auth/screens/doctor_auth_screen.dart';
 import '../features/auth/screens/patient_auth_screen.dart';
-import '../features/auth/screens/admin_auth_screen.dart';
+import '../features/auth/screens/Admin_login_page.dart';
 
 // Doctor
 import '../features/doctor/screens/doctor_dashboard.dart';
@@ -48,7 +48,7 @@ GoRouter createAppRouter({required bool isFirst}) => GoRouter(
     GoRoute(path: '/emergency-request', builder: (context, state) => const EmergencyRequestScreen()),
 
     // Admin
-    GoRoute(path: '/admin/auth', builder: (context, state) => const AdminAuthScreen()),
+    GoRoute(path: '/admin/login', builder: (context, state) => const AdminLoginPage()),
     GoRoute(path: '/admin/dashboard', builder: (context, state) => const AdminDashboardScreen()),
 
     // Wallet
