@@ -14,6 +14,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../patient/screens/patient_signUp.dart';
+
 class PatientLoginPage extends StatelessWidget {
   PatientLoginPage({super.key});
   final ValueNotifier<bool> obscureNotifier = ValueNotifier<bool>(true);
@@ -242,7 +244,7 @@ class PatientLoginPage extends StatelessWidget {
                     // Register button
                     TextButton(
                       onPressed: () {
-                        // Navigate to registration
+                        context.push('/patient/signUp');
                       },
                       child: Text(
                         'لا تمتلك حساب؟ سجل الآن',

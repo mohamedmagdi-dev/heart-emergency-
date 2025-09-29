@@ -226,7 +226,7 @@ class DoctorLoginPage extends StatelessWidget {
                     // Register button
                     TextButton(
                       onPressed: () {
-                        // Navigate to doctor registration
+                        context.push('/doctor/signUp');
                       },
                       child: Text(
                         'لا تمتلك حساب؟ سجل الآن',
