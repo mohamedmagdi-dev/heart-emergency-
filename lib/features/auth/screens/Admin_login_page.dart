@@ -18,7 +18,7 @@ class AdminLoginPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withAlpha(25),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -279,7 +279,7 @@ class AdminLoginPage extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.purple.withOpacity(0.3),
+                                    color: Colors.purple.withAlpha(76),
                                     blurRadius: 10,
                                     offset: const Offset(0, 5),
                                   ),

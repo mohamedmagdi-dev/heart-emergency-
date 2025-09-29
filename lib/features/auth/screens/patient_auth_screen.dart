@@ -199,7 +199,7 @@ class PatientLoginPage extends StatelessWidget {
                             width: double.infinity,
                             child: ElevatedButton(
                               onPressed: () {
-                                // Handle login
+                                context.push('/patient/dashboard');
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red[600],
