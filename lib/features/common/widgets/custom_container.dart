@@ -30,11 +30,11 @@ class CustomContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       width: width, // مرنة حسب الشاشة
       height: height,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.black38,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -61,6 +61,7 @@ class CustomContainer extends StatelessWidget {
             title,
             textAlign:TextAlign.end,
             style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800,
+              color:Colors.white,
               fontFamily: 'janna',
             ),
           ),
@@ -72,7 +73,7 @@ class CustomContainer extends StatelessWidget {
               fontFamily: 'janna',
               fontSize: 22,
               fontWeight: FontWeight.w500,
-              color: Colors.grey,
+              color: Colors.white,
             ),
           ),
           Spacer(),
