@@ -30,6 +30,7 @@ class CustomContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+
       width: width, // مرنة حسب الشاشة
       height: height,
       decoration: BoxDecoration(

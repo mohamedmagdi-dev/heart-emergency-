@@ -30,94 +30,92 @@ class LoginScreen extends StatelessWidget {
             ),
           ),
 
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 80),
-              Text(
-                "ابدأ رحلتك معنا الآن",
-                style: TextStyle(
-                  fontFamily: 'janna',
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+        child: Column(
+          children: [
+            const SizedBox(height: 80),
+            Text(
+              "ابدأ رحلتك معنا الآن",
+              style: TextStyle(
+                fontFamily: 'janna',
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-              Text(
-                "اختر نوع حسابك للوصول إلى الخدمات المتاحة",
-                style: TextStyle(
-                  fontFamily: 'janna',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
+            ),
+            Text(
+              "اختر نوع حسابك للوصول إلى الخدمات المتاحة",
+              style: TextStyle(
+                fontFamily: 'janna',
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
               ),
-              const SizedBox(height: 30),
-          
-              SizedBox(
-                height: 600,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    CustomContainer(
-                      circleAvatarIconColor: AppColor.circleAvatarColor1,
-                      buttonColor: Colors.red,
-                      title: "مريض",
-                      description:
-                          "احجز موعد مع طبيب واحصل علي الرعايه الطبيه في منزلك",
-                      image: "assets/images/heart.svg",
-                      width: screenWidth * 0.8,
-                      height: 480,
-                      buttonText: AppStrings.loginText,
-                      iconColor:Colors.red,
-                      onPressed: () {
-                        context.push('/patient/login');
-                       // Navigator.push(context, MaterialPageRoute(builder: (context) => PatientLoginPage(),));
-                      },
-          
-                    ),
-                    const SizedBox(width: 16),
-                    CustomContainer(
-                      circleAvatarIconColor:AppColor.circleAvatarColor2,
-                      buttonColor: Colors.red,
-                      title: "طبيب",
-                      description:
-                      "انضم إلى شبكة الأطباء واحصل على طلبات العلاج المنزلي",
-                      image: "assets/images/stethoscope.svg",
-                      width: screenWidth * 0.8,
-                      height: 480,
-                      buttonText: AppStrings.loginText,
-                      iconColor:AppColor.containerButtonColor2,
-                      onPressed: () {
-                        context.push('/doctor/login');
-                        //Navigator.push(context, MaterialPageRoute(builder: (context) => DoctorLoginPage(),));
-                      },
-          
-                    ),
-                    const SizedBox(width: 16),
-                    CustomContainer(
-                      circleAvatarIconColor:AppColor.circleAvatarColor3,
-                      buttonColor: Colors.red,
-                      title: "مدير",
-                      description:
-                      "إدارة النظام والأطباء ومراقبة جميع العمليات",
-                      image: "assets/images/shield.svg",
-                      width: screenWidth * 0.8,
-                      height: 480,
-                      buttonText:"لوحة التحكم",
-                      iconColor:AppColor.containerButtonColor3,
-                      onPressed: () {
-                        context.push('/admin/login');
-                      },
-          
-                    ),
-          
-                  ],
-                ),
+            ),
+            const SizedBox(height: 30),
+
+            SizedBox(
+              height: 600,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  CustomContainer(
+                    circleAvatarIconColor: AppColor.circleAvatarColor1,
+                    buttonColor: Colors.red,
+                    title: "مريض",
+                    description:
+                        "احجز موعد مع طبيب واحصل علي الرعايه الطبيه في منزلك",
+                    image: "assets/images/heart.svg",
+                    width: screenWidth * 0.8,
+                    height: 480,
+                    buttonText: AppStrings.loginText,
+                    iconColor:Colors.red,
+                    onPressed: () {
+                      context.push('/patient/login');
+                     // Navigator.push(context, MaterialPageRoute(builder: (context) => PatientLoginPage(),));
+                    },
+
+                  ),
+                  const SizedBox(width: 16),
+                  CustomContainer(
+                    circleAvatarIconColor:AppColor.circleAvatarColor2,
+                    buttonColor: Colors.red,
+                    title: "طبيب",
+                    description:
+                    "انضم إلى شبكة الأطباء واحصل على طلبات العلاج المنزلي",
+                    image: "assets/images/stethoscope.svg",
+                    width: screenWidth * 0.8,
+                    height: 480,
+                    buttonText: AppStrings.loginText,
+                    iconColor:AppColor.containerButtonColor2,
+                    onPressed: () {
+                      context.push('/doctor/login');
+                      //Navigator.push(context, MaterialPageRoute(builder: (context) => DoctorLoginPage(),));
+                    },
+
+                  ),
+                  const SizedBox(width: 16),
+                  CustomContainer(
+                    circleAvatarIconColor:AppColor.circleAvatarColor3,
+                    buttonColor: Colors.red,
+                    title: "مدير",
+                    description:
+                    "إدارة النظام والأطباء ومراقبة جميع العمليات",
+                    image: "assets/images/shield.svg",
+                    width: screenWidth * 0.8,
+                    height: 480,
+                    buttonText:"لوحة التحكم",
+                    iconColor:AppColor.containerButtonColor3,
+                    onPressed: () {
+                      context.push('/admin/login');
+                    },
+
+                  ),
+
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

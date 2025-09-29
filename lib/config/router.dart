@@ -33,7 +33,7 @@ GoRouter createAppRouter({required bool isFirst}) => GoRouter(
   initialLocation: isFirst ? '/' : '/login',
   routes: [
     GoRoute(path: '/', builder: (context, state) =>  LandingPage()),
-    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/login', builder: (context, state) =>  LoginScreen()),
 
     // Auth
     GoRoute(path: '/doctor/signUp', builder: (context, state) =>  DoctorRegistrationPage()),
@@ -52,7 +52,7 @@ GoRouter createAppRouter({required bool isFirst}) => GoRouter(
 
     // Admin
     GoRoute(path: '/admin/login', builder: (context, state) => const AdminLoginPage()),
-    GoRoute(path: '/admin/dashboard', builder: (context, state) => const AdminDashboardScreen()),
+    GoRoute(path: '/admin/dashboard', builder: (context, state) =>  AdminDashboardPage()),
 
     // Wallet
     GoRoute(path: '/wallet', builder: (context, state) => const WalletScreen()),
