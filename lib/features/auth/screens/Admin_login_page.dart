@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class AdminLoginPage extends StatelessWidget {
   const AdminLoginPage({super.key});
@@ -287,7 +288,7 @@ class AdminLoginPage extends StatelessWidget {
                               ),
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // Handle admin login
+                                  context.push("/admin/dashboard");
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,

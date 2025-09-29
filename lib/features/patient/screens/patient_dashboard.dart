@@ -101,7 +101,7 @@ class PatientDashboardPage extends StatelessWidget {
                             const SizedBox(width: 8),
                             IconButton(
                               onPressed: () {
-                                // Logout
+                                context.go('/login');
                               },
                               icon: Icon(
                                 Icons.logout,

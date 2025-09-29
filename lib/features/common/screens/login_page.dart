@@ -24,15 +24,15 @@ class LoginScreen extends StatelessWidget {
               end: Alignment.bottomRight, // اتجاه النهاية
               colors: [
                 Color(0xFF1E3C72), // أزرق غامق
-                Color(0xFF8E2DE2), // بنفسجي
-                Color(0xFFED213A), // أحمر
+                Color(0xFFC12436), // بنفسجي
+                Color(0xFF570B16), // أحمر
               ],
             ),
           ),
 
         child: Column(
           children: [
-            const SizedBox(height: 80),
+            Spacer(),
             Text(
               "ابدأ رحلتك معنا الآن",
               style: TextStyle(
@@ -115,9 +115,12 @@ class LoginScreen extends StatelessWidget {
                 ],
               ),
             ),
+            Spacer()
           ],
+
         ),
       ),
+
     );
   }
 }
