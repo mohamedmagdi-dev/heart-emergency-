@@ -1,46 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../auth/screens/doctor_auth_screen.dart';
+import '../../auth/screens/patient_auth_screen.dart';
 
-class DoctorRegistrationPage extends StatefulWidget {
-  const DoctorRegistrationPage({super.key});
+class PatientRegistrationPage extends StatefulWidget {
+  const PatientRegistrationPage({super.key});
 
   @override
-  State<DoctorRegistrationPage> createState() => _DoctorRegistrationPageState();
+  State<PatientRegistrationPage> createState() => _PatientRegistrationPageState();
 }
 
-class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
+class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
-  String? _selectedSpecialization;
-  String? _selectedExperience;
+  String? _selectedGender;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-
-  // Specialization options
-  final List<Map<String, String>> _specializations = [
-    {'value': 'general', 'label': 'طب عام'},
-    {'value': 'internal', 'label': 'باطنة'},
-    {'value': 'pediatrics', 'label': 'أطفال'},
-    {'value': 'cardiology', 'label': 'قلب'},
-    {'value': 'orthopedics', 'label': 'عظام'},
-    {'value': 'neurology', 'label': 'أعصاب'},
-    {'value': 'emergency', 'label': 'طوارئ'},
-  ];
-
-  // Experience options
-  final List<Map<String, String>> _experiences = [
-    {'value': '1-2', 'label': '1-2 سنة'},
-    {'value': '3-5', 'label': '3-5 سنوات'},
-    {'value': '6-10', 'label': '6-10 سنوات'},
-    {'value': '11-15', 'label': '11-15 سنة'},
-    {'value': '15+', 'label': 'أكثر من 15 سنة'},
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -65,14 +46,14 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                         children: [
                           const Icon(
                             Icons.arrow_left,
-                            color: Colors.blue,
+                            color: Colors.red,
                             size: 20,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             'العودة للرئيسية',
                             style: TextStyle(
-                              color: Colors.blue[600],
+                              color: Colors.red[600],
                               fontSize: 14,
                             ),
                           ),
@@ -81,21 +62,21 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Stethoscope icon in circle
+                    // Heart icon in circle
                     Container(
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.blue[600]!,
-                            Colors.blue[700]!,
+                            Colors.red[500]!,
+                            Colors.red[600]!,
                           ],
                         ),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
-                        Icons.medical_services,
+                        Icons.favorite,
                         color: Colors.white,
                         size: 40,
                       ),
@@ -104,7 +85,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
 
                     // Title and description
                     Text(
-                      'انضم كطبيب',
+                      'إنشاء حساب جديد',
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[900],
@@ -112,7 +93,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'سجل الآن وابدأ في تقديم الخدمات الطبية',
+                      'سجل الآن واحصل على الرعاية الطبية في منزلك',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -147,7 +128,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                                   return null;
                                 },
                                 decoration: InputDecoration(
-                                  hintText: 'د. محمد أحمد',
+                                  hintText: 'محمد أحمد علي',
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
@@ -157,7 +138,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
-                                      color: Colors.blue[600]!,
+                                      color: Colors.red[600]!,
                                       width: 2,
                                     ),
                                   ),
@@ -167,119 +148,114 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Specialization field
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          // Age and Gender row
+                          Row(
                             children: [
-                              Text(
-                                'التخصص',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
+                              // Age field
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'العمر',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextFormField(
+                                      controller: _ageController,
+                                      keyboardType: TextInputType.number,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'يرجى إدخال العمر';
+                                        }
+                                        final age = int.tryParse(value);
+                                        if (age == null || age < 1 || age > 120) {
+                                          return 'العمر يجب أن يكون بين 1 و 120';
+                                        }
+                                        return null;
+                                      },
+                                      decoration: InputDecoration(
+                                        hintText: '25',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey[300]!,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                            color: Colors.red[600]!,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                value: _selectedSpecialization,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'يرجى اختيار التخصص';
-                                  }
-                                  return null;
-                                },
-                                decoration: InputDecoration(
-                                  hintText: 'اختر التخصص',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                      color: Colors.blue[600]!,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                                items: [
-                                  const DropdownMenuItem(
-                                    value: '',
-                                    child: Text('اختر التخصص'),
-                                  ),
-                                  ..._specializations.map((specialization) {
-                                    return DropdownMenuItem(
-                                      value: specialization['value'],
-                                      child: Text(specialization['label']!),
-                                    );
-                                  }).toList(),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedSpecialization = value;
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                              const SizedBox(width: 16),
 
-                          // Experience field
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'سنوات الخبرة',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                value: _selectedExperience,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'يرجى اختيار سنوات الخبرة';
-                                  }
-                                  return null;
-                                },
-                                decoration: InputDecoration(
-                                  hintText: 'اختر سنوات الخبرة',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
+                              // Gender field
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'الجنس',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.grey[700],
+                                      ),
                                     ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                      color: Colors.blue[600]!,
-                                      width: 2,
+                                    const SizedBox(height: 8),
+                                    DropdownButtonFormField<String>(
+                                      value: _selectedGender,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'يرجى اختيار الجنس';
+                                        }
+                                        return null;
+                                      },
+                                      decoration: InputDecoration(
+                                        hintText: 'اختر',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey[300]!,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                            color: Colors.red[600]!,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      items: const [
+                                        DropdownMenuItem(
+                                          value: 'male',
+                                          child: Text('ذكر'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'female',
+                                          child: Text('أنثى'),
+                                        ),
+                                      ],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedGender = value;
+                                        });
+                                      },
                                     ),
-                                  ),
+                                  ],
                                 ),
-                                items: [
-                                  const DropdownMenuItem(
-                                    value: '',
-                                    child: Text('اختر سنوات الخبرة'),
-                                  ),
-                                  ..._experiences.map((experience) {
-                                    return DropdownMenuItem(
-                                      value: experience['value'],
-                                      child: Text(experience['label']!),
-                                    );
-                                  }).toList(),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedExperience = value;
-                                  });
-                                },
                               ),
                             ],
                           ),
@@ -318,7 +294,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
-                                      color: Colors.blue[600]!,
+                                      color: Colors.red[600]!,
                                       width: 2,
                                     ),
                                   ),
@@ -354,7 +330,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                                   return null;
                                 },
                                 decoration: InputDecoration(
-                                  hintText: 'doctor@example.com',
+                                  hintText: 'patient@example.com',
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
@@ -364,7 +340,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
-                                      color: Colors.blue[600]!,
+                                      color: Colors.red[600]!,
                                       width: 2,
                                     ),
                                   ),
@@ -410,7 +386,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
-                                      color: Colors.blue[600]!,
+                                      color: Colors.red[600]!,
                                       width: 2,
                                     ),
                                   ),
@@ -467,7 +443,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
-                                      color: Colors.blue[600]!,
+                                      color: Colors.red[600]!,
                                       width: 2,
                                     ),
                                   ),
@@ -494,12 +470,12 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                             child: ElevatedButton(
                               onPressed: () {
                                 if (_formKey.currentState!.validate()) {
-                                  // Handle doctor registration
-                                  _registerDoctor();
+                                  // Handle registration
+                                  _registerPatient();
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue[600],
+                                backgroundColor: Colors.red[600],
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 textStyle: const TextStyle(
@@ -513,6 +489,50 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                               child: const Text('إنشاء حساب'),
                             ),
                           ),
+                          const SizedBox(height: 16),
+
+                          // Privacy and security notice
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.red[50],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.security,
+                                  color: Colors.red[600],
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'خصوصية وأمان:',
+                                        style: TextStyle(
+                                          color: Colors.red[800],
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'جميع بياناتك الشخصية والطبية محمية بأعلى معايير الأمان والخصوصية.',
+                                        style: TextStyle(
+                                          color: Colors.red[800],
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -522,35 +542,52 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                     // Login link
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) =>  DoctorLoginPage()),
-                        );
+                        // Navigator.pushReplacement(
+                        //   context,
+                        //   MaterialPageRoute(builder: (context) =>  PatientLoginPage()),
+                        // );
+                        context.pushReplacement('/patient/login');
                       },
                       child: Text(
                         'لديك حساب بالفعل؟ تسجيل الدخول',
                         style: TextStyle(
-                          color: Colors.blue[600],
+                          color: Colors.red[600],
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
 
-                    // Help link
-                    TextButton(
-                      onPressed: () {
-                        // Navigate to registration help
-                        _showRegistrationHelp();
-                      },
-                      child: Text(
-                        'تحتاج مساعدة في التسجيل؟',
-                        style: TextStyle(
-                          color: Colors.blue[600],
-                          fontSize: 14,
-                        ),
+                    // Emergency request button
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.favorite,
+                            color: Colors.red[600],
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'طلب طوارئ فوري',
+                            style: TextStyle(
+                              color: Colors.red[600],
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -563,69 +600,40 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
     );
   }
 
-  void _registerDoctor() {
-    // Handle doctor registration logic
-    final doctorData = {
+  void _registerPatient() {
+    // Handle patient registration logic
+    final patientData = {
       'name': _nameController.text,
-      'specialization': _selectedSpecialization,
-      'experience': _selectedExperience,
+      'age': _ageController.text,
+      'gender': _selectedGender,
       'phone': _phoneController.text,
       'email': _emailController.text,
       'password': _passwordController.text,
     };
 
-    print('Doctor registration data: $doctorData');
+    print('Patient registration data: $patientData');
 
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('تم إنشاء الحساب بنجاح! سيتم مراجعة بياناتك من قبل الإدارة'),
+      SnackBar(
+        content: Text('تم إنشاء الحساب بنجاح!'),
         backgroundColor: Colors.green,
-        duration: Duration(seconds: 4),
       ),
     );
 
     // Navigate to login page after successful registration
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 2), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) =>  DoctorLoginPage()),
+        MaterialPageRoute(builder: (context) =>  PatientLoginPage()),
       );
     });
-  }
-
-  void _showRegistrationHelp() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('مساعدة في التسجيل'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('للتسجيل كطبيب، يرجى:'),
-            SizedBox(height: 8),
-            Text('• إدخال جميع البيانات المطلوبة بدقة'),
-            Text('• اختيار التخصص المناسب'),
-            Text('• اختيار سنوات الخبرة الحقيقية'),
-            Text('• استخدام بريد إلكتروني صحيح'),
-            SizedBox(height: 8),
-            Text('سيتم مراجعة بياناتك من قبل إدارة التطبيق قبل الموافقة على الحساب.'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('حسناً'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _ageController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();

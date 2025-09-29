@@ -25,6 +25,7 @@ import '../features/patient/screens/patient_appointment.dart';
 import '../features/admin/screens/admin_dashboard.dart';
 
 // Wallet
+import '../features/patient/screens/patient_signUp.dart';
 import '../features/wallet/screens/wallet_screen.dart';
 
 GoRouter createAppRouter({required bool isFirst}) => GoRouter(
@@ -34,12 +35,12 @@ GoRouter createAppRouter({required bool isFirst}) => GoRouter(
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
 
     // Auth
-    // GoRoute(path: '/doctor/auth', builder: (context, state) => const DoctorAuthScreen()),
+    GoRoute(path: '/doctor/signUp', builder: (context, state) =>  DoctorRegistrationPage()),
     GoRoute(path: '/doctor/login', builder: (context, state) =>  DoctorLoginPage()),
     GoRoute(path: '/doctor/dashboard', builder: (context, state) => const DoctorDashboardScreen()),
 
     GoRoute(path: '/patient/login', builder: (context, state) =>  PatientLoginPage()),
-    // GoRoute(path: '/patient/auth', builder: (context, state) => const PatientAuthScreen()),
+    GoRoute(path: '/patient/signUp', builder: (context, state) =>  PatientRegistrationPage()),
     GoRoute(path: '/patient/dashboard', builder: (context, state) => const PatientDashboardScreen()),
     GoRoute(path: '/patient/payment', builder: (context, state) => const PatientPaymentScreen()),
     GoRoute(path: '/patient/appointment', builder: (context, state) => const PatientAppointmentScreen()),
