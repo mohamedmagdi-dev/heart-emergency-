@@ -1,16 +1,4 @@
-// import 'package:flutter/material.dart';
-//
-// class PatientAuthScreen extends StatelessWidget {
-//   const PatientAuthScreen({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('Patient Auth')),
-//       body: const Center(child: Text('Patient Auth Screen')),
-//     );
-//   }
-// }
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -199,7 +187,7 @@ class PatientLoginPage extends StatelessWidget {
                             width: double.infinity,
                             child: ElevatedButton(
                               onPressed: () {
-                                // Handle login
+                                context.push('/patient/dashboard');
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red[600],

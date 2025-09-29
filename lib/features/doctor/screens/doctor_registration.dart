@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../auth/screens/doctor_auth_screen.dart';
 
@@ -494,8 +495,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                             child: ElevatedButton(
                               onPressed: () {
                                 if (_formKey.currentState!.validate()) {
-                                  // Handle doctor registration
-                                  _registerDoctor();
+                                  context.push("/doctor/login");
                                 }
                               },
                               style: ElevatedButton.styleFrom(
@@ -587,10 +587,11 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
 
     // Navigate to login page after successful registration
     Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) =>  DoctorLoginPage()),
-      );
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(builder: (context) =>  DoctorLoginPage()),
+      // );
+      context.go('/doctor/login');
     });
   }
 

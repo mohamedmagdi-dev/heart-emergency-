@@ -185,6 +185,7 @@ class DoctorLoginPage extends StatelessWidget {
                             child: ElevatedButton(
                               onPressed: () {
                                 // Handle doctor login
+                                context.push('/doctor/dashboard');
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue[600],
@@ -226,6 +227,7 @@ class DoctorLoginPage extends StatelessWidget {
                     // Register button
                     TextButton(
                       onPressed: () {
+                        // Navigate to doctor registration
                         context.push('/doctor/signUp');
                       },
                       child: Text(
@@ -245,6 +247,7 @@ class DoctorLoginPage extends StatelessWidget {
                     TextButton(
                       onPressed: () {
                         // Navigate to registration help
+
                       },
                       child: Text(
                         'تحتاج مساعدة في التسجيل؟',
