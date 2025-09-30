@@ -392,7 +392,7 @@ class AdminDashboardPage extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            // Handle tab navigation
+
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

@@ -248,31 +248,41 @@ class PatientLoginPage extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     // Emergency request button
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.favorite, color: Colors.red[600], size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            'طلب طوارئ فوري',
-                            style: TextStyle(
-                              fontFamily: 'janna',
-                              color: Colors.red[600],
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+               Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    context.push("/emergency_request");
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.favorite, color: Colors.red[600], size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'طلب طوارئ فوري',
+                              style: TextStyle(
+                                fontFamily: 'janna',
+                                color: Colors.red[600],
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                )
+                   
                     ),
                   ],
                 ),

@@ -48,7 +48,7 @@ GoRouter createAppRouter({required bool isFirst}) => GoRouter(
     GoRoute(path: '/patient/appointment', builder: (context, state) =>  AppointmentBookingPage()),
 
     // Emergency
-    GoRoute(path: '/emergency-request', builder: (context, state) => const EmergencyRequestScreen()),
+    GoRoute(path: '/emergency_request', builder: (context, state) =>  EmergencyRequestPage()),
 
     // Admin
     GoRoute(path: '/admin/login', builder: (context, state) => const AdminLoginPage()),
