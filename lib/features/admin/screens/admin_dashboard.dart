@@ -464,7 +464,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   DataRow _buildDoctorRow(String name, String status) {
-    Color statusColor = status == 'موثق' ? Colors.green : Colors.yellow;
     Color statusBgColor = status == 'موثق' ? Colors.green[100]! : Colors.yellow[100]!;
 
     return DataRow(cells: [

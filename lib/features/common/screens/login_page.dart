@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heart_emergency/core/constants/app_strings.dart';
-import 'package:heart_emergency/features/patient/screens/patient_signUp.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../doctor/screens/doctor_registration.dart';
 import '../widgets/custom_container.dart';
 
 class LoginScreen extends StatelessWidget {

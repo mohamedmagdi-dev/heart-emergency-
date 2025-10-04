@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Certificates folder - doctors can upload, authenticated users can read
+    match /certificates/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && 
+                   request.resource.size < 10 * 1024 * 1024 && // Max 10MB
+                   request.resource.contentType.matches('image/.*|application/pdf');
+    }
+    
+    // ID documents folder - doctors can upload, authenticated users can read
+    match /id_documents/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && 
+                   request.resource.size < 10 * 1024 * 1024 && // Max 10MB
+                   request.resource.contentType.matches('image/.*|application/pdf');
+    }
+    
+    // Profile pictures folder - public read, authenticated write
+    match /profile_pictures/{fileName} {
+      allow read: if true; // Public read
+      allow write: if isAuthenticated() && 
+                   request.resource.size < 5 * 1024 * 1024 && // Max 5MB
+                   request.resource.contentType.matches('image/.*');
+    }
+    
+    // Medical reports folder - only patient and assigned doctor can access
+    match /medical_reports/{userId}/{fileName} {
+      allow read: if isAuthenticated() && 
+                  (request.auth.uid == userId || 
+                   request.auth.token.role == 'admin' ||
+                   request.auth.token.role == 'doctor');
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Default - deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

@@ -1,0 +1,341 @@
+{
+  "description": "Sample Firestore data structure for Heart Emergency app",
+  "collections": {
+    "users": {
+      "description": "User accounts (patients, doctors, admins)",
+      "sample_documents": {
+        "admin_user": {
+          "uid": "admin_uid_123",
+          "email": "admin@heartemergency.com",
+          "name": "مدير النظام",
+          "role": "admin",
+          "createdAt": "2025-10-01T00:00:00Z",
+          "isVerified": true,
+          "isBlocked": false,
+          "additionalData": {
+            "department": "IT"
+          },
+          "fcmToken": "fcm_token_here"
+        },
+        "doctor_user": {
+          "uid": "doctor_uid_456",
+          "email": "doctor@test.com",
+          "name": "د. أحمد محمد",
+          "role": "doctor",
+          "specialization": "طب الطوارئ",
+          "experience": "10 سنوات",
+          "latitude": 15.3694,
+          "longitude": 44.1910,
+          "isOnline": true,
+          "isVerified": true,
+          "isBlocked": false,
+          "averageRating": 4.8,
+          "reviewCount": 42,
+          "profilePictureUrl": "https://firebasestorage.googleapis.com/...",
+          "certificateUrls": [
+            "https://firebasestorage.googleapis.com/certificates/..."
+          ],
+          "idDocumentUrl": "https://firebasestorage.googleapis.com/ids/...",
+          "phone": "+967771234567",
+          "createdAt": "2025-09-15T00:00:00Z",
+          "additionalData": {
+            "licenseNumber": "DOC123456",
+            "hospitalAffiliation": "مستشفى الثورة"
+          },
+          "fcmToken": "fcm_token_here"
+        },
+        "patient_user": {
+          "uid": "patient_uid_789",
+          "email": "patient@test.com",
+          "name": "علي عبدالله",
+          "role": "patient",
+          "age": 35,
+          "phone": "+967779876543",
+          "createdAt": "2025-09-20T00:00:00Z",
+          "isVerified": true,
+          "isBlocked": false,
+          "additionalData": {
+            "bloodType": "O+",
+            "allergies": ["بنسلين"]
+          },
+          "fcmToken": "fcm_token_here"
+        }
+      }
+    },
+    "requests": {
+      "description": "Emergency medical requests",
+      "sample_documents": {
+        "request_1": {
+          "id": "req_123456",
+          "patientId": "patient_uid_789",
+          "doctorId": "doctor_uid_456",
+          "latitude": 15.3650,
+          "longitude": 44.1920,
+          "address": "شارع الستين، صنعاء، اليمن",
+          "symptoms": "ألم شديد في الصدر وضيق في التنفس",
+          "urgency": "high",
+          "status": "accepted",
+          "price": 150.0,
+          "currency": "SAR",
+          "createdAt": "2025-10-01T10:30:00Z",
+          "acceptedAt": "2025-10-01T10:32:00Z",
+          "completedAt": null,
+          "cancelledAt": null,
+          "metadata": {
+            "patientAge": 35,
+            "patientGender": "male",
+            "estimatedArrivalTime": "15 دقيقة"
+          }
+        }
+      }
+    },
+    "wallets": {
+      "description": "User wallet balances",
+      "sample_documents": {
+        "patient_wallet": {
+          "userId": "patient_uid_789",
+          "balances": {
+            "SAR": 500.0,
+            "USD": 133.33,
+            "YER": 333333.33
+          },
+          "createdAt": "2025-09-20T00:00:00Z",
+          "updatedAt": "2025-10-01T12:00:00Z"
+        },
+        "doctor_wallet": {
+          "userId": "doctor_uid_456",
+          "balances": {
+            "SAR": 2450.0,
+            "USD": 653.33
+          },
+          "createdAt": "2025-09-15T00:00:00Z",
+          "updatedAt": "2025-10-01T11:00:00Z"
+        },
+        "admin_commission": {
+          "userId": "admin_commission",
+          "balances": {
+            "SAR": 350.0,
+            "USD": 93.33
+          },
+          "createdAt": "2025-09-01T00:00:00Z",
+          "updatedAt": "2025-10-01T11:00:00Z"
+        }
+      }
+    },
+    "transactions": {
+      "description": "Financial transactions",
+      "sample_documents": {
+        "transaction_1": {
+          "id": "trans_123456",
+          "userId": "patient_uid_789",
+          "type": "debit",
+          "amount": -150.0,
+          "currency": "SAR",
+          "description": "دفع مقابل خدمة طبية",
+          "status": "completed",
+          "createdAt": "2025-10-01T11:00:00Z",
+          "metadata": {
+            "requestId": "req_123456",
+            "doctorId": "doctor_uid_456"
+          }
+        },
+        "transaction_2": {
+          "id": "trans_123457",
+          "userId": "doctor_uid_456",
+          "type": "credit",
+          "amount": 132.0,
+          "currency": "SAR",
+          "description": "عائد خدمة طبية (بعد خصم 12% عمولة)",
+          "status": "completed",
+          "createdAt": "2025-10-01T11:00:00Z",
+          "metadata": {
+            "requestId": "req_123456",
+            "patientId": "patient_uid_789",
+            "commission": 18.0
+          }
+        },
+        "transaction_3": {
+          "id": "trans_123458",
+          "userId": "patient_uid_789",
+          "type": "credit",
+          "amount": 500.0,
+          "currency": "SAR",
+          "description": "إعادة شحن المحفظة",
+          "status": "completed",
+          "createdAt": "2025-09-25T14:00:00Z",
+          "metadata": {
+            "paymentMethod": "bank_transfer"
+          }
+        }
+      }
+    },
+    "reviews": {
+      "description": "Doctor reviews and ratings",
+      "sample_documents": {
+        "review_1": {
+          "id": "review_123456",
+          "patientId": "patient_uid_789",
+          "doctorId": "doctor_uid_456",
+          "requestId": "req_123456",
+          "rating": 5.0,
+          "comment": "طبيب ممتاز، سريع الاستجابة ومتعاون جداً. أنصح به بشدة!",
+          "createdAt": "2025-10-01T12:00:00Z"
+        },
+        "review_2": {
+          "id": "review_123457",
+          "patientId": "patient_uid_abc",
+          "doctorId": "doctor_uid_456",
+          "requestId": "req_abc123",
+          "rating": 4.5,
+          "comment": "خدمة جيدة والطبيب محترف. وصل في الوقت المحدد.",
+          "createdAt": "2025-09-28T16:30:00Z"
+        }
+      }
+    },
+    "notifications": {
+      "description": "In-app notifications",
+      "sample_documents": {
+        "notification_1": {
+          "id": "notif_123456",
+          "userId": "doctor_uid_456",
+          "title": "طلب طوارئ جديد",
+          "message": "طلب طوارئ جديد على بعد 2.5 كم من موقعك",
+          "type": "new_request",
+          "createdAt": "2025-10-01T10:30:00Z",
+          "isRead": true,
+          "data": {
+            "requestId": "req_123456"
+          }
+        },
+        "notification_2": {
+          "id": "notif_123457",
+          "userId": "patient_uid_789",
+          "title": "تم قبول طلبك",
+          "message": "قام د. أحمد محمد بقبول طلب الطوارئ الخاص بك",
+          "type": "request_accepted",
+          "createdAt": "2025-10-01T10:32:00Z",
+          "isRead": true,
+          "data": {
+            "requestId": "req_123456",
+            "doctorId": "doctor_uid_456"
+          }
+        }
+      }
+    },
+    "settings": {
+      "description": "App-wide settings",
+      "sample_documents": {
+        "exchangeRates": {
+          "rates": {
+            "SAR": 1.0,
+            "USD": 3.75,
+            "EUR": 4.10,
+            "YER": 0.0015,
+            "EGP": 0.12,
+            "AED": 1.02
+          },
+          "updatedAt": "2025-10-01T00:00:00Z",
+          "source": "manual"
+        },
+        "pricing": {
+          "commissionPercent": 0.12,
+          "basePrice": 50.0,
+          "currency": "SAR",
+          "emergencyMultiplier": 1.5,
+          "updatedAt": "2025-09-01T00:00:00Z"
+        },
+        "appConfig": {
+          "maintenanceMode": false,
+          "minAppVersion": "1.0.0",
+          "maxSearchRadius": 20.0,
+          "defaultCurrency": "SAR",
+          "supportedCurrencies": ["SAR", "USD", "EUR", "YER", "EGP", "AED"]
+        }
+      }
+    }
+  },
+  "indexes_required": {
+    "description": "Firestore composite indexes required for queries",
+    "indexes": [
+      {
+        "collection": "requests",
+        "fields": [
+          {"field": "status", "order": "ASCENDING"},
+          {"field": "createdAt", "order": "DESCENDING"}
+        ]
+      },
+      {
+        "collection": "requests",
+        "fields": [
+          {"field": "patientId", "order": "ASCENDING"},
+          {"field": "createdAt", "order": "DESCENDING"}
+        ]
+      },
+      {
+        "collection": "transactions",
+        "fields": [
+          {"field": "userId", "order": "ASCENDING"},
+          {"field": "createdAt", "order": "DESCENDING"}
+        ]
+      },
+      {
+        "collection": "reviews",
+        "fields": [
+          {"field": "doctorId", "order": "ASCENDING"},
+          {"field": "createdAt", "order": "DESCENDING"}
+        ]
+      },
+      {
+        "collection": "notifications",
+        "fields": [
+          {"field": "userId", "order": "ASCENDING"},
+          {"field": "createdAt", "order": "DESCENDING"}
+        ]
+      },
+      {
+        "collection": "users",
+        "fields": [
+          {"field": "role", "order": "ASCENDING"},
+          {"field": "isVerified", "order": "ASCENDING"},
+          {"field": "isOnline", "order": "ASCENDING"}
+        ]
+      }
+    ]
+  },
+  "cloud_functions_recommended": {
+    "description": "Recommended Cloud Functions for production",
+    "functions": [
+      {
+        "name": "sendRequestNotification",
+        "trigger": "onCreate(requests/{requestId})",
+        "description": "Send FCM notification to nearby doctors when new request is created"
+      },
+      {
+        "name": "sendAcceptNotification",
+        "trigger": "onUpdate(requests/{requestId})",
+        "description": "Send FCM notification to patient when doctor accepts request"
+      },
+      {
+        "name": "processPayment",
+        "trigger": "onCreate(transactions/{transactionId})",
+        "description": "Process payment, update wallets, calculate commission"
+      },
+      {
+        "name": "updateDoctorRating",
+        "trigger": "onCreate(reviews/{reviewId})",
+        "description": "Recalculate doctor average rating when new review is added"
+      },
+      {
+        "name": "cleanupOldRequests",
+        "trigger": "scheduled('every 24 hours')",
+        "description": "Archive or delete old completed requests"
+      },
+      {
+        "name": "updateExchangeRates",
+        "trigger": "scheduled('every 6 hours')",
+        "description": "Fetch latest exchange rates from external API"
+      }
+    ]
+  }
+}
+

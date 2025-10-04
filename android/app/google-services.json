@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "118659624087",
+    "project_id": "heart-emergency",
+    "storage_bucket": "heart-emergency.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:118659624087:android:74295f92ca3333e7708dd2",
+        "android_client_info": {
+          "package_name": "com.example.heart_emergency"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDA5RCecZmKQJa9VOlFYd3KxD4D6Fnwqok"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

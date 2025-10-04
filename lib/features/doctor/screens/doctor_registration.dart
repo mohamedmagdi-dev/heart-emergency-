@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../auth/screens/doctor_auth_screen.dart';
+import '../../auth/screens/firebase_doctor_auth_screen.dart';
 
 class DoctorRegistrationPage extends StatefulWidget {
   const DoctorRegistrationPage({super.key});
@@ -524,7 +524,7 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) =>  DoctorLoginPage()),
+                          MaterialPageRoute(builder: (context) => const FirebaseDoctorAuthScreen()),
                         );
                       },
                       child: Text(
@@ -563,37 +563,38 @@ class _DoctorRegistrationPageState extends State<DoctorRegistrationPage> {
     );
   }
 
-  void _registerDoctor() {
-    // Handle doctor registration logic
-    final doctorData = {
-      'name': _nameController.text,
-      'specialization': _selectedSpecialization,
-      'experience': _selectedExperience,
-      'phone': _phoneController.text,
-      'email': _emailController.text,
-      'password': _passwordController.text,
-    };
+  // Reserved for future use - alternative registration method
+  // void _registerDoctor() {
+  //   // Handle doctor registration logic
+  //   final doctorData = {
+  //     'name': _nameController.text,
+  //     'specialization': _selectedSpecialization,
+  //     'experience': _selectedExperience,
+  //     'phone': _phoneController.text,
+  //     'email': _emailController.text,
+  //     'password': _passwordController.text,
+  //   };
 
-    print('Doctor registration data: $doctorData');
+  //   print('Doctor registration data: $doctorData');
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('تم إنشاء الحساب بنجاح! سيتم مراجعة بياناتك من قبل الإدارة'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 4),
-      ),
-    );
+  //   // Show success message
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     const SnackBar(
+  //       content: Text('تم إنشاء الحساب بنجاح! سيتم مراجعة بياناتك من قبل الإدارة'),
+  //       backgroundColor: Colors.green,
+  //       duration: Duration(seconds: 4),
+  //     ),
+  //   );
 
-    // Navigate to login page after successful registration
-    Future.delayed(const Duration(seconds: 3), () {
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (context) =>  DoctorLoginPage()),
-      // );
-      context.go('/doctor/login');
-    });
-  }
+  //   // Navigate to login page after successful registration
+  //   Future.delayed(const Duration(seconds: 3), () {
+  //     // Navigator.pushReplacement(
+  //     //   context,
+  //     //   MaterialPageRoute(builder: (context) =>  DoctorLoginPage()),
+  //     // );
+  //     context.go('/doctor/login');
+  //   });
+  // }
 
   void _showRegistrationHelp() {
     showDialog(

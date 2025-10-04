@@ -1,0 +1,151 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isPatient() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'patient';
+    }
+    
+    function isDoctor() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'doctor';
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDoctorVerified() {
+      return isDoctor() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.verified == true;
+    }
+    
+    // Users collection rules
+    match /users/{userId} {
+      // Allow read access:
+      // - User can read their own profile
+      // - Admins can read all profiles
+      // - Doctors can read patient profiles (for emergency requests)
+      // - Patients can read verified doctor profiles
+      allow read: if isOwner(userId) 
+                  || isAdmin()
+                  || (isDoctor() && resource.data.role == 'patient')
+                  || (isPatient() && resource.data.role == 'doctor' && resource.data.verified == true);
+      
+      // Allow create: Only during user registration (handled by Firebase Auth)
+      allow create: if isAuthenticated() 
+                    && isOwner(userId)
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.role in ['patient', 'doctor'];
+      
+      // Allow update:
+      // - Users can update their own profile (except role and verification status)
+      // - Admins can update any profile
+      allow update: if (isOwner(userId) 
+                        && !('role' in request.resource.data.diff(resource.data).affectedKeys())
+                        && !('verified' in request.resource.data.diff(resource.data).affectedKeys()))
+                    || isAdmin();
+      
+      // Allow delete: Only admins can delete users
+      allow delete: if isAdmin();
+    }
+    
+    // Requests collection rules
+    match /requests/{requestId} {
+      // Allow read access:
+      // - Patient can read their own requests
+      // - Doctor can read requests assigned to them
+      // - Admin can read all requests
+      allow read: if isAuthenticated() &&
+                  ((isPatient() && resource.data.patientId == request.auth.uid) ||
+                   (isDoctor() && resource.data.doctorId == request.auth.uid) ||
+                   isAdmin());
+      
+      // Allow create: Only patients can create emergency requests
+      allow create: if isPatient() 
+                    && request.resource.data.patientId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      
+      // Allow update: Patients can cancel, doctors can accept/reject/complete, admins can do anything
+      allow update: if isAuthenticated() &&
+                    ((isPatient() && resource.data.patientId == request.auth.uid) ||
+                     (isDoctor() && resource.data.doctorId == request.auth.uid) ||
+                     isAdmin());
+      
+      // Allow delete: Only admins can delete requests
+      allow delete: if isAdmin();
+    }
+    
+    // Transactions collection rules
+    match /transactions/{transactionId} {
+      // Allow read: Users involved in the transaction or admins
+      allow read: if isAuthenticated() &&
+                  ((resource.data.fromUserId == request.auth.uid) ||
+                   (resource.data.toUserId == request.auth.uid) ||
+                   isAdmin());
+      
+      // Allow create: Users can create transactions they're involved in
+      allow create: if isAuthenticated() &&
+                    ((request.resource.data.fromUserId == request.auth.uid) ||
+                     (request.resource.data.toUserId == request.auth.uid));
+      
+      // Allow update: Only admins can update transactions
+      allow update: if isAdmin();
+      
+      // Allow delete: Only admins can delete transactions
+      allow delete: if isAdmin();
+    }
+    
+    // Reviews collection rules
+    match /reviews/{reviewId} {
+      // Allow read: Anyone authenticated can read reviews
+      allow read: if isAuthenticated();
+      
+      // Allow create: Only patients can create reviews
+      allow create: if isPatient() && request.resource.data.patientId == request.auth.uid;
+      
+      // Allow update: Only the review author or admin
+      allow update: if (isPatient() && resource.data.patientId == request.auth.uid) || isAdmin();
+      
+      // Allow delete: Only admins can delete reviews
+      allow delete: if isAdmin();
+    }
+    
+    // Notifications collection rules
+    match /notifications/{notificationId} {
+      // Allow read: User can read their own notifications or admin can read all
+      allow read: if isAuthenticated() &&
+                  (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Allow create: System/admin can create notifications
+      allow create: if isAdmin();
+      
+      // Allow update: User can mark their notifications as read, admin can do anything
+      allow update: if isAuthenticated() &&
+                    ((resource.data.userId == request.auth.uid) || isAdmin());
+      
+      // Allow delete: User can delete their own notifications, admin can delete any
+      allow delete: if isAuthenticated() &&
+                    ((resource.data.userId == request.auth.uid) || isAdmin());
+    }
+    
+    // FCM tokens collection (for Cloud Functions)
+    match /fcm_tokens/{tokenId} {
+      // Allow read/write: Only admins and Cloud Functions
+      allow read, write: if isAdmin();
+    }
+    
+    // Analytics collection (for admin dashboard)
+    match /analytics/{docId} {
+      // Allow read/write: Only admins
+      allow read, write: if isAdmin();
+    }
+  }
+}

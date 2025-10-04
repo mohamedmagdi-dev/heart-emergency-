@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../core/constants/app_colors.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 class CustomContainer extends StatelessWidget {
  const  CustomContainer({
     super.key,

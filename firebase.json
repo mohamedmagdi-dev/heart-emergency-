@@ -1,0 +1,27 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "heart-emergency",
+          "appId": "1:118659624087:android:74295f92ca3333e7708dd2",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "heart-emergency",
+          "configurations": {
+            "android": "1:118659624087:android:74295f92ca3333e7708dd2",
+            "ios": "1:118659624087:ios:85910f0975ea751b708dd2",
+            "web": "1:118659624087:web:864c00d14299e111708dd2"
+          }
+        }
+      }
+    }
+  }
+}
