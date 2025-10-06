@@ -1,7 +1,6 @@
 // CHANGED_FOR_FIREBASE_INTEGRATION: Firebase Storage service for document uploads
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 
 class FirebaseStorageService {
@@ -15,7 +14,7 @@ class FirebaseStorageService {
     String? fileName,
   }) async {
     try {
-      final extension = path.extension(file.path);
+      final extension = file.path.split('.').last;
       final uniqueFileName = fileName ?? '${_uuid.v4()}$extension';
       final fullPath = '$folderPath/$uniqueFileName';
 

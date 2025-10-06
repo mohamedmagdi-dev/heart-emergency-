@@ -1,4 +1,5 @@
 // Doctor Dashboard with real-time Firestore integration
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +7,11 @@ import '../../../data/models/user_model.dart';
 import '../../../data/models/request_model.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/fcm_service.dart';
+import '../../../services/request_service.dart';
+import '../../../services/rating_service.dart';
+import '../../../data/models/rating_model.dart';
 import '../../../providers/auth_provider.dart';
+
 
 class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({super.key});
@@ -18,7 +23,10 @@ class DoctorDashboardScreen extends ConsumerStatefulWidget {
 class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final FCMService _fcmService = FCMService();
-  
+  final RequestService _requestService = RequestService();
+  final RatingService _ratingService = RatingService();
+  bool _showReviews = true;
+
   @override
   Widget build(BuildContext context) {
     final currentUserAsync = ref.watch(currentUserDataProvider);
@@ -135,9 +143,13 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   const SizedBox(height: 16),
                   _buildPendingRequests(user.uid),
                   const SizedBox(height: 16),
+                  _buildPatientRequestsSection(user.uid),
+                  const SizedBox(height: 16),
                   _buildWalletCard(user),
                   const SizedBox(height: 16),
                   _buildQuickActions(),
+                  const SizedBox(height: 16),
+                  _buildLatestReviewSection(user.uid),
                 ],
               ),
             ),
@@ -234,7 +246,13 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => context.push('/doctor/settings'),
+                    // onPressed: () => context.push(''),
+
+
+                    onPressed: (){
+
+context.push("/doctor/emergency/map");
+                    },
                     icon: const Icon(Icons.settings, color: Colors.white),
                   ),
                 ],
@@ -453,7 +471,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         ),
         const SizedBox(height: 12),
         StreamBuilder<List<RequestModel>>(
-          stream: _firestoreService.getPendingRequestsForDoctor(doctorId),
+          stream: _requestService.getDoctorEmergencyRequests(doctorId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -558,7 +576,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       ],
     );
   }
-
+  //
+  //
   Widget _buildRequestCard(RequestModel request) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -646,37 +665,89 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _acceptRequest(request),
-                  icon: const Icon(Icons.check),
-                  label: const Text('قبول'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+          if (request.status == RequestStatus.pending) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _acceptRequest(request),
+                    icon: const Icon(Icons.check),
+                    label: const Text('قبول'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _rejectRequest(request),
-                  icon: const Icon(Icons.close),
-                  label: const Text('رفض'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _rejectRequest(request),
+                    icon: const Icon(Icons.close),
+                    label: const Text('رفض'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final lat = request.patientLocation.latitude;
+                      final lng = request.patientLocation.longitude;
+                      final patient = await _firestoreService.getUser(request.patientId);
+                      if (!mounted) return;
+                      context.push('/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent(patient?.name ?? 'مريض')}');
+                    },
+                    icon: const Icon(Icons.map),
+                    label: const Text('الخريطة'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else if (request.status == RequestStatus.accepted || request.status == RequestStatus.completed) ...[
+            Row(
+              children: [
+                if (request.status == RequestStatus.accepted)
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _completeRequest(request),
+                      icon: const Icon(Icons.check_circle),
+                      label: const Text('إكمال الطلب'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                if (request.status == RequestStatus.completed) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _ratePatient(request),
+                      icon: const Icon(Icons.star),
+                      label: const Text('تقييم المريض'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber[600],
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
+
 
   Widget _buildWalletCard(UserModel user) {
     return Container(
@@ -756,6 +827,12 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   Widget _buildQuickActions() {
     final actions = [
       {
+        'title': 'طلبات المرضى',
+        'icon': Icons.assignment,
+        'color': Colors.blue,
+        'route': '/doctor/requests',
+      },
+      {
         'title': 'تاريخ الطلبات',
         'icon': Icons.history,
         'color': Colors.orange,
@@ -820,7 +897,19 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
-                  onTap: () => context.push(action['route'] as String),
+                  onTap: () {
+                    final route = action['route'] as String;
+                    if (route == '/doctor/reviews') {
+                      final currentUser = ref.read(currentUserDataProvider).maybeWhen(data: (u) => u, orElse: () => null);
+                      if (currentUser != null) {
+                        context.push(route, extra: currentUser.uid);
+                      } else {
+                        context.push(route);
+                      }
+                    } else {
+                      context.push(route);
+                    }
+                  },
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -859,6 +948,208 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     );
   }
 
+  Widget _buildLatestReviewSection(String doctorId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'المراجعات',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            IconButton(
+              onPressed: () => setState(() => _showReviews = !_showReviews),
+              icon: Icon(_showReviews ? Icons.expand_less : Icons.expand_more),
+              tooltip: _showReviews ? 'إخفاء' : 'إظهار',
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (!_showReviews)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+            child: Row(
+              children: [
+                const Icon(Icons.reviews, color: Colors.grey),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('المراجعات مخفية')), 
+                TextButton(
+                  onPressed: () => setState(() => _showReviews = true),
+                  child: const Text('إظهار'),
+                ),
+              ],
+            ),
+          )
+        else
+          StreamBuilder<List<RatingModel>>(
+            stream: _ratingService.getRatingsByUser(doctorId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final ratings = snapshot.data ?? [];
+              if (ratings.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                  child: const Text('لا توجد مراجعات بعد', style: TextStyle(color: Colors.grey)),
+                );
+              }
+              final r = ratings.first; // latest (stream ordered desc by createdAt)
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.star, color: Colors.amber[600], size: 18),
+                            const SizedBox(width: 4),
+                            Text('${r.rating}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                            const Spacer(),
+                            Text(
+                              _formatDateTime(r.createdAt),
+                              style: const TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        if (r.comment != null && r.comment!.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(r.comment!, style: const TextStyle(fontSize: 14)),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => context.push('/doctor/reviews', extra: doctorId),
+                      child: const Text('عرض الكل'),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPatientRequestsSection(String doctorId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'طلبات المرضى',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: () => context.push('/doctor/requests'),
+              child: const Text('عرض الكل'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        StreamBuilder<List<RequestModel>>(
+          stream: _firestoreService.getDoctorRequests(doctorId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Text('خطأ: ${snapshot.error}');
+            }
+            final items = snapshot.data ?? [];
+            if (items.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                child: const Text('لا توجد طلبات', style: TextStyle(color: Colors.grey)),
+              );
+            }
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: items.length > 3 ? 3 : items.length,
+              itemBuilder: (context, index) {
+                final r = items[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          _statusChip(r.status),
+                          const Spacer(),
+                          Text(_formatDateTime(r.createdAt), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(r.symptoms, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Text('(${r.patientLocation.latitude.toStringAsFixed(4)}, ${r.patientLocation.longitude.toStringAsFixed(4)})',
+                              style: const TextStyle(color: Colors.grey)),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () {
+                              final lat = r.patientLocation.latitude;
+                              final lng = r.patientLocation.longitude;
+                              context.push('/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent('مريض')}');
+                            },
+                            icon: const Icon(Icons.map),
+                            label: const Text('إظهار المسار'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _statusChip(RequestStatus status) {
+    Color color;
+    String text;
+    switch (status) {
+      case RequestStatus.pending:
+        color = Colors.orange; text = 'معلق'; break;
+      case RequestStatus.accepted:
+        color = Colors.blue; text = 'مقبول'; break;
+      case RequestStatus.rejected:
+        color = Colors.red; text = 'مرفوض'; break;
+      case RequestStatus.completed:
+        color = Colors.green; text = 'مكتمل'; break;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
+    );
+  }
+
   Future<void> _acceptRequest(RequestModel request) async {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
@@ -883,21 +1174,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     if (confirmed != true) return;
 
     try {
-      await _firestoreService.updateRequestStatus(request.id, RequestStatus.accepted);
-      
-      // Send notification to patient
-      final patient = await _firestoreService.getUser(request.patientId);
-      if (patient?.fcmToken != null) {
-        await _fcmService.sendNotificationToUser(
-          token: patient!.fcmToken!,
-          title: 'تم قبول طلبك',
-          body: 'تم قبول طلب الطوارئ الخاص بك من قبل الطبيب',
-          data: {
-            'type': 'request_accepted',
-            'requestId': request.id,
-          },
-        );
-      }
+      await _requestService.acceptEmergencyRequest(request.id);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -936,6 +1213,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('رفض', style: TextStyle(color: Colors.white)),
           ),
+
         ],
       ),
     );
@@ -943,21 +1221,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     if (confirmed != true) return;
 
     try {
-      await _firestoreService.updateRequestStatus(request.id, RequestStatus.rejected);
-      
-      // Send notification to patient
-      final patient = await _firestoreService.getUser(request.patientId);
-      if (patient?.fcmToken != null) {
-        await _fcmService.sendNotificationToUser(
-          token: patient!.fcmToken!,
-          title: 'تم رفض طلبك',
-          body: 'تم رفض طلب الطوارئ الخاص بك. يرجى المحاولة مع طبيب آخر.',
-          data: {
-            'type': 'request_rejected',
-            'requestId': request.id,
-          },
-        );
-      }
+      await _requestService.rejectEmergencyRequest(request.id);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -972,6 +1236,64 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('خطأ في رفض الطلب: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _completeRequest(RequestModel request) async {
+    try {
+      await _requestService.completeEmergencyRequest(request.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم إكمال الطلب بنجاح'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ في إكمال الطلب: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _ratePatient(RequestModel request) async {
+    try {
+      final patient = await _requestService.getUserDetails(request.patientId);
+      if (patient == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('لم يتم العثور على بيانات المريض'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // context.push(
+      //   '/doctor/rate-patient',
+      //   extra: patient,
+      //   queryParameters: {'requestId': request.id},
+      // );
+      context.push(
+        '/doctor/rate-patient?requestId=${request.id}',
+        extra: patient,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ في فتح صفحة التقييم: $e'),
             backgroundColor: Colors.red,
           ),
         );

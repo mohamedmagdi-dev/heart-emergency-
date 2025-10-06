@@ -2,20 +2,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'review_model.dart';
 
-enum Currency { EGP, USD, SAR, YER_NEW, YER_OLD }
+enum Currency { egp, usd, sar, yerNew, yerOld }
 
 extension CurrencyExtension on Currency {
   String get name {
     switch (this) {
-      case Currency.EGP:
+      case Currency.egp:
         return 'EGP';
-      case Currency.USD:
+      case Currency.usd:
         return 'USD';
-      case Currency.SAR:
+      case Currency.sar:
         return 'SAR';
-      case Currency.YER_NEW:
+      case Currency.yerNew:
         return 'YER-new';
-      case Currency.YER_OLD:
+      case Currency.yerOld:
         return 'YER-old';
     }
   }
@@ -23,17 +23,17 @@ extension CurrencyExtension on Currency {
   static Currency fromString(String value) {
     switch (value) {
       case 'EGP':
-        return Currency.EGP;
+        return Currency.egp;
       case 'USD':
-        return Currency.USD;
+        return Currency.usd;
       case 'SAR':
-        return Currency.SAR;
+        return Currency.sar;
       case 'YER-new':
-        return Currency.YER_NEW;
+        return Currency.yerNew;
       case 'YER-old':
-        return Currency.YER_OLD;
+        return Currency.yerOld;
       default:
-        return Currency.EGP; // Default currency
+        return Currency.egp; // Default currency
     }
   }
 }

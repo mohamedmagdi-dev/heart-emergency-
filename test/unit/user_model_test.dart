@@ -1,8 +1,8 @@
 // FIXED: Unit tests for UserModel data model
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../lib/data/models/user_model.dart';
-import '../../lib/data/models/review_model.dart';
+import 'package:heart_emergency/data/models/user_model.dart';
+import 'package:heart_emergency/data/models/review_model.dart';
 
 void main() {
   group('UserModel Tests', () {
@@ -13,7 +13,7 @@ void main() {
         name: 'Test User',
         email: 'test@example.com',
         phone: '+1234567890',
-        currency: Currency.EGP,
+        currency: Currency.egp,
         walletBalance: 100,
         createdAt: DateTime.now(),
       );
@@ -23,7 +23,7 @@ void main() {
       expect(user.name, equals('Test User'));
       expect(user.email, equals('test@example.com'));
       expect(user.phone, equals('+1234567890'));
-      expect(user.currency, equals(Currency.EGP));
+      expect(user.currency, equals(Currency.egp));
       expect(user.walletBalance, equals(100.0));
       expect(user.available, isNull); // Should be null for patients
     });
@@ -44,7 +44,7 @@ void main() {
         name: 'Dr. Test',
         email: 'doctor@example.com',
         phone: '+1234567890',
-        currency: Currency.EGP,
+        currency: Currency.egp,
         walletBalance: 500.0,
         createdAt: DateTime.now(),
         specialization: 'Cardiology',
@@ -75,7 +75,7 @@ void main() {
         name: 'Test User',
         email: 'test@example.com',
         phone: '+1234567890',
-        currency: Currency.USD,
+        currency: Currency.usd,
         walletBalance: 100,
         createdAt: DateTime(2023, 1, 1),
       );
@@ -116,7 +116,7 @@ void main() {
       expect(user.uid, equals('test-uid'));
       expect(user.role, equals('doctor'));
       expect(user.name, equals('Dr. Test'));
-      expect(user.currency, equals(Currency.SAR));
+      expect(user.currency, equals(Currency.sar));
       expect(user.specialization, equals('Neurology'));
       expect(user.verified, isFalse);
       expect(user.available, isTrue);
@@ -156,7 +156,7 @@ void main() {
         name: 'Dr. Original',
         email: 'original@example.com',
         phone: '+1234567890',
-        currency: Currency.EGP,
+        currency: Currency.egp,
         walletBalance: 100,
         createdAt: DateTime.now(),
         available: false,
@@ -179,24 +179,24 @@ void main() {
 
   group('Currency Extension Tests', () {
     test('should convert Currency enum to string correctly', () {
-      expect(Currency.EGP.name, equals('EGP'));
-      expect(Currency.USD.name, equals('USD'));
-      expect(Currency.SAR.name, equals('SAR'));
-      expect(Currency.YER_NEW.name, equals('YER-new'));
-      expect(Currency.YER_OLD.name, equals('YER-old'));
+      expect(Currency.egp.name, equals('EGP'));
+      expect(Currency.usd.name, equals('USD'));
+      expect(Currency.sar.name, equals('SAR'));
+      expect(Currency.yerNew.name, equals('YER-new'));
+      expect(Currency.yerOld.name, equals('YER-old'));
     });
 
     test('should convert string to Currency enum correctly', () {
-      expect(CurrencyExtension.fromString('EGP'), equals(Currency.EGP));
-      expect(CurrencyExtension.fromString('USD'), equals(Currency.USD));
-      expect(CurrencyExtension.fromString('SAR'), equals(Currency.SAR));
-      expect(CurrencyExtension.fromString('YER-new'), equals(Currency.YER_NEW));
-      expect(CurrencyExtension.fromString('YER-old'), equals(Currency.YER_OLD));
+      expect(CurrencyExtension.fromString('EGP'), equals(Currency.egp));
+      expect(CurrencyExtension.fromString('USD'), equals(Currency.usd));
+      expect(CurrencyExtension.fromString('SAR'), equals(Currency.sar));
+      expect(CurrencyExtension.fromString('YER-new'), equals(Currency.yerNew));
+      expect(CurrencyExtension.fromString('YER-old'), equals(Currency.yerOld));
     });
 
     test('should default to EGP for invalid currency string', () {
-      expect(CurrencyExtension.fromString('INVALID'), equals(Currency.EGP));
-      expect(CurrencyExtension.fromString(''), equals(Currency.EGP));
+      expect(CurrencyExtension.fromString('INVALID'), equals(Currency.egp));
+      expect(CurrencyExtension.fromString(''), equals(Currency.egp));
     });
   });
 }

@@ -48,7 +48,7 @@ class CustomContainer extends StatelessWidget {
             child: image != null
                 ? SvgPicture.asset(
               image!,
-              color: iconColor, // Apply the iconColor
+              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn), // Apply the iconColor
               width: 50,
               height: 50,
             )

@@ -1,7 +1,7 @@
 // FIXED: Unit tests for RequestModel data model
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../lib/data/models/request_model.dart';
+import 'package:heart_emergency/data/models/request_model.dart';
 
 void main() {
   group('RequestModel Tests', () {

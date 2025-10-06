@@ -53,7 +53,9 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
       }
       
       _currentPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
     } catch (e) {
       if (mounted) {

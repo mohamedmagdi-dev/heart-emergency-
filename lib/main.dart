@@ -1,9 +1,13 @@
 // CHANGED_FOR_FIREBASE_INTEGRATION: Added Firebase initialization with auto-login
+
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/adapters.dart';
+
 import 'config/firebase_router.dart';
 import 'firebase_options.dart';
 import 'core/cache/shared_pref_cache.dart';

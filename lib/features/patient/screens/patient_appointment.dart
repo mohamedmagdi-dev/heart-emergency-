@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../data/models/user_model.dart';
+import '../../../services/doctor_request_service.dart';
+import '../../../services/firestore_service.dart';
 
 class AppointmentBookingPage extends StatefulWidget {
   const AppointmentBookingPage({super.key});
@@ -8,29 +11,123 @@ class AppointmentBookingPage extends StatefulWidget {
 }
 
 class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
-  String? _selectedDoctor;
+  String? _selectedDoctorId;
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
+  final TextEditingController _requestMessageController = TextEditingController();
 
-  final List<Doctor> _doctors = [
-    Doctor(
-      id: '1',
-      name: 'mohamed',
-      specialization: 'internal',
-      experience: '3 سنوات خبرة',
-      rating: 4.66,
-      reviewCount: 105,
-    ),
-    Doctor(
-      id: '2',
-      name: 'mohamed',
-      specialization: 'internal',
-      experience: '3 سنوات خبرة',
-      rating: 4.61,
-      reviewCount: 88,
-    ),
-  ];
+  final FirestoreService _firestoreService = FirestoreService();
+  final DoctorRequestService _doctorRequestService = DoctorRequestService();
+  
+  List<UserModel> _doctors = [];
+  bool _isLoading = false;
+  bool _isRequesting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDoctors();
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    _timeController.dispose();
+    _reasonController.dispose();
+    _requestMessageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadDoctors() async {
+    setState(() => _isLoading = true);
+    try {
+      final doctors = await _firestoreService.getVerifiedDoctors();
+      setState(() {
+        _doctors = doctors;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في تحميل الأطباء: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _requestDoctor(String doctorId) async {
+    if (_requestMessageController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى كتابة رسالة للطبيب')),
+      );
+      return;
+    }
+
+    setState(() => _isRequesting = true);
+    try {
+      await _doctorRequestService.createDoctorRequest(
+        doctorId: doctorId,
+        message: _requestMessageController.text.trim(),
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إرسال الطلب بنجاح')),
+        );
+        _requestMessageController.clear();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في إرسال الطلب: $e')),
+        );
+      }
+    } finally {
+      setState(() => _isRequesting = false);
+    }
+  }
+
+  void _showRequestDialog(UserModel doctor) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('طلب طبيب - د. ${doctor.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'اكتب رسالة للطبيب لتوضيح حالتك:',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _requestMessageController,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                hintText: 'اكتب رسالتك هنا...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _requestDoctor(doctor.uid);
+            },
+            child: const Text('إرسال الطلب'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,29 +266,39 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                                       ),
                                       const SizedBox(height: 16),
                                       // Doctors grid
-                                      LayoutBuilder(
-                                        builder: (context, constraints) {
-                                          final isTablet = constraints.maxWidth > 600;
-                                          return GridView(
-                                            shrinkWrap: true,
-                                            physics: const NeverScrollableScrollPhysics(),
-                                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                              crossAxisCount: isTablet ? 2 : 1,
-                                              crossAxisSpacing: 16,
-                                              mainAxisSpacing: 16,
-                                              childAspectRatio: isTablet ? 2.8 : 2.1,
-                                            ),
-                                            children: _doctors
-                                                .map((doctor) => _buildDoctorCard(doctor))
-                                                .toList(),
-                                          );
-                                        },
-                                      ),
+                                      if (_isLoading)
+                                        const Center(child: CircularProgressIndicator())
+                                      else if (_doctors.isEmpty)
+                                        const Center(
+                                          child: Text(
+                                            'لا توجد أطباء متاحين حالياً',
+                                            style: TextStyle(fontSize: 16),
+                                          ),
+                                        )
+                                      else
+                                        LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final isTablet = constraints.maxWidth > 600;
+                                            return GridView(
+                                              shrinkWrap: true,
+                                              physics: const NeverScrollableScrollPhysics(),
+                                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                                crossAxisCount: isTablet ? 2 : 1,
+                                                crossAxisSpacing: 16,
+                                                mainAxisSpacing: 16,
+                                                childAspectRatio: isTablet ? 2.8 : 2.1,
+                                              ),
+                                              children: _doctors
+                                                  .map((doctor) => _buildDoctorCard(doctor))
+                                                  .toList(),
+                                            );
+                                          },
+                                        ),
                                     ],
                                   ),
 
                                   // Appointment details (shown only when doctor is selected)
-                                  if (_selectedDoctor != null) ...[
+                                  if (_selectedDoctorId != null) ...[
                                     const SizedBox(height: 24),
                                     _buildAppointmentDetails(),
                                   ],
@@ -202,7 +309,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
-                                      onPressed: _selectedDoctor != null &&
+                                      onPressed: _selectedDoctorId != null &&
                                           _dateController.text.isNotEmpty &&
                                           _timeController.text.isNotEmpty &&
                                           _reasonController.text.isNotEmpty
@@ -244,8 +351,8 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
     );
   }
 
-  Widget _buildDoctorCard(Doctor doctor) {
-    final isSelected = _selectedDoctor == doctor.id;
+  Widget _buildDoctorCard(UserModel doctor) {
+    final isSelected = _selectedDoctorId == doctor.uid;
 
     return Container(
       decoration: BoxDecoration(
@@ -261,7 +368,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
         child: InkWell(
           onTap: () {
             setState(() {
-              _selectedDoctor = doctor.id;
+              _selectedDoctorId = doctor.uid;
             });
           },
           borderRadius: BorderRadius.circular(12),
@@ -299,7 +406,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        doctor.specialization,
+                        doctor.specialization ?? 'غير محدد',
                         style: TextStyle(
                           fontFamily: 'Janna',
                           color: Colors.grey[600],
@@ -307,65 +414,79 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // Experience and rating
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              doctor.experience,
-                              style: TextStyle(
-                                fontFamily: 'Janna',
-                                color: Colors.grey[800],
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              '★ ${doctor.rating} (${doctor.reviewCount} تقييم)',
+                      // Rating
+                      if (doctor.rating != null)
+                        Row(
+                          children: [
+                            Icon(Icons.star, size: 14, color: Colors.amber[600]),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${doctor.rating!.toStringAsFixed(1)}',
                               style: TextStyle(
                                 fontFamily: 'Janna',
                                 color: Colors.grey[500],
                                 fontSize: 10,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Selection indicator
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected ? Colors.red[500]! : Colors.grey[300]!,
-                      width: 2,
+                // Action buttons
+                Column(
+                  children: [
+                    // Selection indicator
+                    Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? Colors.red[500]! : Colors.grey[300]!,
+                          width: 2,
+                        ),
+                      ),
+                      child: isSelected
+                          ? Container(
+                        margin: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.red[500],
+                        ),
+                      )
+                          : null,
                     ),
-                  ),
-                  child: isSelected
-                      ? Container(
-                    margin: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.red[500],
+                    const SizedBox(height: 8),
+                    // Request Doctor button
+                    SizedBox(
+                      width: 80,
+                      height: 32,
+                      child: ElevatedButton(
+                        onPressed: _isRequesting ? null : () => _showRequestDialog(doctor),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[600],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          textStyle: const TextStyle(fontSize: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        child: _isRequesting
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Text('طلب طبيب'),
+                      ),
                     ),
-                  )
-                      : null,
+                  ],
                 ),
               ],
             ),
@@ -557,9 +678,9 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
   }
 
   void _bookAppointment() {
-    if (_selectedDoctor != null) {
+    if (_selectedDoctorId != null) {
       final selectedDoctor = _doctors.firstWhere(
-            (doctor) => doctor.id == _selectedDoctor,
+            (doctor) => doctor.uid == _selectedDoctorId,
       );
 
       // Show booking confirmation dialog
@@ -567,7 +688,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
     }
   }
 
-  void _showBookingConfirmation(Doctor doctor) {
+  void _showBookingConfirmation(UserModel doctor) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -598,7 +719,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              doctor.specialization,
+              doctor.specialization ?? 'غير محدد',
               style: TextStyle(
                 fontFamily: 'Janna',
                 color: Colors.grey[600],
@@ -674,7 +795,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
     );
   }
 
-  void _showBookingSuccess(Doctor doctor) {
+  void _showBookingSuccess(UserModel doctor) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -755,29 +876,4 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
     );
   }
 
-  @override
-  void dispose() {
-    _dateController.dispose();
-    _timeController.dispose();
-    _reasonController.dispose();
-    super.dispose();
-  }
-}
-
-class Doctor {
-  final String id;
-  final String name;
-  final String specialization;
-  final String experience;
-  final double rating;
-  final int reviewCount;
-
-  Doctor({
-    required this.id,
-    required this.name,
-    required this.specialization,
-    required this.experience,
-    required this.rating,
-    required this.reviewCount,
-  });
 }

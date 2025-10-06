@@ -152,6 +152,7 @@ class _FirebaseAdminLoginScreenState extends ConsumerState<FirebaseAdminLoginScr
                   
                   // Back button
                   TextButton(
+
                     onPressed: () => context.go('/'),
                     child: const Text('العودة للصفحة الرئيسية'),
                   ),

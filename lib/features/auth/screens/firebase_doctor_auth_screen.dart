@@ -78,7 +78,9 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
       }
       
       _currentPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
     } catch (e) {
       if (mounted) {
@@ -351,7 +353,7 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                 // Specialization (signup only)
                 if (!_isLogin) ...[
                   DropdownButtonFormField<String>(
-                    value: _selectedSpecialization,
+                    initialValue: _selectedSpecialization,
                     decoration: const InputDecoration(
                       labelText: 'التخصص',
                       prefixIcon: Icon(Icons.medical_services),
@@ -368,7 +370,7 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                 // Experience (signup only)
                 if (!_isLogin) ...[
                   DropdownButtonFormField<String>(
-                    value: _selectedExperience,
+                    initialValue: _selectedExperience,
                     decoration: const InputDecoration(
                       labelText: 'سنوات الخبرة',
                       prefixIcon: Icon(Icons.work),

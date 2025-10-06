@@ -32,7 +32,7 @@ final authStateProvider = StreamProvider<User?>((ref) {
 // Current user data provider - FIXED: Using StreamProvider for real-time updates
 final currentUserDataProvider = StreamProvider<UserModel?>((ref) {
   final authState = ref.watch(authStateProvider);
-  
+
   return authState.when(
     data: (user) {
       if (user == null) {
@@ -68,7 +68,7 @@ class AuthController {
     required String name,
     required String phone,
     required String role,
-    Currency currency = Currency.EGP,
+    Currency currency = Currency.egp,
     String? specialization,
     String? experience,
     List<File>? certificates,
@@ -80,7 +80,7 @@ class AuthController {
       // Upload certificates if doctor
       List<String>? certificateUrls;
       String? idDocumentUrl;
-      
+
       if (role == 'doctor' && certificates != null && certificates.isNotEmpty) {
         certificateUrls = [];
         for (var cert in certificates) {
@@ -94,7 +94,7 @@ class AuthController {
           }
         }
       }
-      
+
       if (role == 'doctor' && idDocument != null) {
         // Validate file exists
         if (await idDocument.exists()) {
@@ -128,27 +128,62 @@ class AuthController {
   }
 
   // Sign in with email and password
+  // Future<UserModel?> signInWithEmail({
+  //   required String email,
+  //   required String password,
+  // }) async {
+  //   try {
+  //     final userData = await _authService.signIn(
+  //       email: email,
+  //       password: password,
+  //     );
+  //
+  //     // Update FCM token
+  //     final fcmToken = await _fcmService.getToken();
+  //     if (fcmToken != null) {
+  //       await _authService.updateUserData(userData.uid, {'fcmToken': fcmToken});
+  //     }
+  //
+  //     return userData;
+  //   } catch (e) {
+  //     rethrow;
+  //   }
+  // }
+
+  // update
+  // AuthController -> signInWithEmail فقط
   Future<UserModel?> signInWithEmail({
     required String email,
     required String password,
   }) async {
     try {
-      final userData = await _authService.signIn(
-        email: email,
+      // تسجيل الدخول باستخدام FirebaseAuth
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email.trim(),
         password: password,
       );
 
-      // Update FCM token
+      final uid = userCredential.user!.uid;
+
+      // جلب بيانات المستخدم من Firestore مباشرة
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (!doc.exists) throw Exception('حساب المستخدم غير موجود في قاعدة البيانات.');
+
+      final userData = UserModel.fromMap(doc.data()!);
+
+      // تحديث FCM token
       final fcmToken = await _fcmService.getToken();
       if (fcmToken != null) {
-        await _authService.updateUserData(userData.uid, {'fcmToken': fcmToken});
+        await _authService.updateUserData(uid, {'fcmToken': fcmToken});
       }
 
-      return userData;
+      return userData; // الآن role موجود بشكل صحيح
     } catch (e) {
       rethrow;
     }
   }
+
+
 
   // Sign out
   Future<void> signOut() async {

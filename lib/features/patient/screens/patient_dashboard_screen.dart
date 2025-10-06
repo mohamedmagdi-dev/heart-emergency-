@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/models/request_model.dart';
 import '../../../services/firestore_service.dart';
+import '../../../services/request_service.dart';
 import '../../../providers/auth_provider.dart';
+import 'rate_doctor_screen.dart';
 
 class PatientDashboardScreen extends ConsumerStatefulWidget {
   const PatientDashboardScreen({super.key});
@@ -16,6 +18,7 @@ class PatientDashboardScreen extends ConsumerStatefulWidget {
 
 class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final RequestService _requestService = RequestService();
   
   @override
   Widget build(BuildContext context) {
@@ -291,21 +294,33 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
   Widget _buildQuickActions() {
     final actions = [
       {
+        'title': 'طلب طبيب',
+        'icon': Icons.person_add,
+        'color': Colors.green,
+        'route': '/patient/doctor-appointment',
+      },
+      {
+        'title': 'طلباتي',
+        'icon': Icons.assignment,
+        'color': Colors.blue,
+        'route': '/patient/my-requests',
+      },
+      {
         'title': 'الأطباء القريبين',
         'icon': Icons.local_hospital,
-        'color': Colors.blue,
+        'color': Colors.orange,
         'route': '/patient/nearby-doctors',
       },
       {
         'title': 'تاريخ الطلبات',
         'icon': Icons.history,
-        'color': Colors.orange,
+        'color': Colors.purple,
         'route': '/patient/requests-history',
       },
       {
         'title': 'الملف الطبي',
         'icon': Icons.medical_information,
-        'color': Colors.purple,
+        'color': Colors.indigo,
         'route': '/patient/medical-profile',
       },
       {
@@ -568,6 +583,21 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
               ),
             ],
           ),
+          if (request.status == RequestStatus.completed && request.doctorId != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _rateDoctor(request),
+                icon: const Icon(Icons.star),
+                label: const Text('تقييم الطبيب'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber[600],
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -726,6 +756,46 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _rateDoctor(RequestModel request) async {
+    try {
+      final doctor = await _requestService.getUserDetails(request.doctorId!);
+      if (doctor == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('لم يتم العثور على بيانات الطبيب'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // context.push(
+      //   '/patient/rate-doctor',
+      //   extra: doctor,
+      //   queryParameters: {'requestId': request.id},
+      // );
+
+    await  context.push(
+        // '/patient/rate-doctor',
+        // extra: doctor,
+        // queryParameters: {'requestId': request.id},
+        '/patient/rate-doctor?requestId=${request.id}',
+        extra: doctor,
+
+      );
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ في فتح صفحة التقييم: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   String _formatDateTime(DateTime dateTime) {

@@ -1,10 +1,13 @@
 // Firebase-based Router with Authentication Guards
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Common
+import '../data/models/request_model.dart';
+import '../data/models/user_model.dart';
 import '../features/common/screens/firebase_welcome_screen.dart';
 
 // Auth
@@ -15,6 +18,14 @@ import '../features/auth/screens/doctor_verification_pending_screen.dart';
 
 // Doctor
 import '../features/doctor/screens/doctor_dashboard_screen.dart';
+import '../features/doctor/screens/doctor_emergancy_map.dart';
+import 'package:latlong2/latlong.dart' show LatLng; // ensure latlong types available
+import '../features/doctor/screens/doctor_requests_screen.dart';
+import '../features/doctor/screens/doctor_reviews_screen.dart';
+import '../features/doctor/screens/doctor_profile_screen.dart';
+import '../features/doctor/screens/doctor_requests_history_screen.dart';
+import '../features/doctor/screens/doctor_statistics_screen.dart';
+import '../features/doctor/screens/rate_patient_screen.dart';
 
 // Patient
 import '../features/patient/screens/patient_dashboard_screen.dart';
@@ -22,7 +33,10 @@ import '../features/patient/screens/emergency_request_screen.dart';
 import '../features/patient/screens/simple_payment_screen.dart';
 import '../features/patient/screens/simple_wallet_screen.dart';
 import '../features/patient/screens/simple_appointment_screen.dart';
+import '../features/patient/screens/patient_appointment.dart';
+import '../features/patient/screens/patient_requests_screen.dart';
 import '../features/patient/screens/request_tracking_screen.dart'; // FIXED: Added import
+import '../features/patient/screens/rate_doctor_screen.dart';
 
 // Admin
 import '../features/admin/screens/admin_dashboard_screen.dart';
@@ -196,11 +210,76 @@ GoRouter createFirebaseRouter() {
         },
         redirect: (context, state) => _authGuard(context, state, 'patient'),
       ),
+      // New doctor request routes
+      GoRoute(
+        path: '/patient/doctor-appointment',
+        builder: (context, state) => const AppointmentBookingPage(),
+        redirect: (context, state) => _authGuard(context, state, 'patient'),
+      ),
+      GoRoute(
+        path: '/patient/my-requests',
+        builder: (context, state) => const PatientRequestsScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'patient'),
+      ),
+      GoRoute(
+        path: '/patient/rate-doctor',
+        builder: (context, state) {
+          final doctor = state.extra as UserModel?;
+          final requestId = state.uri.queryParameters['requestId'];
+          if (doctor == null) {
+            return const Scaffold(
+              body: Center(child: Text('خطأ: لم يتم العثور على بيانات الطبيب')),
+            );
+          }
+          return RateDoctorScreen(
+            doctor: doctor,
+            requestId: requestId,
+          );
+        },
+        redirect: (context, state) => _authGuard(context, state, 'patient'),
+      ),
 
       // Doctor Routes
       GoRoute(
         path: '/doctor/dashboard',
         builder: (context, state) => const DoctorDashboardScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'doctor'),
+      ),
+      GoRoute(
+        path: '/doctor/profile',
+        builder: (context, state) => const DoctorProfileScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'doctor'),
+      ),
+      GoRoute(
+        path: '/doctor/requests-history',
+        builder: (context, state) => const DoctorRequestsHistoryScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'doctor'),
+      ),
+      GoRoute(
+        path: '/doctor/requests',
+        builder: (context, state) => const DoctorRequestsScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'doctor'),
+      ),
+      GoRoute(
+        path: '/doctor/analytics',
+        builder: (context, state) => const DoctorStatisticsScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'doctor'),
+      ),
+      GoRoute(
+        path: '/doctor/rate-patient',
+        builder: (context, state) {
+          final patient = state.extra as UserModel?;
+          final requestId = state.uri.queryParameters['requestId'];
+          if (patient == null) {
+            return const Scaffold(
+              body: Center(child: Text('خطأ: لم يتم العثور على بيانات المريض')),
+            );
+          }
+          return RatePatientScreen(
+            patient: patient,
+            requestId: requestId,
+          );
+        },
         redirect: (context, state) => _authGuard(context, state, 'doctor'),
       ),
 
@@ -210,7 +289,58 @@ GoRouter createFirebaseRouter() {
         builder: (context, state) => const AdminDashboardScreen(),
         redirect: (context, state) => _authGuard(context, state, 'admin'),
       ),
+      GoRoute(path: '/doctor/reviews',
+        builder: (context, state) {
+          final doctorId = state.extra as String;
+          return DoctorReviewsScreen(doctorId: doctorId);
+        },
 
+      ),
+
+      // GoRoute(
+      //   path: "/doctor/emergency/map",
+      //   builder: (context, state) {
+      //     final extra = state.extra as Map<String, dynamic>?;
+      //
+      //     if (extra == null ||
+      //         extra['request'] == null ||
+      //         extra['patient'] == null) {
+      //       return const Scaffold(
+      //         body: Center(
+      //           child: Text('خطأ: لم يتم تمرير بيانات الحالة أو المريض'),
+      //         ),
+      //       );
+      //     }
+      //
+      //     final request = extra['request'] as RequestModel;
+      //     final patient = extra['patient'] as UserModel;
+      //
+      //     return DoctorEmergencyMapScreen(
+      //       request: request,
+      //       patient: patient,
+      //     );
+      //   },
+      // ),
+      GoRoute(
+        path: '/doctor/emergency/map',
+        builder: (context, state) {
+          final q = state.uri.queryParameters;
+          final lat = double.tryParse(q['lat'] ?? '');
+          final lng = double.tryParse(q['lng'] ?? '');
+          final name = q['name'];
+          if (lat == null || lng == null) {
+            return const Scaffold(
+              body: Center(child: Text('إحداثيات غير صالحة')),
+            );
+          }
+          return DoctorEmergencyMapScreen(
+            destLat: lat,
+            destLng: lng,
+            patientName: name,
+          );
+        },
+        redirect: (context, state) => _authGuard(context, state, 'doctor'),
+      ),
       // Wallet (accessible by all authenticated users)
       GoRoute(
         path: '/wallet',

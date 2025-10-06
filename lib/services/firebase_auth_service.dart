@@ -18,7 +18,7 @@ class FirebaseAuthService {
     required String name,
     required String phone,
     required String role,
-    Currency currency = Currency.EGP,
+    Currency currency = Currency.egp,
     String? specialization,
     List<String>? certificates,
     String? profileImage,

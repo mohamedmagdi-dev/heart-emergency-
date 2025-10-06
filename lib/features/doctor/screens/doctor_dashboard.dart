@@ -206,7 +206,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
                           _isAvailable = value;
                         });
                       },
-                      activeColor: Color(0xFF16A34A),
+                      activeThumbColor: Color(0xFF16A34A),
                     ),
                     SizedBox(width: 8),
                     Text(
@@ -227,7 +227,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
                       _isAvailable = value;
                     });
                   },
-                  activeColor: Color(0xFF16A34A),
+                  activeThumbColor: Color(0xFF16A34A),
                 ),
               ],
 

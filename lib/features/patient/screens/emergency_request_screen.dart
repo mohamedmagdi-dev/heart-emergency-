@@ -8,6 +8,7 @@ import '../../../data/models/user_model.dart';
 import '../../../data/models/request_model.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/fcm_service.dart';
+import '../../../services/request_service.dart';
 import '../../../providers/auth_provider.dart';
 
 class EmergencyRequestScreen extends ConsumerStatefulWidget {
@@ -23,6 +24,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
   final _notesController = TextEditingController();
   final FirestoreService _firestoreService = FirestoreService();
   final FCMService _fcmService = FCMService();
+  final RequestService _requestService = RequestService();
   
   Position? _currentPosition;
   String _locationAddress = 'جاري تحديد الموقع...';
@@ -82,7 +84,9 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
 
       // Get current position
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
 
       setState(() {
@@ -107,16 +111,13 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
     setState(() => _isLoading = true);
     
     try {
-      final doctors = await _firestoreService.getNearbyDoctors(
-        latitude: _currentPosition!.latitude,
-        longitude: _currentPosition!.longitude,
-        radiusKm: 50.0, // 50km radius
-      );
+      // Get available doctors using the new RequestService
+      final doctors = await _requestService.getAvailableDoctors();
       
       setState(() {
         _nearbyDoctors = doctors;
         if (doctors.isNotEmpty) {
-          _selectedDoctor = doctors.first; // Auto-select closest doctor
+          _selectedDoctor = doctors.first; // Auto-select first doctor
         } else {
           _selectedDoctor = null; // Clear selection if no doctors
         }
@@ -175,36 +176,17 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
         throw Exception('لم يتم العثور على بيانات المستخدم');
       }
       
-      // Create emergency request
-      final request = RequestModel(
-        id: '', // Will be set by Firestore
-        patientId: currentUser.uid,
+      // Create emergency request using RequestService
+      final requestId = await _requestService.createEmergencyRequest(
         doctorId: _selectedDoctor!.uid,
-        status: RequestStatus.pending,
-        patientLocation: GeoPoint(_currentPosition!.latitude, _currentPosition!.longitude),
-        patientAddress: _locationAddress,
         symptoms: _symptomsController.text.trim(),
         urgencyLevel: _urgencyLevel,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        patientLocation: GeoPoint(_currentPosition!.latitude, _currentPosition!.longitude),
+        patientAddress: _locationAddress,
+        notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
       );
       
-      final requestId = await _firestoreService.createEmergencyRequest(request);
-      
-      // Send notification to doctor
-      if (_selectedDoctor!.fcmToken != null) {
-        await _fcmService.sendNotificationToUser(
-          token: _selectedDoctor!.fcmToken!,
-          title: 'طلب طوارئ جديد',
-          body: 'لديك طلب طوارئ جديد من ${currentUser.name}',
-          data: {
-            'type': 'emergency_request',
-            'requestId': requestId,
-            'patientId': currentUser.uid,
-            'patientName': currentUser.name,
-          },
-        );
-      }
+      // Notification is automatically sent by RequestService
       
       if (!mounted) return;
       
@@ -298,6 +280,11 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                 _buildNearbyDoctorsCard()
               else if (_currentPosition != null) // FIXED: Show message when no available doctors
                 _buildNoAvailableDoctorsCard(),
+              
+              const SizedBox(height: 20),
+              
+              // Past Emergency Requests
+              _buildPastRequestsSection(),
               
               const SizedBox(height: 30),
               
@@ -820,5 +807,254 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
 
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
     return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000; // Convert to km
+  }
+
+  Widget _buildPastRequestsSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.history,
+                  color: Colors.blue[600],
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'طلبات الطوارئ السابقة',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          StreamBuilder<List<RequestModel>>(
+            stream: _requestService.getPatientEmergencyRequests(
+              ref.read(currentUserDataProvider).when(
+                data: (user) => user?.uid ?? '',
+                loading: () => '',
+                error: (_, __) => '',
+              ),
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'خطأ في تحميل الطلبات: ${snapshot.error}',
+                    style: TextStyle(color: Colors.red[600]),
+                  ),
+                );
+              }
+
+              final requests = snapshot.data ?? [];
+
+              if (requests.isEmpty) {
+                return Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.inbox_outlined,
+                        size: 48,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'لا توجد طلبات سابقة',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: requests.length > 3 ? 3 : requests.length, // Show only last 3
+                itemBuilder: (context, index) {
+                  final request = requests[index];
+                  return _buildPastRequestCard(request);
+                },
+              );
+            },
+          ),
+          // Show "View All" button if there are more than 3 requests
+          StreamBuilder<List<RequestModel>>(
+            stream: _requestService.getPatientEmergencyRequests(
+              ref.read(currentUserDataProvider).when(
+                data: (user) => user?.uid ?? '',
+                loading: () => '',
+                error: (_, __) => '',
+              ),
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data!.length > 3) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Center(
+                    child: TextButton(
+                      onPressed: () {
+                        // Navigate to full requests history
+                        context.push('/patient/my-requests');
+                      },
+                      child: const Text('عرض جميع الطلبات'),
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPastRequestCard(RequestModel request) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(request.status).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _getStatusText(request.status),
+                  style: TextStyle(
+                    color: _getStatusColor(request.status),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _formatDateTime(request.createdAt),
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            request.symptoms,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'مستوى الأولوية: ${_getUrgencyText(request.urgencyLevel)}',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(RequestStatus status) {
+    switch (status) {
+      case RequestStatus.pending:
+        return Colors.orange;
+      case RequestStatus.accepted:
+        return Colors.green;
+      case RequestStatus.rejected:
+        return Colors.red;
+      case RequestStatus.completed:
+        return Colors.blue;
+    }
+  }
+
+  String _getStatusText(RequestStatus status) {
+    switch (status) {
+      case RequestStatus.pending:
+        return 'معلق';
+      case RequestStatus.accepted:
+        return 'مقبول';
+      case RequestStatus.rejected:
+        return 'مرفوض';
+      case RequestStatus.completed:
+        return 'مكتمل';
+    }
+  }
+
+  String _getUrgencyText(String urgencyLevel) {
+    switch (urgencyLevel) {
+      case 'low':
+        return 'منخفض';
+      case 'medium':
+        return 'متوسط';
+      case 'high':
+        return 'عالي';
+      case 'critical':
+        return 'حرج';
+      default:
+        return 'متوسط';
+    }
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inMinutes < 1) {
+      return 'الآن';
+    } else if (difference.inMinutes < 60) {
+      return 'منذ ${difference.inMinutes} دقيقة';
+    } else if (difference.inHours < 24) {
+      return 'منذ ${difference.inHours} ساعة';
+    } else {
+      return 'منذ ${difference.inDays} يوم';
+    }
   }
 }

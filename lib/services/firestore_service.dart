@@ -428,6 +428,23 @@ class FirestoreService {
     }
   }
 
+  // Get all verified doctors
+  Future<List<UserModel>> getVerifiedDoctors() async {
+    try {
+      final snapshot = await _firestore
+          .collection(usersCollection)
+          .where('role', isEqualTo: 'doctor')
+          .where('verified', isEqualTo: true)
+          .get();
+      
+      return snapshot.docs
+          .map((doc) => UserModel.fromMap(doc.data()))
+          .toList();
+    } catch (e) {
+      throw 'فشل في جلب الأطباء: $e';
+    }
+  }
+
   // ==================== UTILITY METHODS ====================
 
   // Calculate distance between two points using Haversine formula
