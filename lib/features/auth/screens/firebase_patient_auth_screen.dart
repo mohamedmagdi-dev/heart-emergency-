@@ -294,7 +294,7 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
                     alignment: Alignment.centerLeft,
                     child: TextButton(
                       onPressed: () {
-                        // TODO: Implement forgot password
+                      context.go("/doctor/forgot-password");
                       },
                       child: const Text('نسيت كلمة المرور؟'),
                     ),

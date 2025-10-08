@@ -506,6 +506,11 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                     ),
                   ],
                 ),
+                TextButton(onPressed: (){
+                  context.push('/doctor/forgot-password');
+                }, child: Text("نسيت كلمة المرور؟")
+
+                ),
                 
                 // Back button
                 TextButton(

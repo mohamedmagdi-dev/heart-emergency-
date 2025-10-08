@@ -7,7 +7,6 @@ import '../../../data/models/request_model.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/request_service.dart';
 import '../../../providers/auth_provider.dart';
-import 'rate_doctor_screen.dart';
 
 class PatientDashboardScreen extends ConsumerStatefulWidget {
   const PatientDashboardScreen({super.key});
@@ -324,10 +323,10 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
         'route': '/patient/medical-profile',
       },
       {
-        'title': 'تقييم الأطباء',
+        'title': 'الأطباء المقيمين',
         'icon': Icons.star_rate,
         'color': Colors.amber,
-        'route': '/patient/reviews',
+        'route': '/patient/rated-doctors',
       },
     ];
 
@@ -639,9 +638,9 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
             onTap: () => context.push('/patient/notification-settings'),
           ),
           _buildSettingItem(
-            icon: Icons.help,
-            title: 'مراجعة الميزات',
-            onTap: () => context.push('/patient/features-review'),
+            icon: Icons.settings,
+            title: 'الإعدادات',
+            onTap: () => context.push('/patient/settings'),
           ),
           _buildSettingItem(
             icon: Icons.logout,

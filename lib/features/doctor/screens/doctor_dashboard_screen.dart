@@ -1,5 +1,7 @@
 // Doctor Dashboard with real-time Firestore integration
 
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,12 +14,12 @@ import '../../../services/rating_service.dart';
 import '../../../data/models/rating_model.dart';
 import '../../../providers/auth_provider.dart';
 
-
 class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({super.key});
 
   @override
-  ConsumerState<DoctorDashboardScreen> createState() => _DoctorDashboardScreenState();
+  ConsumerState<DoctorDashboardScreen> createState() =>
+      _DoctorDashboardScreenState();
 }
 
 class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
@@ -30,7 +32,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUserAsync = ref.watch(currentUserDataProvider);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: currentUserAsync.when(
@@ -38,12 +40,12 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           if (user == null) {
             return const Center(child: Text('المستخدم غير مسجل الدخول'));
           }
-          
+
           // Check if doctor is verified
           if (user.verified != true) {
             return _buildVerificationPendingScreen();
           }
-          
+
           return _buildDashboard(user);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -184,7 +186,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                             ? NetworkImage(user.profileImage!)
                             : null,
                         child: user.profileImage == null
-                            ? const Icon(Icons.person, size: 30, color: Color(0xFF059669))
+                            ? const Icon(Icons.person,
+                                size: 30, color: Color(0xFF059669))
                             : null,
                       ),
                       if (user.verified == true)
@@ -231,7 +234,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                         if (user.rating != null)
                           Row(
                             children: [
-                              Icon(Icons.star, size: 16, color: Colors.amber[300]),
+                              Icon(Icons.star,
+                                  size: 16, color: Colors.amber[300]),
                               const SizedBox(width: 4),
                               Text(
                                 user.rating!.toStringAsFixed(1),
@@ -246,13 +250,14 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                     ),
                   ),
                   IconButton(
-                    // onPressed: () => context.push(''),
-
-
-                    onPressed: (){
-
-context.push("/doctor/emergency/map");
-                    },
+                    onPressed: () {},
+                    icon: Icon(Icons.notifications,
+                     size: 30,
+                      color: Colors.white,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => context.push('/doctor/settings'),
                     icon: const Icon(Icons.settings, color: Colors.white),
                   ),
                 ],
@@ -286,7 +291,8 @@ context.push("/doctor/emergency/map");
               color: Colors.green.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.medical_services, color: Colors.green, size: 32),
+            child: const Icon(Icons.medical_services,
+                color: Colors.green, size: 32),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -307,17 +313,24 @@ context.push("/doctor/emergency/map");
                       width: 12,
                       height: 12,
                       decoration: BoxDecoration(
-                        color: (user.available ?? true) ? Colors.green : Colors.red, // FIXED: Dynamic color based on availability
+                        color: (user.available ?? true)
+                            ? Colors.green
+                            : Colors
+                                .red, // FIXED: Dynamic color based on availability
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      (user.available ?? true) ? 'متاح للطوارئ' : 'غير متاح', // FIXED: Dynamic text
+                      (user.available ?? true)
+                          ? 'متاح للطوارئ'
+                          : 'غير متاح', // FIXED: Dynamic text
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: (user.available ?? true) ? Colors.green : Colors.red, // FIXED: Dynamic color
+                        color: (user.available ?? true)
+                            ? Colors.green
+                            : Colors.red, // FIXED: Dynamic color
                       ),
                     ),
                   ],
@@ -331,11 +344,14 @@ context.push("/doctor/emergency/map");
             activeColor: Colors.green,
             onChanged: (value) async {
               try {
-                await _firestoreService.updateDoctorAvailability(user.uid, value);
+                await _firestoreService.updateDoctorAvailability(
+                    user.uid, value);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(value ? 'تم تفعيل استقبال الطوارئ' : 'تم إيقاف استقبال الطوارئ'),
+                      content: Text(value
+                          ? 'تم تفعيل استقبال الطوارئ'
+                          : 'تم إيقاف استقبال الطوارئ'),
                       backgroundColor: value ? Colors.green : Colors.orange,
                     ),
                   );
@@ -383,8 +399,9 @@ context.push("/doctor/emergency/map");
             stream: _firestoreService.getDoctorRequests(user.uid),
             builder: (context, snapshot) {
               final completedRequests = snapshot.data
-                  ?.where((r) => r.status == RequestStatus.completed)
-                  .length ?? 0;
+                      ?.where((r) => r.status == RequestStatus.completed)
+                      .length ??
+                  0;
               return _buildStatCard(
                 title: 'الطلبات المكتملة',
                 value: '$completedRequests',
@@ -476,17 +493,20 @@ context.push("/doctor/emergency/map");
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
-            
+
             if (snapshot.hasError) {
               // FIXED: Better error handling for Firestore index issues
               final errorMessage = snapshot.error.toString();
-              final isIndexError = errorMessage.contains('failed-precondition') || 
-                                 errorMessage.contains('requires an index');
-              
+              final isIndexError =
+                  errorMessage.contains('failed-precondition') ||
+                      errorMessage.contains('requires an index');
+
               return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isIndexError ? Colors.orange.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                  color: isIndexError
+                      ? Colors.orange.withOpacity(0.1)
+                      : Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -498,19 +518,20 @@ context.push("/doctor/emergency/map");
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      isIndexError 
-                        ? 'جاري إعداد قاعدة البيانات...'
-                        : 'خطأ في تحميل الطلبات',
+                      isIndexError
+                          ? 'جاري إعداد قاعدة البيانات...'
+                          : 'خطأ في تحميل الطلبات',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: isIndexError ? Colors.orange[700] : Colors.red[700],
+                        color:
+                            isIndexError ? Colors.orange[700] : Colors.red[700],
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isIndexError 
-                        ? 'يرجى الانتظار بضع دقائق حتى يتم إعداد النظام بالكامل.'
-                        : 'خطأ: ${snapshot.error}',
+                      isIndexError
+                          ? 'يرجى الانتظار بضع دقائق حتى يتم إعداد النظام بالكامل.'
+                          : 'خطأ: ${snapshot.error}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 12,
@@ -536,9 +557,9 @@ context.push("/doctor/emergency/map");
                 ),
               );
             }
-            
+
             final requests = snapshot.data ?? [];
-            
+
             if (requests.isEmpty) {
               return Container(
                 padding: const EdgeInsets.all(32),
@@ -561,7 +582,7 @@ context.push("/doctor/emergency/map");
                 ),
               );
             }
-            
+
             return ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -576,6 +597,7 @@ context.push("/doctor/emergency/map");
       ],
     );
   }
+
   //
   //
   Widget _buildRequestCard(RequestModel request) {
@@ -599,7 +621,8 @@ context.push("/doctor/emergency/map");
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -697,9 +720,11 @@ context.push("/doctor/emergency/map");
                     onPressed: () async {
                       final lat = request.patientLocation.latitude;
                       final lng = request.patientLocation.longitude;
-                      final patient = await _firestoreService.getUser(request.patientId);
+                      final patient =
+                          await _firestoreService.getUser(request.patientId);
                       if (!mounted) return;
-                      context.push('/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent(patient?.name ?? 'مريض')}');
+                      context.push(
+                          '/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent(patient?.name ?? 'مريض')}');
                     },
                     icon: const Icon(Icons.map),
                     label: const Text('الخريطة'),
@@ -711,7 +736,8 @@ context.push("/doctor/emergency/map");
                 ),
               ],
             ),
-          ] else if (request.status == RequestStatus.accepted || request.status == RequestStatus.completed) ...[
+          ] else if (request.status == RequestStatus.accepted ||
+              request.status == RequestStatus.completed) ...[
             Row(
               children: [
                 if (request.status == RequestStatus.accepted)
@@ -747,7 +773,6 @@ context.push("/doctor/emergency/map");
       ),
     );
   }
-
 
   Widget _buildWalletCard(UserModel user) {
     return Container(
@@ -900,7 +925,9 @@ context.push("/doctor/emergency/map");
                   onTap: () {
                     final route = action['route'] as String;
                     if (route == '/doctor/reviews') {
-                      final currentUser = ref.read(currentUserDataProvider).maybeWhen(data: (u) => u, orElse: () => null);
+                      final currentUser = ref
+                          .read(currentUserDataProvider)
+                          .maybeWhen(data: (u) => u, orElse: () => null);
                       if (currentUser != null) {
                         context.push(route, extra: currentUser.uid);
                       } else {
@@ -970,12 +997,13 @@ context.push("/doctor/emergency/map");
         if (!_showReviews)
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+                color: Colors.white, borderRadius: BorderRadius.circular(12)),
             child: Row(
               children: [
                 const Icon(Icons.reviews, color: Colors.grey),
                 const SizedBox(width: 8),
-                const Expanded(child: Text('المراجعات مخفية')), 
+                const Expanded(child: Text('المراجعات مخفية')),
                 TextButton(
                   onPressed: () => setState(() => _showReviews = true),
                   child: const Text('إظهار'),
@@ -994,35 +1022,46 @@ context.push("/doctor/emergency/map");
               if (ratings.isEmpty) {
                 return Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                  child: const Text('لا توجد مراجعات بعد', style: TextStyle(color: Colors.grey)),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12)),
+                  child: const Text('لا توجد مراجعات بعد',
+                      style: TextStyle(color: Colors.grey)),
                 );
               }
-              final r = ratings.first; // latest (stream ordered desc by createdAt)
+              final r =
+                  ratings.first; // latest (stream ordered desc by createdAt)
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.star, color: Colors.amber[600], size: 18),
+                            Icon(Icons.star,
+                                color: Colors.amber[600], size: 18),
                             const SizedBox(width: 4),
-                            Text('${r.rating}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text('${r.rating}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600)),
                             const Spacer(),
                             Text(
                               _formatDateTime(r.createdAt),
-                              style: const TextStyle(color: Colors.grey, fontSize: 12),
+                              style: const TextStyle(
+                                  color: Colors.grey, fontSize: 12),
                             ),
                           ],
                         ),
                         if (r.comment != null && r.comment!.isNotEmpty) ...[
                           const SizedBox(height: 6),
-                          Text(r.comment!, style: const TextStyle(fontSize: 14)),
+                          Text(r.comment!,
+                              style: const TextStyle(fontSize: 14)),
                         ],
                       ],
                     ),
@@ -1031,7 +1070,8 @@ context.push("/doctor/emergency/map");
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton(
-                      onPressed: () => context.push('/doctor/reviews', extra: doctorId),
+                      onPressed: () =>
+                          context.push('/doctor/reviews', extra: doctorId),
                       child: const Text('عرض الكل'),
                     ),
                   ),
@@ -1074,8 +1114,11 @@ context.push("/doctor/emergency/map");
             if (items.isEmpty) {
               return Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                child: const Text('لا توجد طلبات', style: TextStyle(color: Colors.grey)),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12)),
+                child: const Text('لا توجد طلبات',
+                    style: TextStyle(color: Colors.grey)),
               );
             }
             return ListView.builder(
@@ -1087,7 +1130,9 @@ context.push("/doctor/emergency/map");
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1095,24 +1140,30 @@ context.push("/doctor/emergency/map");
                         children: [
                           _statusChip(r.status),
                           const Spacer(),
-                          Text(_formatDateTime(r.createdAt), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text(_formatDateTime(r.createdAt),
+                              style: const TextStyle(
+                                  color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text(r.symptoms, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Text(r.symptoms,
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                          const Icon(Icons.location_on,
+                              size: 16, color: Colors.grey),
                           const SizedBox(width: 4),
-                          Text('(${r.patientLocation.latitude.toStringAsFixed(4)}, ${r.patientLocation.longitude.toStringAsFixed(4)})',
+                          Text(
+                              '(${r.patientLocation.latitude.toStringAsFixed(4)}, ${r.patientLocation.longitude.toStringAsFixed(4)})',
                               style: const TextStyle(color: Colors.grey)),
                           const Spacer(),
                           TextButton.icon(
                             onPressed: () {
                               final lat = r.patientLocation.latitude;
                               final lng = r.patientLocation.longitude;
-                              context.push('/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent('مريض')}');
+                              context.push(
+                                  '/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent('مريض')}');
                             },
                             icon: const Icon(Icons.map),
                             label: const Text('إظهار المسار'),
@@ -1135,18 +1186,30 @@ context.push("/doctor/emergency/map");
     String text;
     switch (status) {
       case RequestStatus.pending:
-        color = Colors.orange; text = 'معلق'; break;
+        color = Colors.orange;
+        text = 'معلق';
+        break;
       case RequestStatus.accepted:
-        color = Colors.blue; text = 'مقبول'; break;
+        color = Colors.blue;
+        text = 'مقبول';
+        break;
       case RequestStatus.rejected:
-        color = Colors.red; text = 'مرفوض'; break;
+        color = Colors.red;
+        text = 'مرفوض';
+        break;
       case RequestStatus.completed:
-        color = Colors.green; text = 'مكتمل'; break;
+        color = Colors.green;
+        text = 'مكتمل';
+        break;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8)),
+      child: Text(text,
+          style: TextStyle(
+              color: color, fontWeight: FontWeight.w600, fontSize: 12)),
     );
   }
 
@@ -1175,7 +1238,7 @@ context.push("/doctor/emergency/map");
 
     try {
       await _requestService.acceptEmergencyRequest(request.id);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1213,7 +1276,6 @@ context.push("/doctor/emergency/map");
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('رفض', style: TextStyle(color: Colors.white)),
           ),
-
         ],
       ),
     );
@@ -1222,7 +1284,7 @@ context.push("/doctor/emergency/map");
 
     try {
       await _requestService.rejectEmergencyRequest(request.id);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1246,7 +1308,7 @@ context.push("/doctor/emergency/map");
   Future<void> _completeRequest(RequestModel request) async {
     try {
       await _requestService.completeEmergencyRequest(request.id);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1304,7 +1366,7 @@ context.push("/doctor/emergency/map");
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inDays > 0) {
       return 'منذ ${difference.inDays} يوم';
     } else if (difference.inHours > 0) {

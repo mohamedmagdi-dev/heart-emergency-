@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../data/models/rating_model.dart';
 import '../data/models/user_model.dart';
-import 'fcm_notification_service.dart';
 
 class RatingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -97,6 +96,24 @@ class RatingService {
         return RatingModel.fromMap(doc.data(), documentId: doc.id);
       }).toList();
     });
+  }
+
+  // Get ratings by a specific patient (for rated doctors screen)
+  Future<List<RatingModel>> getRatingsByPatient(String patientId) async {
+    try {
+      final snapshot = await _firestore
+          .collection(ratingsCollection)
+          .where('fromUserId', isEqualTo: patientId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) {
+        return RatingModel.fromMap(doc.data(), documentId: doc.id);
+      }).toList();
+    } catch (e) {
+      print('Error getting ratings by patient: $e');
+      return [];
+    }
   }
 
   // Get all ratings (admin only)

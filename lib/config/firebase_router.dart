@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Common
-import '../data/models/request_model.dart';
 import '../data/models/user_model.dart';
 import '../features/common/screens/firebase_welcome_screen.dart';
 
@@ -19,12 +18,13 @@ import '../features/auth/screens/doctor_verification_pending_screen.dart';
 // Doctor
 import '../features/doctor/screens/doctor_dashboard_screen.dart';
 import '../features/doctor/screens/doctor_emergancy_map.dart';
-import 'package:latlong2/latlong.dart' show LatLng; // ensure latlong types available
 import '../features/doctor/screens/doctor_requests_screen.dart';
 import '../features/doctor/screens/doctor_reviews_screen.dart';
 import '../features/doctor/screens/doctor_profile_screen.dart';
 import '../features/doctor/screens/doctor_requests_history_screen.dart';
+import '../features/doctor/screens/doctor_settings_screen.dart';
 import '../features/doctor/screens/doctor_statistics_screen.dart';
+import '../features/doctor/screens/forget_password_screen.dart';
 import '../features/doctor/screens/rate_patient_screen.dart';
 
 // Patient
@@ -37,9 +37,15 @@ import '../features/patient/screens/patient_appointment.dart';
 import '../features/patient/screens/patient_requests_screen.dart';
 import '../features/patient/screens/request_tracking_screen.dart'; // FIXED: Added import
 import '../features/patient/screens/rate_doctor_screen.dart';
+import '../features/patient/screens/nearby_doctors_screen.dart';
+import '../features/patient/screens/rated_doctors_screen.dart';
+import '../features/patient/screens/request_history_screen.dart';
+import '../features/patient/screens/medical_file_screen.dart';
+import '../features/patient/screens/patient_settings_screen.dart';
 
 // Admin
 import '../features/admin/screens/admin_dashboard_screen.dart';
+import '../features/splash/splash_screen.dart';
 
 // Wallet - removed, using simple wallet screen instead
 
@@ -100,7 +106,7 @@ Future<String?> _authGuard(BuildContext context, GoRouterState state, String req
 // Create app router with Firebase authentication
 GoRouter createFirebaseRouter() {
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/splash',
     redirect: (context, state) async {
       final user = FirebaseAuth.instance.currentUser;
       final path = state.uri.toString();
@@ -109,7 +115,9 @@ GoRouter createFirebaseRouter() {
       if (path == '/' || 
           path == '/patient/auth' || 
           path == '/doctor/auth' || 
-          path == '/admin/login') {
+          path == '/admin/login'
+      || path == '/doctor/forgot-password'
+      ) {
         return null;
       }
 
@@ -144,11 +152,19 @@ GoRouter createFirebaseRouter() {
       return null;
     },
     routes: [
+      // splash screen
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+
+
       // Home/Welcome page
       GoRoute(
         path: '/',
         builder: (context, state) => const FirebaseWelcomeScreen(),
       ),
+
 
       // Patient Auth (Login & Signup)
       GoRoute(
@@ -173,6 +189,11 @@ GoRouter createFirebaseRouter() {
       GoRoute(
         path: '/admin/login',
         builder: (context, state) => const FirebaseAdminLoginScreen(),
+      ),
+// forgetPassword routes
+      GoRoute(
+        path: '/doctor/forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
       ),
 
       // Patient Routes
@@ -236,6 +257,32 @@ GoRouter createFirebaseRouter() {
             requestId: requestId,
           );
         },
+        redirect: (context, state) => _authGuard(context, state, 'patient'),
+      ),
+      // New patient routes
+      GoRoute(
+        path: '/patient/nearby-doctors',
+        builder: (context, state) => const NearbyDoctorsScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'patient'),
+      ),
+      GoRoute(
+        path: '/patient/rated-doctors',
+        builder: (context, state) => const RatedDoctorsScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'patient'),
+      ),
+      GoRoute(
+        path: '/patient/requests-history',
+        builder: (context, state) => const RequestHistoryScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'patient'),
+      ),
+      GoRoute(
+        path: '/patient/medical-profile',
+        builder: (context, state) => const MedicalFileScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'patient'),
+      ),
+      GoRoute(
+        path: '/patient/settings',
+        builder: (context, state) => const PatientSettingsScreen(),
         redirect: (context, state) => _authGuard(context, state, 'patient'),
       ),
 
@@ -351,6 +398,11 @@ GoRouter createFirebaseRouter() {
           return null;
         },
       ),
+      GoRoute(
+        path: '/doctor/settings',
+        builder: (context, state) => const DoctorSettingsScreen(),
+      ),
+
     ],
     
     // Error handling

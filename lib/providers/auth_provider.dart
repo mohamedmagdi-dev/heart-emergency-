@@ -203,6 +203,7 @@ class AuthController {
     }
   }
 
+
   // Update user profile
   Future<void> updateProfile(Map<String, dynamic> data) async {
     try {
@@ -213,6 +214,26 @@ class AuthController {
     } catch (e) {
       rethrow;
     }
+  }
+  // في auth_controller.dart - إضافة هذه الدوال
+  User? get currentUser => _authService.currentUser;
+
+  Future<void> changePassword(String newPassword) async {
+    try {
+      final user = _authService.currentUser;
+      if (user != null) {
+        await user.updatePassword(newPassword);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+  // في firestore_service.dart
+  // في firestore_service.dart - إصلاح الخطأ هنا
+  Future<void> updateUserCurrency(String userId, Currency currency) async {
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'currency': currency.name,
+    });
   }
 }
 

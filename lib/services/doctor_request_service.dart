@@ -9,8 +9,8 @@ class DoctorRequestService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  static const String requestsCollection = 'doctor_requests';
-
+ // static const String requestsCollection = 'doctor_requests';
+  static const String requestsCollection = 'requests';
   // Create a new doctor request
   Future<String> createDoctorRequest({
     required String doctorId,
