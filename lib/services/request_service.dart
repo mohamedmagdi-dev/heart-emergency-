@@ -4,12 +4,98 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../data/models/request_model.dart';
 import '../data/models/user_model.dart';
 import 'fcm_notification_service.dart';
+import 'notification_sender.dart';
 
 class RequestService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   static const String requestsCollection = 'requests';
+
+  // Add a simple request from current patient to a doctor
+  Future<void> sendRequestToDoctor(String doctorId) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw 'يجب تسجيل الدخول أولاً';
+      }
+
+      // Create minimal pending request
+      final docRef = _firestore.collection(requestsCollection).doc();
+      await docRef.set({
+        'id': docRef.id,
+        'patientId': user.uid,
+        'doctorId': doctorId,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Firestore notification to doctor
+      await NotificationSender().sendNotification(
+        toUserId: doctorId,
+        title: 'New patient request', // إشعار جديد
+        body: 'هناك طلب جديد من مريض',
+        type: 'new_request',
+        payload: {
+          'requestId': docRef.id,
+          'fromUserId': user.uid,
+        },
+      );
+    } on FirebaseException catch (e) {
+      // Friendly message if rules block access
+      throw _friendlyFirestoreError(e, fallback: 'تعذر إرسال الطلب، تحقق من الصلاحيات.');
+    } catch (e) {
+      throw 'تعذر إرسال الطلب: $e';
+    }
+  }
+
+  // Doctor responds to a request and notifies the patient
+  Future<void> respondToRequest(String requestId, String patientId, bool accepted) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw 'يجب تسجيل الدخول أولاً';
+      }
+
+      final status = accepted ? 'accepted' : 'rejected'; // use 'rejected' to match existing enum
+
+      await _firestore.collection(requestsCollection).doc(requestId).update({
+        'status': status,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Firestore notification to patient
+      await NotificationSender().sendNotification(
+        toUserId: patientId,
+        title: accepted ? 'تم قبول الطلب' : 'تم رفض الطلب',
+        body: accepted
+            ? 'تم قبول طلبك من الطبيب'
+            : 'تم رفض طلبك من الطبيب حالياً',
+        type: accepted ? 'request_accepted' : 'request_rejected',
+        payload: {
+          'requestId': requestId,
+          'fromUserId': user.uid,
+          'accepted': accepted,
+        },
+      );
+    } on FirebaseException catch (e) {
+      throw _friendlyFirestoreError(e, fallback: 'تعذر تحديث حالة الطلب.');
+    } catch (e) {
+      throw 'تعذر تحديث حالة الطلب: $e';
+    }
+  }
+
+  String _friendlyFirestoreError(FirebaseException e, {required String fallback}) {
+    switch (e.code) {
+      case 'permission-denied':
+        return 'ليس لديك صلاحية لتنفيذ هذه العملية.';
+      case 'unavailable':
+        return 'خدمة قاعدة البيانات غير متاحة مؤقتاً. حاول لاحقاً.';
+      default:
+        return fallback;
+    }
+  }
 
   // Create emergency request
   Future<String> createEmergencyRequest({

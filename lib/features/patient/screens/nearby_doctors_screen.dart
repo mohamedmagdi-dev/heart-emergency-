@@ -209,6 +209,15 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'العملة: ${doctor.currency.name.isNotEmpty ? doctor.currency.name : 'Not set'}',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                           if (doctor.specialization != null) ...[
                             const SizedBox(height: 4),
                             Text(

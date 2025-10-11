@@ -15,6 +15,7 @@ class FirestoreService {
   static const String usersCollection = 'users';
   static const String requestsCollection = 'requests';
   static const String transactionsCollection = 'transactions';
+  static const String notificationsCollection = 'notifications';
 
   // ==================== USER OPERATIONS ====================
 
@@ -168,14 +169,15 @@ class FirestoreService {
   }
 
   // Update doctor verification status
-  Future<void> updateDoctorVerification(String doctorId, bool verified) async {
-    try {
-      await updateUser(doctorId, {'verified': verified});
-    } catch (e) {
-      throw 'فشل في تحديث حالة التحقق: $e';
-    }
-  }
-
+  //correct version
+  // Future<void> updateDoctorVerification(String doctorId, bool verified) async {
+  //   try {
+  //     await updateUser(doctorId, {'verified': verified});
+  //   } catch (e) {
+  //     throw 'فشل في تحديث حالة التحقق: $e';
+  //   }
+  // }
+  //
   // Update user currency
   Future<void> updateUserCurrency(String uid, Currency currency) async {
     try {
@@ -184,6 +186,24 @@ class FirestoreService {
       throw 'فشل في تحديث العملة: $e';
     }
   }
+  Future<void> updateDoctorVerification(String doctorId, bool verified) async {
+    try {
+      await updateUser(doctorId, {'verified': verified});
+
+      // إرسال إشعار للدكتور بعد التوثيق أو الرفض
+      await sendNotification(
+        userId: doctorId,
+        title: 'حالة التحقق من الحساب',
+        body: verified
+            ? 'تم توثيق حسابك بنجاح ✅'
+            : 'تم رفض توثيق حسابك ❌',
+        type: 'verification_update',
+      );
+    } catch (e) {
+      throw 'فشل في تحديث حالة التحقق: $e';
+    }
+  }
+
 
   // FIXED: Update doctor availability status
   Future<void> updateDoctorAvailability(String doctorId, bool available) async {
@@ -206,16 +226,41 @@ class FirestoreService {
   // ==================== REQUEST OPERATIONS ====================
 
   // Create emergency request
+  //correct
+  // Future<String> createEmergencyRequest(RequestModel request) async {
+  //   try {
+  //     final docRef = await _firestore.collection(requestsCollection).add(request.toMap());
+  //     // Update the request with the generated ID
+  //     await docRef.update({'id': docRef.id});
+  //     return docRef.id;
+  //   } catch (e) {
+  //     throw 'فشل في إنشاء طلب الطوارئ: $e';
+  //   }
+  // }
   Future<String> createEmergencyRequest(RequestModel request) async {
     try {
+      // إنشاء الطلب في Firestore
       final docRef = await _firestore.collection(requestsCollection).add(request.toMap());
-      // Update the request with the generated ID
+
+      // 📢 إرسال إشعار للطبيب (فقط لو doctorId مش null)
+      if (request.doctorId != null) {
+        await sendNotification(
+          userId: request.doctorId!,
+          title: 'طلب جديد من مريض',
+          body: 'مريض جديد أرسل لك طلب استشارة.',
+          type: 'new_request',
+        );
+      }
+
+      // تحديث الطلب بالـ ID الذي تم توليده
       await docRef.update({'id': docRef.id});
+
       return docRef.id;
     } catch (e) {
       throw 'فشل في إنشاء طلب الطوارئ: $e';
     }
   }
+
 
   // FIXED: Get request by ID as stream for real-time updates
   Stream<RequestModel?> getRequestById(String requestId) {
@@ -268,16 +313,58 @@ class FirestoreService {
   }
 
   // Update request status
+  // correct
+  // Future<void> updateRequestStatus(String requestId, RequestStatus status) async {
+  //   try {
+  //     await _firestore.collection(requestsCollection).doc(requestId).update({
+  //       'status': status.name,
+  //       'updatedAt': Timestamp.now(),
+  //     });
+  //   } catch (e) {
+  //     throw 'فشل في تحديث حالة الطلب: $e';
+  //   }
+  // }
   Future<void> updateRequestStatus(String requestId, RequestStatus status) async {
     try {
+      // 1️⃣ نجيب الطلب أولاً علشان نعرف الـ patientId
+      final doc = await _firestore.collection(requestsCollection).doc(requestId).get();
+      if (!doc.exists) throw 'الطلب غير موجود';
+
+      final request = RequestModel.fromMap(doc.data()!, documentId: doc.id);
+
+      // 2️⃣ نحدث حالة الطلب
       await _firestore.collection(requestsCollection).doc(requestId).update({
         'status': status.name,
         'updatedAt': Timestamp.now(),
       });
+
+      // 3️⃣ نرسل إشعار للمريض
+      await sendNotification(
+        userId: request.patientId,
+        title: 'رد على طلبك',
+        body: status == RequestStatus.accepted
+            ? 'تم قبول طلبك من الطبيب ✅'
+            : 'تم رفض طلبك من الطبيب ❌',
+        type: 'request_response',
+      );
+
+      // 4️⃣ (اختياري) نرسل إشعار للطبيب كمان إنه تم تنفيذ الإجراء
+      if (request.doctorId != null) {
+        await sendNotification(
+          userId: request.doctorId!,
+          title: 'تم تحديث حالة الطلب',
+          body: status == RequestStatus.accepted
+              ? 'لقد قبلت طلب المريض بنجاح ✅'
+              : 'لقد رفضت طلب المريض ❌',
+          type: 'doctor_update',
+        );
+      }
+
     } catch (e) {
       throw 'فشل في تحديث حالة الطلب: $e';
     }
   }
+
 
   // Get all requests (for admin)
   Stream<List<RequestModel>> getAllRequests() {
@@ -485,4 +572,25 @@ class FirestoreService {
       throw 'فشل في تحديث حالة الحظر: $e';
     }
   }
+  // ==================== NOTIFICATIONS OPERATIONS ====================
+  Future<void> sendNotification({
+    required String userId,
+    required String title,
+    required String body,
+    required String type,
+  }) async {
+    try {
+      await _firestore.collection(notificationsCollection).add({
+        'userId': userId,
+        'title': title,
+        'body': body,
+        'type': type,
+        'createdAt': FieldValue.serverTimestamp(),
+        'read': false,
+      });
+    } catch (e) {
+      throw 'فشل في إرسال الإشعار: $e';
+    }
+  }
+
 }

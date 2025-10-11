@@ -214,12 +214,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     .fold<double>(0, (sum, t) => sum + t.commission);
 
                 return GridView.count(
+                  childAspectRatio: MediaQuery.of(context).size.width < 400 ? 1 : 1.2,
+
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 1.2,
+                  // childAspectRatio: 1.2,
                   children: [
                     _buildStatCard(
                       title: 'المرضى',
@@ -255,6 +257,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       },
     );
   }
+  //
 
   Widget _buildStatCard({
     required String title,
@@ -263,59 +266,61 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     required Color color,
     String? subtitle,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          padding: EdgeInsets.all(constraints.maxWidth * 0.06),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withOpacity(0.3)),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: color,
-                fontWeight: FontWeight.w600,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: constraints.maxWidth * 0.2, color: color),
+              SizedBox(height: constraints.maxHeight * 0.05),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: constraints.maxWidth * 0.09,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-          ],
-        ],
-      ),
+              SizedBox(height: constraints.maxHeight * 0.02),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: constraints.maxWidth * 0.15,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ),
+              if (subtitle != null) ...[
+                SizedBox(height: constraints.maxHeight * 0.02),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    subtitle!,
+                    style: TextStyle(
+                      fontSize: constraints.maxWidth * 0.08,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -644,6 +649,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     value: 'view',
                     child: Text('عرض التفاصيل'),
                   ),
+                  const PopupMenuItem(
+                    value: 'verify',
+                    child: Text('توثيق الطبيب'),
+                  ),
+
                   const PopupMenuItem(
                     value: 'delete',
                     child: Text('حذف المستخدم'),
@@ -1012,11 +1022,34 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     );
   }
 
-  void _handleUserAction(String action, UserModel user) {
+  Future<void> _handleUserAction(String action, UserModel user) async {
     switch (action) {
       case 'view':
         _showUserDetails(user);
         break;
+    // verfiy notfication
+      case 'verify':
+        final newStatus = !(user.verified ?? false);
+        await _firestoreService.updateDoctorVerification(user.uid, newStatus);
+
+        // إرسال إشعار للدكتور
+        await _firestoreService.sendNotification(
+          userId: user.uid,
+          title: newStatus ? 'تم توثيق حسابك ✅' : 'تم رفض توثيق حسابك ❌',
+          body: newStatus
+              ? 'مبروك! تم توثيق حسابك من قبل الإدارة ويمكنك استقبال المرضى الآن.'
+              : 'نأسف، تم رفض طلب التوثيق. يرجى التواصل مع الدعم.',
+          type: 'doctor_verification',
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(newStatus ? 'تم توثيق الطبيب ✅' : 'تم إلغاء التوثيق ❌'),
+          ),
+        );
+        break;
+
+
       case 'delete':
         _showDeleteUserDialog(user);
         break;
