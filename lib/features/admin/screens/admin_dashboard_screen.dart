@@ -114,8 +114,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ? NetworkImage(user.profileImage!)
                     : null,
                 child: user.profileImage == null
-                    ? const Icon(Icons.admin_panel_settings,
-                        size: 25, color: Color(0xFF7C3AED))
+                    ? const Icon(
+                        Icons.admin_panel_settings,
+                        size: 25,
+                        color: Color(0xFF7C3AED),
+                      )
                     : null,
               ),
               const SizedBox(width: 16),
@@ -184,8 +187,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         final users = usersSnapshot.data ?? [];
         final patients = users.where((u) => u.role == 'patient').length;
         final doctors = users.where((u) => u.role == 'doctor').length;
-        final verifiedDoctors =
-            users.where((u) => u.role == 'doctor' && u.verified == true).length;
+        final verifiedDoctors = users
+            .where((u) => u.role == 'doctor' && u.verified == true)
+            .length;
 
         return StreamBuilder<List<RequestModel>>(
           stream: _firestoreService.getAllRequests(),
@@ -202,8 +206,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     .fold<double>(0, (sum, t) => sum + t.commission);
 
                 return GridView.count(
-                  childAspectRatio:
-                      MediaQuery.of(context).size.width < 400 ? 1 : 1.2,
+                  childAspectRatio: MediaQuery.of(context).size.width < 400
+                      ? 1
+                      : 1.2,
 
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -298,7 +303,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    subtitle!,
+                    subtitle,
                     style: TextStyle(
                       fontSize: constraints.maxWidth * 0.08,
                       color: Colors.grey[700],
@@ -532,8 +537,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.local_hospital_outlined,
-                    size: 64, color: Colors.grey),
+                Icon(
+                  Icons.local_hospital_outlined,
+                  size: 64,
+                  color: Colors.grey,
+                ),
                 SizedBox(height: 16),
                 Text('لا يوجد أطباء مسجلين'),
               ],
@@ -637,7 +645,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -754,8 +761,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   ),
                   PopupMenuItem(
                     value: doctor.verified == true ? 'unverify' : 'verify',
-                    child:
-                        Text(doctor.verified == true ? 'إلغاء التحقق' : 'تحقق'),
+                    child: Text(
+                      doctor.verified == true ? 'إلغاء التحقق' : 'تحقق',
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'delete',
@@ -785,24 +793,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 title: 'نسبة العمولة',
                 subtitle: '12%',
                 onTap: () => _showCommissionDialog(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSettingsCard(
-            title: 'إدارة المحتوى',
-            items: [
-              _buildSettingItem(
-                icon: Icons.announcement,
-                title: 'الإعلانات',
-                subtitle: 'إدارة الإعلانات والأخبار',
-                onTap: () => context.push('/admin/announcements'),
-              ),
-              _buildSettingItem(
-                icon: Icons.help,
-                title: 'الدعم الفني',
-                subtitle: 'إدارة طلبات الدعم',
-                onTap: () => context.push('/admin/support'),
               ),
             ],
           ),
@@ -979,8 +969,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text(newStatus ? 'تم توثيق الطبيب ✅' : 'تم إلغاء التوثيق ❌'),
+            content: Text(
+              newStatus ? 'تم توثيق الطبيب ✅' : 'تم إلغاء التوثيق ❌',
+            ),
           ),
         );
         break;
@@ -1194,8 +1185,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('تسجيل الخروج',
-                style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'تسجيل الخروج',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -1310,8 +1303,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           child: const Center(
                             child: Column(
                               children: [
-                                Icon(Icons.folder_open,
-                                    size: 48, color: Colors.grey),
+                                Icon(
+                                  Icons.folder_open,
+                                  size: 48,
+                                  color: Colors.grey,
+                                ),
                                 SizedBox(height: 8),
                                 Text(
                                   'لم يتم رفع أي شهادات بعد',
@@ -1392,10 +1388,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         child: Stack(
           children: [
             Center(
-              child: LocalFileViewer(
-                filePath: filePath,
-                fit: BoxFit.contain,
-              ),
+              child: LocalFileViewer(filePath: filePath, fit: BoxFit.contain),
             ),
             Positioned(
               top: 40,
@@ -1434,7 +1427,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           return const Center(child: CircularProgressIndicator());
         }
 
-        final stats = snapshot.data ??
+        final stats =
+            snapshot.data ??
             {
               'totalRatings': 0,
               'averageRating': 0.0,

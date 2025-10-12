@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:heart_emergency/services/rating_service.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/rating_model.dart';
@@ -99,7 +100,7 @@ class _AdminRatingsScreenState extends State<AdminRatingsScreen> {
                   itemCount: ratings.length,
                   itemBuilder: (context, index) {
                     final rating = ratings[index];
-                    final date = (rating.createdAt ?? DateTime.now());
+                    final date = (rating.createdAt);
 
                     return Card(
                       margin: const EdgeInsets.symmetric(

@@ -9,7 +9,6 @@ import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/request_service.dart';
-import '../../../providers/auth_provider.dart';
 import '../../notifications/notification_request_service.dart';
 
 class PatientDashboardScreen extends ConsumerStatefulWidget {
@@ -24,7 +23,8 @@ class _PatientDashboardScreenState
     extends ConsumerState<PatientDashboardScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final RequestService _requestService = RequestService();
-  final NotificationRequestService _notificationService = NotificationRequestService();
+  final NotificationRequestService _notificationService =
+      NotificationRequestService();
 
   @override
   Widget build(BuildContext context) {
@@ -209,78 +209,6 @@ class _PatientDashboardScreenState
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildWalletCard(UserModel user) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet,
-                  color: Colors.green,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Text(
-                  'رصيد المحفظة',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              TextButton(
-                onPressed: () => context.push('/patient/wallet'),
-                child: const Text('إدارة المحفظة'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text(
-                '${user.walletBalance.toStringAsFixed(2)} ${user.currency.name}',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
-              const Spacer(),
-              ElevatedButton.icon(
-                onPressed: () => context.push('/patient/wallet/topup'),
-                icon: const Icon(Icons.add),
-                label: const Text('شحن المحفظة'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -618,10 +546,11 @@ class _PatientDashboardScreenState
           _buildSettingItem(
             icon: Icons.notifications,
             title: 'الإشعارات',
-            onTap: () => context.push('/patient/notifications', extra: user.uid),
+            onTap: () =>
+                context.push('/patient/notifications', extra: user.uid),
             trailing: StreamBuilder<QuerySnapshot>(
               // stream: _notificationService.getUserNotifications(user.uid),
-             stream: _notificationService.getUnreadUserNotifications(user.uid),
+              stream: _notificationService.getUnreadUserNotifications(user.uid),
               builder: (context, snapshot) {
                 // if (!snapshot.hasData) {
                 //   return const SizedBox.shrink();
@@ -632,7 +561,10 @@ class _PatientDashboardScreenState
 
                 final docs = snapshot.data!.docs;
                 final unreadCount = docs
-                    .where((d) => (d.data() as Map<String, dynamic>)['read'] == false)
+                    .where(
+                      (d) =>
+                          (d.data() as Map<String, dynamic>)['read'] == false,
+                    )
                     .length;
 
                 // لو مافيش إشعارات غير مقروءة، ماظهرش أي رقم
