@@ -704,7 +704,7 @@ class _PatientDashboardScreenState
           mainAxisSize: MainAxisSize.min,
           children: Currency.values.map((currency) {
             return ListTile(
-              title: Text(currency.name),
+              title: Text(currency.arabicName),
               onTap: () async {
                 try {
                   final currentUserAsync = ref.read(currentUserDataProvider);

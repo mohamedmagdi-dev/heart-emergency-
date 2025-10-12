@@ -870,50 +870,6 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
   }
 
 
-  // Widget _buildAppearanceSection(BuildContext context,ThemeCubit themeCubit) {
-  //   return Container(
-  //     padding: const EdgeInsets.all(20),
-  //     decoration: BoxDecoration(
-  //       color: Theme.of(context).colorScheme.surface,
-  //       borderRadius: BorderRadius.circular(16),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Theme.of(context).shadowColor.withOpacity(0.1),
-  //           blurRadius: 10,
-  //           offset: const Offset(0, 2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'المظهر',
-  //           style: TextStyle(
-  //             fontSize: 18,
-  //             fontWeight: FontWeight.bold,
-  //             color: Theme.of(context).colorScheme.onSurface,
-  //           ),
-  //         ),
-  //         const SizedBox(height: 16),
-  //         BlocBuilder<ThemeCubit, ThemeState>(
-  //           builder: (context, state) {
-  //             return ListTile(
-  //               leading: Icon(Icons.brightness_6, color: Theme.of(context).colorScheme.primary),
-  //               title: const Text('الوضع الليلي'),
-  //               subtitle: const Text('تفعيل الوضع المظلم'),
-  //               trailing: Switch(
-  //                 value: state.isDark,
-  //                 onChanged: (value) async => await themeCubit.setDark(value),
-  //               ),
-  //               contentPadding: EdgeInsets.zero,
-  //             );
-  //           },
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildCurrencySection(BuildContext context, UserModel user) {
     return Container(
@@ -944,7 +900,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
           ListTile(
             leading: Icon(Icons.currency_exchange, color: Theme.of(context).colorScheme.primary),
             title: const Text('العملة الحالية'),
-            subtitle: Text(user.currency.name),
+            subtitle: Text(user.currency.arabicName),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () => _showCurrencyDialog(user),
             contentPadding: EdgeInsets.zero,
@@ -1040,7 +996,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: Currency.values.map((currency) {
             return ListTile(
-              title: Text(currency.name),
+              title: Text(currency.arabicName),
               trailing: user.currency == currency
                   ? const Icon(Icons.check)
                   : null,

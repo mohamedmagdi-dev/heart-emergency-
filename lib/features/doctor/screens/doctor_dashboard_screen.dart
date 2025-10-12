@@ -12,11 +12,10 @@ import '../../../providers/auth_provider.dart';
 import '../../../services/fcm_service.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/rating_service.dart';
-import '../../../data/models/rating_model.dart';
-import '../../../providers/auth_provider.dart';
+
 import '../../../services/request_service.dart';
 import '../../notifications/notification_request_service.dart';
-import 'doctor_notification_screen.dart';
+
 
 class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({super.key});
@@ -156,270 +155,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     );
   }
 
-  // Widget _buildHeader(UserModel user) {
-  //   return Container(
-  //     decoration: const BoxDecoration(
-  //       gradient: LinearGradient(
-  //         begin: Alignment.topCenter,
-  //         end: Alignment.bottomCenter,
-  //         colors: [Color(0xFF059669), Color(0xFF10B981)],
-  //       ),
-  //     ),
-  //     child: SafeArea(
-  //       child: Padding(
-  //         padding: const EdgeInsets.all(20),
-  //         child: Column(
-  //           children: [
-  //             Row(
-  //               children: [
-  //                 // Stack(
-  //                 //   children: [
-  //                 //     CircleAvatar(
-  //                 //       radius: 30,
-  //                 //       backgroundColor: Colors.white,
-  //                 //       backgroundImage: user.profileImage != null
-  //                 //           ? NetworkImage(user.profileImage!)
-  //                 //           : null,
-  //                 //       child: user.profileImage == null
-  //                 //           ? const Icon(Icons.person,
-  //                 //               size: 30, color: Color(0xFF059669))
-  //                 //           : null,
-  //                 //     ),
-  //                 //     if (user.verified == true)
-  //                 //       Positioned(
-  //                 //         bottom: 0,
-  //                 //         right: 0,
-  //                 //         child: Container(
-  //                 //           padding: const EdgeInsets.all(4),
-  //                 //           decoration: const BoxDecoration(
-  //                 //             color: Colors.green,
-  //                 //             shape: BoxShape.circle,
-  //                 //           ),
-  //                 //           child: const Icon(
-  //                 //             Icons.verified,
-  //                 //             size: 16,
-  //                 //             color: Colors.white,
-  //                 //           ),
-  //                 //         ),
-  //                 //       ),
-  //                 //   ],
-  //                 // ),
-  //                 Stack(
-  //                   children: [
-  //                     IconButton(
-  //                       onPressed: () {
-  //                         context.push('/doctor/notifications');
-  //                       },
-  //                       icon: const Icon(Icons.notifications, size: 30, color: Colors.white),
-  //                     ),
-  //                     StreamBuilder<QuerySnapshot>(
-  //                       stream: FirebaseFirestore.instance
-  //                           .collection('notifications')
-  //                           .where('userId', isEqualTo: user.uid)
-  //                           .where('read', isEqualTo: false)
-  //                           .snapshots(),
-  //                       builder: (context, snapshot) {
-  //                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-  //                           return const SizedBox();
-  //                         }
-  //                         final count = snapshot.data!.docs.length;
-  //                         return Positioned(
-  //                           right: 4,
-  //                           top: 4,
-  //                           child: Container(
-  //                             padding: const EdgeInsets.all(4),
-  //                             decoration: const BoxDecoration(
-  //                               color: Colors.red,
-  //                               shape: BoxShape.circle,
-  //                             ),
-  //                             child: Text(
-  //                               count.toString(),
-  //                               style: const TextStyle(color: Colors.white, fontSize: 10),
-  //                             ),
-  //                           ),
-  //                         );
-  //                       },
-  //                     ),
-  //                   ],
-  //                 ),
-  //
-  //                 const SizedBox(width: 16),
-  //                 Expanded(
-  //                   child: Column(
-  //                     crossAxisAlignment: CrossAxisAlignment.start,
-  //                     children: [
-  //                       Text(
-  //                         'د. ${user.name}',
-  //                         style: const TextStyle(
-  //                           fontSize: 24,
-  //                           fontWeight: FontWeight.bold,
-  //                           color: Colors.white,
-  //                         ),
-  //                       ),
-  //                       const SizedBox(height: 4),
-  //                       if (user.specialization != null)
-  //                         Text(
-  //                           user.specialization!,
-  //                           style: const TextStyle(
-  //                             fontSize: 16,
-  //                             color: Colors.white70,
-  //                           ),
-  //                         ),
-  //                       if (user.rating != null)
-  //                         Row(
-  //                           children: [
-  //                             Icon(Icons.star,
-  //                                 size: 16, color: Colors.amber[300]),
-  //                             const SizedBox(width: 4),
-  //                             Text(
-  //                               user.rating!.toStringAsFixed(1),
-  //                               style: const TextStyle(
-  //                                 color: Colors.white70,
-  //                                 fontSize: 14,
-  //                               ),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                     ],
-  //                   ),
-  //                 ),
-  //                 IconButton(
-  //                   onPressed: () {
-  //                     context.go("/doctor/notifications",);
-  //                   },
-  //                   icon: Icon(Icons.notifications,
-  //                    size: 30,
-  //                     color: Colors.white,
-  //                   ),
-  //                 ),
-  //                 IconButton(
-  //                   onPressed: () => context.push('/doctor/settings'),
-  //                   icon: const Icon(Icons.settings, color: Colors.white),
-  //                 ),
-  //               ],
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-  // Widget _buildHeader(UserModel user) {
-  //   return Container(
-  //     decoration: const BoxDecoration(
-  //       gradient: LinearGradient(
-  //         begin: Alignment.topCenter,
-  //         end: Alignment.bottomCenter,
-  //         colors: [Color(0xFF059669), Color(0xFF10B981)],
-  //       ),
-  //     ),
-  //     child: SafeArea(
-  //       child: Padding(
-  //         padding: const EdgeInsets.all(20),
-  //         child: Column(
-  //           children: [
-  //             Row(
-  //               children: [
-  //                 const SizedBox(width: 16),
-  //
-  //                 // Doctor Info
-  //                 Expanded(
-  //                   child: Column(
-  //                     crossAxisAlignment: CrossAxisAlignment.start,
-  //                     children: [
-  //                       Text(
-  //                         'د. ${user.name}',
-  //                         style: const TextStyle(
-  //                           fontSize: 24,
-  //                           fontWeight: FontWeight.bold,
-  //                           color: Colors.white,
-  //                         ),
-  //                       ),
-  //                       const SizedBox(height: 4),
-  //                       if (user.specialization != null)
-  //                         Text(
-  //                           user.specialization!,
-  //                           style: const TextStyle(
-  //                             fontSize: 16,
-  //                             color: Colors.white70,
-  //                           ),
-  //                         ),
-  //                       if (user.rating != null)
-  //                         Row(
-  //                           children: [
-  //                             Icon(Icons.star, size: 16, color: Colors.amber[300]),
-  //                             const SizedBox(width: 4),
-  //                             Text(
-  //                               user.rating!.toStringAsFixed(1),
-  //                               style: const TextStyle(
-  //                                 color: Colors.white70,
-  //                                 fontSize: 14,
-  //                               ),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                     ],
-  //                   ),
-  //                 ),
-  //
-  //                 // Notification Icon with Badge
-  //                 Stack(
-  //                   clipBehavior: Clip.none,
-  //                   children: [
-  //                     IconButton(
-  //                       onPressed: () {
-  //                         context.push('/doctor/notifications');
-  //                       },
-  //                       icon: const Icon(Icons.notifications, size: 30, color: Colors.white),
-  //                     ),
-  //                     StreamBuilder<QuerySnapshot>(
-  //                       stream: FirebaseFirestore.instance
-  //                           .collection('notifications')
-  //                           .where('userId', isEqualTo: user.uid)
-  //                           .where('read', isEqualTo: false)
-  //                           .snapshots(),
-  //                       builder: (context, snapshot) {
-  //                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-  //                           return const SizedBox();
-  //                         }
-  //                         final count = snapshot.data!.docs.length;
-  //                         return Positioned(
-  //                           right: 4,
-  //                           top: 4,
-  //                           child: Container(
-  //                             padding: const EdgeInsets.all(6),
-  //                             decoration: const BoxDecoration(
-  //                               color: Colors.red,
-  //                               shape: BoxShape.circle,
-  //                             ),
-  //                             child: Text(
-  //                               count.toString(),
-  //                               style: const TextStyle(
-  //                                 color: Colors.white,
-  //                                 fontSize: 12,
-  //                                 fontWeight: FontWeight.bold,
-  //                               ),
-  //                             ),
-  //                           ),
-  //                         );
-  //                       },
-  //                     ),
-  //                   ],
-  //                 ),
-  //
-  //                 // Settings Icon
-  //                 IconButton(
-  //                   onPressed: () => context.push('/doctor/settings'),
-  //                   icon: const Icon(Icons.settings, color: Colors.white),
-  //                 ),
-  //               ],
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
+
   Widget _buildHeader(UserModel user) {
     return Container(
       decoration: const BoxDecoration(
@@ -981,7 +717,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _acceptRequest(request),
                     icon: const Icon(Icons.check),
-                    label: const Text('قبول'),
+                    label: FittedBox(child: const Text('قبول')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -993,7 +729,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _rejectRequest(request),
                     icon: const Icon(Icons.close),
-                    label: const Text('رفض'),
+                    label: FittedBox(child: const Text('رفض')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
@@ -1296,6 +1032,9 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           StreamBuilder<List<RatingModel>>(
             stream: _ratingService.getRatingsByUser(doctorId),
             builder: (context, snapshot) {
+
+
+
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
