@@ -69,7 +69,7 @@ class SplashScreenState extends State<SplashScreen>
                   style: TextStyle(
                       fontSize: size.width * 0.1,
                       fontWeight: FontWeight.bold,
-                      color: Colors.indigo),
+                      color:  Theme.of(context).colorScheme.primary),
                 ),
               ],
             ),

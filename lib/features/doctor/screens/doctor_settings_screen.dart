@@ -532,7 +532,9 @@ class DoctorSettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.currency_exchange),
             title: const Text('العملة الحالية'),
-            subtitle: Text('${user.currency.name}'),
+            // subtitle: Text('${user.currency.name}'),
+            // الكود الجديد
+            subtitle: Text(user.currency.arabicName),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () => _showCurrencyDialog(context, ref, user),
             contentPadding: EdgeInsets.zero,
@@ -601,7 +603,9 @@ class DoctorSettingsScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: Currency.values.map((currency) {
             return ListTile(
-              title: Text(currency.name),
+              // title: Text(currency.name),
+              // الكود الجديد
+              title: Text(currency.arabicName),
               trailing: user.currency == currency ? const Icon(Icons.check) : null,
               onTap: () async {
                 try {
