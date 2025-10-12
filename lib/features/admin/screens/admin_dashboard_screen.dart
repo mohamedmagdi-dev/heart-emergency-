@@ -1,22 +1,25 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../data/models/user_model.dart';
+import 'package:heart_emergency/core/cubits/theme_cubit.dart';
+
+import '../../../data/models/rating_model.dart';
 import '../../../data/models/request_model.dart';
 import '../../../data/models/transaction_model.dart';
-import '../../../data/models/rating_model.dart';
-import '../../../services/firestore_service.dart';
-import '../../../services/fcm_service.dart';
-import '../../../services/rating_service.dart';
-import '../../../providers/auth_provider.dart';
+import '../../../data/models/user_model.dart';
 import '../../../features/common/widgets/local_file_viewer.dart'; // FIXED: Added for file viewing
+import '../../../providers/auth_provider.dart';
+import '../../../services/fcm_service.dart';
+import '../../../services/firestore_service.dart';
+import '../../../services/rating_service.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  ConsumerState<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+  ConsumerState<AdminDashboardScreen> createState() =>
+      _AdminDashboardScreenState();
 }
 
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
@@ -41,38 +44,36 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   @override
   Widget build(BuildContext context) {
     final currentUserAsync = ref.watch(currentUserDataProvider);
-
+    final themeCubit = context.read<ThemeCubit>();
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       body: currentUserAsync.when(
         data: (user) {
           if (user == null || user.role != 'admin') {
             return const Center(child: Text('غير مصرح لك بالوصول'));
           }
-          return _buildDashboard(user);
+          return _buildDashboard(themeCubit, user);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) =>
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text('خطأ في تحميل البيانات: $error'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => ref.refresh(currentUserDataProvider),
-                    child: const Text('إعادة المحاولة'),
-                  ),
-                ],
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('خطأ في تحميل البيانات: $error'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.refresh(currentUserDataProvider),
+                child: const Text('إعادة المحاولة'),
               ),
-            ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildDashboard(UserModel user) {
+  Widget _buildDashboard(ThemeCubit themeCubit, UserModel user) {
     return Column(
       children: [
         _buildHeader(user),
@@ -85,7 +86,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               _buildUsersTab(),
               _buildTransactionsTab(),
               _buildRatingsTab(),
-              _buildSettingsTab(),
+              _buildSettingsTab(themeCubit),
             ],
           ),
         ),
@@ -114,8 +115,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ? NetworkImage(user.profileImage!)
                     : null,
                 child: user.profileImage == null
-                    ? const Icon(Icons.admin_panel_settings, size: 25,
-                    color: Color(0xFF7C3AED))
+                    ? const Icon(
+                        Icons.admin_panel_settings,
+                        size: 25,
+                        color: Color(0xFF7C3AED),
+                      )
                     : null,
               ),
               const SizedBox(width: 16),
@@ -133,10 +137,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ),
                     const Text(
                       'لوحة تحكم الإدارة',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.white70),
                     ),
                   ],
                 ),
@@ -153,21 +154,18 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   }
 
   Widget _buildTabBar() {
-    return Container(
-      color: Colors.white,
-      child: TabBar(
-        controller: _tabController,
-        labelColor: const Color(0xFF7C3AED),
-        unselectedLabelColor: Colors.grey,
-        indicatorColor: const Color(0xFF7C3AED),
-        tabs: const [
-          Tab(icon: Icon(Icons.dashboard), text: 'نظرة عامة'),
-          Tab(icon: Icon(Icons.people), text: 'المستخدمون'),
-          Tab(icon: Icon(Icons.payment), text: 'المعاملات'),
-          Tab(icon: Icon(Icons.star), text: 'التقييمات'),
-          Tab(icon: Icon(Icons.settings), text: 'الإعدادات'),
-        ],
-      ),
+    return TabBar(
+      controller: _tabController,
+      labelColor: const Color(0xFF7C3AED),
+      unselectedLabelColor: Colors.grey,
+      indicatorColor: const Color(0xFF7C3AED),
+      tabs: const [
+        Tab(icon: Icon(Icons.dashboard), text: 'نظرة عامة'),
+        Tab(icon: Icon(Icons.people), text: 'المستخدمون'),
+        Tab(icon: Icon(Icons.payment), text: 'المعاملات'),
+        Tab(icon: Icon(Icons.star), text: 'التقييمات'),
+        Tab(icon: Icon(Icons.settings), text: 'الإعدادات'),
+      ],
     );
   }
 
@@ -189,12 +187,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       stream: _firestoreService.getAllUsers(),
       builder: (context, usersSnapshot) {
         final users = usersSnapshot.data ?? [];
-        final patients = users
-            .where((u) => u.role == 'patient')
-            .length;
-        final doctors = users
-            .where((u) => u.role == 'doctor')
-            .length;
+        final patients = users.where((u) => u.role == 'patient').length;
+        final doctors = users.where((u) => u.role == 'doctor').length;
         final verifiedDoctors = users
             .where((u) => u.role == 'doctor' && u.verified == true)
             .length;
@@ -242,7 +236,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ),
                     _buildStatCard(
                       title: 'إجمالي العمولات',
-                      value: '${totalRevenue.toStringAsFixed(2)}',
+                      value: totalRevenue.toStringAsFixed(2),
                       icon: Icons.monetization_on,
                       color: Colors.purple,
                     ),
@@ -266,7 +260,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -290,19 +283,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           const Spacer(),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-          ),
+          Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
             Text(
@@ -323,7 +307,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -338,10 +321,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         children: [
           const Text(
             'النشاط الأخير',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           StreamBuilder<List<RequestModel>>(
@@ -351,9 +331,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               final recentRequests = requests.take(5).toList();
 
               if (recentRequests.isEmpty) {
-                return const Center(
-                  child: Text('لا توجد أنشطة حديثة'),
-                );
+                return const Center(child: Text('لا توجد أنشطة حديثة'));
               }
 
               return ListView.builder(
@@ -398,10 +376,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
       child: Row(
         children: [
           Container(
@@ -426,10 +401,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 ),
                 Text(
                   _formatDateTime(request.createdAt),
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
@@ -444,24 +416,19 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       length: 2,
       child: Column(
         children: [
-          Container(
-            color: Colors.white,
-            child: const TabBar(
-              labelColor: Color(0xFF7C3AED),
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: Color(0xFF7C3AED),
-              tabs: [
-                Tab(text: 'المرضى'),
-                Tab(text: 'الأطباء'),
-              ],
-            ),
+          const TabBar(
+            labelColor: Color(0xFF7C3AED),
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: Color(0xFF7C3AED),
+            tabs: [
+              Tab(text: 'المرضى'),
+              Tab(text: 'الأطباء'),
+            ],
           ),
+
           Expanded(
             child: TabBarView(
-              children: [
-                _buildPatientsTab(),
-                _buildDoctorsTab(),
-              ],
+              children: [_buildPatientsTab(), _buildDoctorsTab()],
             ),
           ),
         ],
@@ -555,8 +522,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.local_hospital_outlined, size: 64,
-                    color: Colors.grey),
+                Icon(
+                  Icons.local_hospital_outlined,
+                  size: 64,
+                  color: Colors.grey,
+                ),
                 SizedBox(height: 16),
                 Text('لا يوجد أطباء مسجلين'),
               ],
@@ -581,7 +551,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -619,14 +588,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ),
                     Text(
                       user.email,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                     Text(
-                      'رصيد المحفظة: ${user.walletBalance.toStringAsFixed(
-                          2)} ${user.currency.name}',
+                      'رصيد المحفظة: ${user.walletBalance.toStringAsFixed(2)} ${user.currency.name}',
                       style: const TextStyle(
                         color: Colors.green,
                         fontSize: 14,
@@ -638,8 +603,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               ),
               PopupMenuButton<String>(
                 onSelected: (value) => _handleUserAction(value, user),
-                itemBuilder: (context) =>
-                [
+                itemBuilder: (context) => [
                   const PopupMenuItem(
                     value: 'view',
                     child: Text('عرض التفاصيل'),
@@ -731,11 +695,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: doctor.verified == true ? Colors.green
-                                .withOpacity(0.1) : Colors.orange.withOpacity(
-                                0.1),
+                            color: doctor.verified == true
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.orange.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -765,8 +731,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               ),
               PopupMenuButton<String>(
                 onSelected: (value) => _handleDoctorAction(value, doctor),
-                itemBuilder: (context) =>
-                [
+                itemBuilder: (context) => [
                   const PopupMenuItem(
                     value: 'view',
                     child: Text('عرض التفاصيل'),
@@ -779,7 +744,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   PopupMenuItem(
                     value: doctor.verified == true ? 'unverify' : 'verify',
                     child: Text(
-                        doctor.verified == true ? 'إلغاء التحقق' : 'تحقق'),
+                      doctor.verified == true ? 'إلغاء التحقق' : 'تحقق',
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'delete',
@@ -868,16 +834,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${transaction.amount.toStringAsFixed(2)} ${transaction
-                          .currency.name}',
+                      '${transaction.amount.toStringAsFixed(2)} ${transaction.currency.name}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      'عمولة: ${transaction.commission.toStringAsFixed(
-                          2)} ${transaction.currency.name}',
+                      'عمولة: ${transaction.commission.toStringAsFixed(2)} ${transaction.currency.name}',
                       style: const TextStyle(
                         color: Colors.green,
                         fontSize: 14,
@@ -889,10 +853,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               ),
               Text(
                 _formatDateTime(transaction.createdAt),
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
           ),
@@ -901,11 +862,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     );
   }
 
-  Widget _buildSettingsTab() {
+  Widget _buildSettingsTab(ThemeCubit themeCubit) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          _buildAppearanceSection(context, themeCubit),
           _buildSettingsCard(
             title: 'إعدادات النظام',
             items: [
@@ -959,7 +921,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -974,14 +935,40 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ...items,
         ],
+      ),
+    );
+  }
+
+  Widget _buildAppearanceSection(BuildContext context, ThemeCubit themeCubit) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('المظهر', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            BlocBuilder<ThemeCubit, ThemeData>(
+              builder: (context, state) {
+                return ListTile(
+                  leading: const Icon(Icons.brightness_6),
+                  title: const Text('الوضع الليلي'),
+                  subtitle: const Text('تفعيل الوضع المظلم'),
+                  trailing: Switch(
+                    value: themeCubit.isDark,
+                    onChanged: (value) async => themeCubit.toggleTheme(value),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1001,10 +988,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         ),
         child: Icon(icon, color: const Color(0xFF7C3AED)),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
@@ -1046,79 +1030,76 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   void _showUserDetails(UserModel user) {
     showDialog(
       context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: Text(user.name),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('البريد الإلكتروني: ${user.email}'),
-                Text('الهاتف: ${user.phone}'),
-                Text('العملة: ${user.currency.name}'),
-                Text('رصيد المحفظة: ${user.walletBalance.toStringAsFixed(2)}'),
-                Text('تاريخ التسجيل: ${_formatDateTime(user.createdAt)}'),
-                if (user.role == 'doctor') ...[
-                  Text('التخصص: ${user.specialization ?? 'غير محدد'}'),
-                  Text(
-                      'التحقق: ${user.verified == true ? 'محقق' : 'غير محقق'}'),
-                  if (user.rating != null)
-                    Text('التقييم: ${user.rating!.toStringAsFixed(1)}'),
-                ],
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('إغلاق'),
-              ),
+      builder: (context) => AlertDialog(
+        title: Text(user.name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('البريد الإلكتروني: ${user.email}'),
+            Text('الهاتف: ${user.phone}'),
+            Text('العملة: ${user.currency.name}'),
+            Text('رصيد المحفظة: ${user.walletBalance.toStringAsFixed(2)}'),
+            Text('تاريخ التسجيل: ${_formatDateTime(user.createdAt)}'),
+            if (user.role == 'doctor') ...[
+              Text('التخصص: ${user.specialization ?? 'غير محدد'}'),
+              Text('التحقق: ${user.verified == true ? 'محقق' : 'غير محقق'}'),
+              if (user.rating != null)
+                Text('التقييم: ${user.rating!.toStringAsFixed(1)}'),
             ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إغلاق'),
           ),
+        ],
+      ),
     );
   }
 
   void _showDeleteUserDialog(UserModel user) {
     showDialog(
       context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: const Text('تأكيد الحذف'),
-            content: Text('هل أنت متأكد من حذف المستخدم "${user.name}"؟'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await _firestoreService.deleteUser(user.uid);
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('تم حذف المستخدم بنجاح'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('خطأ في حذف المستخدم: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('حذف', style: TextStyle(color: Colors.white)),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('تأكيد الحذف'),
+        content: Text('هل أنت متأكد من حذف المستخدم "${user.name}"؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
           ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await _firestoreService.deleteUser(user.uid);
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('تم حذف المستخدم بنجاح'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('خطأ في حذف المستخدم: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('حذف', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1145,7 +1126,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                verified ? 'تم تحقق الطبيب بنجاح' : 'تم إلغاء تحقق الطبيب'),
+              verified ? 'تم تحقق الطبيب بنجاح' : 'تم إلغاء تحقق الطبيب',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -1166,75 +1148,75 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     final controller = TextEditingController(text: '12');
     showDialog(
       context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: const Text('تحديث نسبة العمولة'),
-            content: TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'نسبة العمولة (%)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement commission update
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('تم تحديث نسبة العمولة'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                },
-                child: const Text('حفظ'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('تحديث نسبة العمولة'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'نسبة العمولة (%)',
+            border: OutlineInputBorder(),
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // TODO: Implement commission update
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('تم تحديث نسبة العمولة'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('حفظ'),
+          ),
+        ],
+      ),
     );
   }
 
   void _showLogoutDialog() {
     showDialog(
       context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: const Text('تسجيل الخروج'),
-            content: const Text('هل أنت متأكد من رغبتك في تسجيل الخروج؟'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    final authController = ref.read(authControllerProvider);
-                    await authController.signOut();
-                    if (mounted) {
-                      context.go('/');
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('خطأ في تسجيل الخروج: $e')),
-                      );
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text(
-                    'تسجيل الخروج', style: TextStyle(color: Colors.white)),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('تسجيل الخروج'),
+        content: const Text('هل أنت متأكد من رغبتك في تسجيل الخروج؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
           ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                final authController = ref.read(authControllerProvider);
+                await authController.signOut();
+                if (mounted) {
+                  context.go('/');
+                }
+              } catch (e) {
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('خطأ في تسجيل الخروج: $e')),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text(
+              'تسجيل الخروج',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1242,185 +1224,184 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   void _showVerificationDocuments(UserModel doctor) {
     showDialog(
       context: context,
-      builder: (context) =>
-          Dialog(
-            child: Container(
-              width: MediaQuery
-                  .of(context)
-                  .size
-                  .width * 0.9,
-              height: MediaQuery
-                  .of(context)
-                  .size
-                  .height * 0.8,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (context) => Dialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.8,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.verified_user, color: Colors.blue[600]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'ملفات التحقق - د. ${doctor.name}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  const SizedBox(height: 16),
-
-                  // Verification Status
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: doctor.verified == true ? Colors.green[50] : Colors
-                          .orange[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: doctor.verified == true
-                            ? Colors.green[200]!
-                            : Colors.orange[200]!,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          doctor.verified == true ? Icons.check_circle : Icons
-                              .pending,
-                          color: doctor.verified == true ? Colors.green : Colors
-                              .orange,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          doctor.verified == true
-                              ? 'طبيب محقق'
-                              : 'في انتظار التحقق',
-                          style: TextStyle(
-                            color: doctor.verified == true
-                                ? Colors.green[700]
-                                : Colors.orange[700],
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Certificates Section
+                  Icon(Icons.verified_user, color: Colors.blue[600]),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'الشهادات والمؤهلات:',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          if (doctor.certificates != null &&
-                              doctor.certificates!.isNotEmpty)
-                            LocalFilesList(
-                              filePaths: doctor.certificates!,
-                              onFileSelected: (filePath) {
-                                _showFullScreenImage(filePath);
-                              },
-                            )
-                          else
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Center(
-                                child: Column(
-                                  children: [
-                                    Icon(Icons.folder_open, size: 48,
-                                        color: Colors.grey),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'لم يتم رفع أي شهادات بعد',
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
+                    child: Text(
+                      'ملفات التحقق - د. ${doctor.name}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Action Buttons
-                  Row(
-                    children: [
-                      if (doctor.verified != true)
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _verifyDoctor(doctor, true);
-                            },
-                            icon: const Icon(Icons.check),
-                            label: const Text('موافقة وتحقق'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                      if (doctor.verified != true) const SizedBox(width: 12),
-                      if (doctor.verified == true)
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _verifyDoctor(doctor, false);
-                            },
-                            icon: const Icon(Icons.cancel),
-                            label: const Text('إلغاء التحقق'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                      if (doctor.verified == true) const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close),
-                          label: const Text('إغلاق'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[600],
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
                   ),
                 ],
               ),
-            ),
+              const Divider(),
+              const SizedBox(height: 16),
+
+              // Verification Status
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: doctor.verified == true
+                      ? Colors.green[50]
+                      : Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: doctor.verified == true
+                        ? Colors.green[200]!
+                        : Colors.orange[200]!,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      doctor.verified == true
+                          ? Icons.check_circle
+                          : Icons.pending,
+                      color: doctor.verified == true
+                          ? Colors.green
+                          : Colors.orange,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      doctor.verified == true
+                          ? 'طبيب محقق'
+                          : 'في انتظار التحقق',
+                      style: TextStyle(
+                        color: doctor.verified == true
+                            ? Colors.green[700]
+                            : Colors.orange[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Certificates Section
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'الشهادات والمؤهلات:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      if (doctor.certificates != null &&
+                          doctor.certificates!.isNotEmpty)
+                        LocalFilesList(
+                          filePaths: doctor.certificates!,
+                          onFileSelected: (filePath) {
+                            _showFullScreenImage(filePath);
+                          },
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Center(
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.folder_open,
+                                  size: 48,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'لم يتم رفع أي شهادات بعد',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Action Buttons
+              Row(
+                children: [
+                  if (doctor.verified != true)
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _verifyDoctor(doctor, true);
+                        },
+                        icon: const Icon(Icons.check),
+                        label: const Text('موافقة وتحقق'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  if (doctor.verified != true) const SizedBox(width: 12),
+                  if (doctor.verified == true)
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _verifyDoctor(doctor, false);
+                        },
+                        icon: const Icon(Icons.cancel),
+                        label: const Text('إلغاء التحقق'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  if (doctor.verified == true) const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                      label: const Text('إغلاق'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[600],
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -1428,29 +1409,24 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   void _showFullScreenImage(String filePath) {
     showDialog(
       context: context,
-      builder: (context) =>
-          Dialog(
-            backgroundColor: Colors.black,
-            child: Stack(
-              children: [
-                Center(
-                  child: LocalFileViewer(
-                    filePath: filePath,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                Positioned(
-                  top: 40,
-                  right: 20,
-                  child: IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
-                        Icons.close, color: Colors.white, size: 30),
-                  ),
-                ),
-              ],
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            Center(
+              child: LocalFileViewer(filePath: filePath, fit: BoxFit.contain),
             ),
-          ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1477,12 +1453,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           return const Center(child: CircularProgressIndicator());
         }
 
-        final stats = snapshot.data ?? {
-          'totalRatings': 0,
-          'averageRating': 0.0,
-          'ratingDistribution': <String, int>{},
-          'recentRatings': 0,
-        };
+        final stats =
+            snapshot.data ??
+            {
+              'totalRatings': 0,
+              'averageRating': 0.0,
+              'ratingDistribution': <String, int>{},
+              'recentRatings': 0,
+            };
 
         return Row(
           children: [
@@ -1511,8 +1489,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     );
   }
 
-  Widget _buildRatingStatCard(String value, String label, IconData icon,
-      Color color, Color backgroundColor) {
+  Widget _buildRatingStatCard(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+    Color backgroundColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1535,10 +1518,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: color.withOpacity(0.8),
-            ),
+            style: TextStyle(fontSize: 12, color: color.withOpacity(0.8)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1552,10 +1532,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       children: [
         const Text(
           'جميع التقييمات',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         StreamBuilder<List<RatingModel>>(
@@ -1589,10 +1566,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     SizedBox(height: 16),
                     Text(
                       'لا توجد تقييمات حتى الآن',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -1619,7 +1593,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -1645,8 +1618,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 child: Text(
                   rating.role == 'doctor' ? 'تقييم طبيب' : 'تقييم مريض',
                   style: TextStyle(
-                    color: rating.role == 'doctor' ? Colors.blue[700] : Colors
-                        .green[700],
+                    color: rating.role == 'doctor'
+                        ? Colors.blue[700]
+                        : Colors.green[700],
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1695,10 +1669,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       const SizedBox(height: 4),
                       Text(
                         'إلى: ${toUser?.name ?? 'مستخدم غير معروف'}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
                   );
@@ -1711,25 +1682,19 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: Colors.grey,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 rating.comment!,
-                style: TextStyle(
-                  color: Colors.grey[700],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[700], fontSize: 14),
               ),
             ),
           ],
           const SizedBox(height: 8),
           Text(
             _formatDateTime(rating.createdAt),
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey[500], fontSize: 12),
           ),
         ],
       ),
