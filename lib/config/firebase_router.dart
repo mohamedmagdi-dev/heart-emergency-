@@ -43,12 +43,8 @@ import '../features/patient/screens/rate_doctor_screen.dart';
 import '../features/patient/screens/rated_doctors_screen.dart';
 import '../features/patient/screens/request_history_screen.dart';
 import '../features/patient/screens/request_tracking_screen.dart'; // FIXED: Added import
-import '../features/patient/screens/simple_appointment_screen.dart';
-import '../features/patient/screens/simple_payment_screen.dart';
-import '../features/patient/screens/simple_wallet_screen.dart';
 import '../features/splash/splash_screen.dart';
 
-// Wallet - removed, using simple wallet screen instead
 
 // Auth guard to check user authentication and role
 Future<String?> _authGuard(
@@ -111,12 +107,74 @@ Future<String?> _authGuard(
 // Create app router with Firebase authentication
 GoRouter createFirebaseRouter() {
   return GoRouter(
+    // initialLocation: '/splash',
+    // redirect: (context, state) async {
+    //   final user = FirebaseAuth.instance.currentUser;
+    //   final path = state.uri.toString();
+    //
+    //   // If user is logged in and trying to access splash, home, or auth pages
+    //   if (user != null &&
+    //       (path == '/splash' ||
+    //           path == '/' ||
+    //           path == '/patient/auth' ||
+    //           path == '/doctor/auth' ||
+    //           path == '/admin/login')) {
+    //     try {
+    //       final userDoc = await FirebaseFirestore.instance
+    //           .collection('users')
+    //           .doc(user.uid)
+    //           .get();
+    //
+    //       if (userDoc.exists) {
+    //         final role = userDoc.data()?['role'];
+    //         final isVerified = userDoc.data()?['verified'] ?? false;
+    //         final isBlocked = userDoc.data()?['isBlocked'] ?? false;
+    //
+    //         // If user is blocked, sign out and redirect to home
+    //         if (isBlocked) {
+    //           await FirebaseAuth.instance.signOut();
+    //           return '/';
+    //         }
+    //
+    //         // Redirect based on role
+    //         if (role == 'patient') return '/patient/dashboard';
+    //         if (role == 'doctor') {
+    //           return isVerified
+    //               ? '/doctor/dashboard'
+    //               : '/doctor/pending-verification';
+    //         }
+    //         if (role == 'admin') return '/admin/dashboard';
+    //       }
+    //     } catch (e) {
+    //       print('Redirect error: $e');
+    //     }
+    //   }
+    //
+    //   // Public routes
+    //   if (path == '/' ||
+    //       path == '/patient/auth' ||
+    //       path == '/doctor/auth' ||
+    //       path == '/admin/login' ||
+    //       path == '/doctor/forgot-password') {
+    //     return null;
+    //   }
+    //
+    //   // If not logged in, redirect to home
+    //   if (user == null) {
+    //     return '/';
+    //   }
+    //
+    //   return null;
+    // },
     initialLocation: '/splash',
     redirect: (context, state) async {
       final user = FirebaseAuth.instance.currentUser;
       final path = state.uri.toString();
 
-      // If user is logged in and trying to access splash, home, or auth pages
+      // ✅ الإصلاح: تجاهل أي redirect أثناء شاشة السبلاتش
+      if (path == '/splash') return null;
+
+      // ✅ لو المستخدم داخل بالفعل وحاول يروح auth أو splash أو home
       if (user != null &&
           (path == '/splash' ||
               path == '/' ||
@@ -130,17 +188,17 @@ GoRouter createFirebaseRouter() {
               .get();
 
           if (userDoc.exists) {
-            final role = userDoc.data()?['role'];
-            final isVerified = userDoc.data()?['verified'] ?? false;
-            final isBlocked = userDoc.data()?['isBlocked'] ?? false;
+            final data = userDoc.data();
+            final role = data?['role'];
+            final isVerified = data?['verified'] ?? false;
+            final isBlocked = data?['isBlocked'] ?? false;
 
-            // If user is blocked, sign out and redirect to home
             if (isBlocked) {
               await FirebaseAuth.instance.signOut();
               return '/';
             }
 
-            // Redirect based on role
+            // ✅ توجيه حسب الدور
             if (role == 'patient') return '/patient/dashboard';
             if (role == 'doctor') {
               return isVerified
@@ -150,11 +208,11 @@ GoRouter createFirebaseRouter() {
             if (role == 'admin') return '/admin/dashboard';
           }
         } catch (e) {
-          print('Redirect error: $e');
+          debugPrint('Redirect error: $e');
         }
       }
 
-      // Public routes
+      // ✅ المسارات العامة
       if (path == '/' ||
           path == '/patient/auth' ||
           path == '/doctor/auth' ||
@@ -163,13 +221,14 @@ GoRouter createFirebaseRouter() {
         return null;
       }
 
-      // If not logged in, redirect to home
+      // ✅ لو المستخدم مش مسجل دخول
       if (user == null) {
         return '/';
       }
 
       return null;
     },
+
     routes: [
       // splash screen
       GoRoute(
