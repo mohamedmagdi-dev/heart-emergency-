@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:heart_emergency/core/constants/app_colors.dart';
 import 'package:heart_emergency/core/constants/app_strings.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../widgets/custom_container.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -12,21 +12,20 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      backgroundColor: Colors.red,
       body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,   // اتجاه البداية
-              end: Alignment.bottomRight, // اتجاه النهاية
-              colors: [
-                Color(0xFF1E3C72), // أزرق غامق
-                Color(0xFF8E2DE2), // بنفسجي
-                Color(0xFFED213A), // أحمر
-              ],
-            ),
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft, // اتجاه البداية
+            end: Alignment.bottomRight, // اتجاه النهاية
+            colors: [
+              AppColor.lightPrimary,
+              AppColor.lightSecondary,
+              AppColor.lightError,
+            ],
           ),
+        ),
 
         child: Column(
           children: [
@@ -37,7 +36,7 @@ class LoginScreen extends StatelessWidget {
                 fontFamily: 'janna',
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColor.lightOnPrimary,
               ),
             ),
             Text(
@@ -46,7 +45,7 @@ class LoginScreen extends StatelessWidget {
                 fontFamily: 'janna',
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
-                color: Colors.white,
+                color: AppColor.lightOnPrimary,
               ),
             ),
             const SizedBox(height: 30),
@@ -67,49 +66,44 @@ class LoginScreen extends StatelessWidget {
                     width: screenWidth * 0.8,
                     height: 480,
                     buttonText: AppStrings.loginText,
-                    iconColor:Colors.red,
+                    iconColor: Colors.red,
                     onPressed: () {
                       context.push('/patient/login');
-                     // Navigator.push(context, MaterialPageRoute(builder: (context) => PatientLoginPage(),));
+                      // Navigator.push(context, MaterialPageRoute(builder: (context) => PatientLoginPage(),));
                     },
-
                   ),
                   const SizedBox(width: 16),
                   CustomContainer(
-                    circleAvatarIconColor:AppColor.circleAvatarColor2,
+                    circleAvatarIconColor: AppColor.circleAvatarColor2,
                     buttonColor: Colors.red,
                     title: "طبيب",
                     description:
-                    "انضم إلى شبكة الأطباء واحصل على طلبات العلاج المنزلي",
+                        "انضم إلى شبكة الأطباء واحصل على طلبات العلاج المنزلي",
                     image: "assets/images/stethoscope.svg",
                     width: screenWidth * 0.8,
                     height: 480,
                     buttonText: AppStrings.loginText,
-                    iconColor:AppColor.containerButtonColor2,
+                    iconColor: AppColor.containerButtonColor2,
                     onPressed: () {
                       context.push('/doctor/login');
                       //Navigator.push(context, MaterialPageRoute(builder: (context) => DoctorLoginPage(),));
                     },
-
                   ),
                   const SizedBox(width: 16),
                   CustomContainer(
-                    circleAvatarIconColor:AppColor.circleAvatarColor3,
+                    circleAvatarIconColor: AppColor.circleAvatarColor3,
                     buttonColor: Colors.red,
                     title: "مدير",
-                    description:
-                    "إدارة النظام والأطباء ومراقبة جميع العمليات",
+                    description: "إدارة النظام والأطباء ومراقبة جميع العمليات",
                     image: "assets/images/shield.svg",
                     width: screenWidth * 0.8,
                     height: 480,
-                    buttonText:"لوحة التحكم",
-                    iconColor:AppColor.containerButtonColor3,
+                    buttonText: "لوحة التحكم",
+                    iconColor: AppColor.containerButtonColor3,
                     onPressed: () {
                       context.push('/admin/login');
                     },
-
                   ),
-
                 ],
               ),
             ),

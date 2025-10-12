@@ -7,34 +7,28 @@ class SimplePaymentScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('الدفع'),
-        backgroundColor: Colors.red[600],
-        foregroundColor: Colors.white,
-      ),
-      body: const Center(
+      appBar: AppBar(title: const Text('الدفع')),
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.payment,
               size: 80,
-              color: Colors.grey,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               'صفحة الدفع',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'قريباً...',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],

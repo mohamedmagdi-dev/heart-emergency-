@@ -1,32 +1,35 @@
 // Enhanced Emergency Request Screen with Firestore integration
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
-import '../../../data/models/user_model.dart';
+
+import '../../../core/constants/app_colors.dart';
 import '../../../data/models/request_model.dart';
-import '../../../services/firestore_service.dart';
-import '../../../services/fcm_service.dart';
-import '../../../services/request_service.dart';
+import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../services/fcm_service.dart';
+import '../../../services/firestore_service.dart';
+import '../../../services/request_service.dart';
 
 class EmergencyRequestScreen extends ConsumerStatefulWidget {
   const EmergencyRequestScreen({super.key});
 
   @override
-  ConsumerState<EmergencyRequestScreen> createState() => _EmergencyRequestScreenState();
+  ConsumerState<EmergencyRequestScreen> createState() =>
+      _EmergencyRequestScreenState();
 }
 
-class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen> {
+class _EmergencyRequestScreenState
+    extends ConsumerState<EmergencyRequestScreen> {
   final _formKey = GlobalKey<FormState>();
   final _symptomsController = TextEditingController();
   final _notesController = TextEditingController();
   final FirestoreService _firestoreService = FirestoreService();
   final FCMService _fcmService = FCMService();
   final RequestService _requestService = RequestService();
-  
+
   Position? _currentPosition;
   String _locationAddress = 'جاري تحديد الموقع...';
   List<UserModel> _nearbyDoctors = [];
@@ -50,7 +53,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
 
   Future<void> _getCurrentLocation() async {
     setState(() => _isLocationLoading = true);
-    
+
     try {
       // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -92,7 +95,8 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
 
       setState(() {
         _currentPosition = position;
-        _locationAddress = 'الموقع: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+        _locationAddress =
+            'الموقع: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
         _isLocationLoading = false;
       });
 
@@ -108,13 +112,13 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
 
   Future<void> _fetchNearbyDoctors() async {
     if (_currentPosition == null) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       // Get available doctors using the new RequestService
       final doctors = await _requestService.getAvailableDoctors();
-      
+
       setState(() {
         _nearbyDoctors = doctors;
         if (doctors.isNotEmpty) {
@@ -130,7 +134,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
         _selectedDoctor = null;
         _isLoading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -153,7 +157,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
       );
       return;
     }
-    
+
     if (_selectedDoctor == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -163,9 +167,9 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
       );
       return;
     }
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final currentUserAsync = ref.read(currentUserDataProvider);
       final currentUser = currentUserAsync.when(
@@ -176,21 +180,26 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
       if (currentUser == null) {
         throw Exception('لم يتم العثور على بيانات المستخدم');
       }
-      
+
       // Create emergency request using RequestService
       final requestId = await _requestService.createEmergencyRequest(
         doctorId: _selectedDoctor!.uid,
         symptoms: _symptomsController.text.trim(),
         urgencyLevel: _urgencyLevel,
-        patientLocation: GeoPoint(_currentPosition!.latitude, _currentPosition!.longitude),
+        patientLocation: GeoPoint(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+        ),
         patientAddress: _locationAddress,
-        notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+        notes: _notesController.text.trim().isNotEmpty
+            ? _notesController.text.trim()
+            : null,
       );
-      
+
       // Notification is automatically sent by RequestService
-      
+
       if (!mounted) return;
-      
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -198,10 +207,9 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
           backgroundColor: Colors.green,
         ),
       );
-      
+
       // Navigate to request tracking screen
       context.push('/patient/request-tracking/$requestId');
-      
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -218,11 +226,10 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('طلب طوارئ'),
         backgroundColor: Colors.red[600],
-        foregroundColor: Colors.white,
+        foregroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -236,59 +243,67 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.red[50],
+                  color: Theme.of(context).colorScheme.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red[200]!),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning, color: Colors.red[600], size: 24),
+                    Icon(
+                      Icons.warning,
+                      color: Theme.of(context).colorScheme.error,
+                      size: 24,
+                    ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'هذا طلب طوارئ. سيتم إشعار أقرب طبيب متاح فوراً.',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Location Card
               _buildLocationCard(),
-              
+
               const SizedBox(height: 20),
-              
+
               // Symptoms Input
               _buildSymptomsCard(),
-              
+
               const SizedBox(height: 20),
-              
+
               // Urgency Level
               _buildUrgencyCard(),
-              
+
               const SizedBox(height: 20),
-              
+
               // Nearby Doctors
               if (_isLoading)
                 _buildLoadingDoctorsCard()
-              else if (_nearbyDoctors.isNotEmpty) 
+              else if (_nearbyDoctors.isNotEmpty)
                 _buildNearbyDoctorsCard()
-              else if (_currentPosition != null) // FIXED: Show message when no available doctors
+              else if (_currentPosition !=
+                  null) // FIXED: Show message when no available doctors
                 _buildNoAvailableDoctorsCard(),
-              
+
               const SizedBox(height: 20),
-              
+
               // Past Emergency Requests
               _buildPastRequestsSection(),
-              
+
               const SizedBox(height: 30),
-              
+
               // Submit Button
               _buildSubmitButton(),
             ],
@@ -302,7 +317,6 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -323,16 +337,17 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                   color: Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.location_on, color: Colors.red, size: 24),
+                child: const Icon(
+                  Icons.location_on,
+                  color: AppColor.lightPrimary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               const Expanded(
                 child: Text(
                   'الموقع الحالي',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -355,7 +370,9 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
               _locationAddress,
               style: TextStyle(
                 fontSize: 16,
-                color: _currentPosition != null ? Colors.green[700] : Colors.red[700],
+                color: _currentPosition != null
+                    ? Colors.green[700]
+                    : Colors.red[700],
               ),
             ),
           const SizedBox(height: 16),
@@ -381,7 +398,6 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -402,16 +418,17 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.medical_services, color: Colors.blue, size: 24),
+                child: const Icon(
+                  Icons.medical_services,
+                  color: AppColor.lightSecondary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               const Expanded(
                 child: Text(
                   'وصف الأعراض',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -444,7 +461,6 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -465,16 +481,17 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.priority_high, color: Colors.orange, size: 24),
+                child: const Icon(
+                  Icons.priority_high,
+                  color: AppColor.containerButtonColor3,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               const Expanded(
                 child: Text(
                   'مستوى الأولوية',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -517,7 +534,6 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -538,7 +554,11 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                   color: Colors.green.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.local_hospital, color: Colors.green, size: 24),
+                child: const Icon(
+                  Icons.local_hospital,
+                  color: AppColor.containerButtonColor2,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -560,7 +580,8 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
             itemBuilder: (context, index) {
               final doctor = _nearbyDoctors[index];
               final isSelected = _selectedDoctor?.uid == doctor.uid;
-              final distance = _currentPosition != null && doctor.location != null
+              final distance =
+                  _currentPosition != null && doctor.location != null
                   ? _calculateDistance(
                       _currentPosition!.latitude,
                       _currentPosition!.longitude,
@@ -568,16 +589,16 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                       doctor.location!.longitude,
                     )
                   : 0.0;
-              
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? Colors.green : Colors.grey[300]!,
+                    color: isSelected ? Colors.red : Colors.grey[300]!,
                     width: isSelected ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  color: isSelected ? Colors.green[50] : null,
+                  color: isSelected ? Colors.red : null,
                 ),
                 child: ListTile(
                   leading: CircleAvatar(
@@ -616,9 +637,13 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                       if (doctor.rating != null)
                         Row(
                           children: [
-                            Icon(Icons.star, size: 16, color: Colors.amber[600]),
+                            Icon(
+                              Icons.star,
+                              size: 16,
+                              color: Colors.amber[600],
+                            ),
                             const SizedBox(width: 4),
-                            Text('${doctor.rating!.toStringAsFixed(1)}'),
+                            Text(doctor.rating!.toStringAsFixed(1)),
                           ],
                         ),
                     ],
@@ -641,9 +666,12 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: (_isLoading || _nearbyDoctors.isEmpty || _selectedDoctor == null) ? null : _submitEmergencyRequest, // FIXED: Disable if no doctors available or no doctor selected
+        onPressed:
+            (_isLoading || _nearbyDoctors.isEmpty || _selectedDoctor == null)
+            ? null
+            : _submitEmergencyRequest, // FIXED: Disable if no doctors available or no doctor selected
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red[600],
+          backgroundColor: AppColor.lightPrimary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -667,28 +695,28 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                 ],
               )
             : _nearbyDoctors.isEmpty
-                ? const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.warning, size: 24),
-                      SizedBox(width: 12),
-                      Text(
-                        'لا يوجد أطباء متاحون',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.emergency, size: 24),
-                      SizedBox(width: 12),
-                      Text(
-                        'إرسال طلب الطوارئ',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ],
+            ? const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.warning, size: 24),
+                  SizedBox(width: 12),
+                  Text(
+                    'لا يوجد أطباء متاحون',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
+                ],
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.emergency, size: 24),
+                  SizedBox(width: 12),
+                  Text(
+                    'إرسال طلب الطوارئ',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -721,10 +749,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
           const SizedBox(height: 16),
           const Text(
             'جاري البحث عن الأطباء المتاحين...',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
         ],
@@ -767,10 +792,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
           const SizedBox(height: 8),
           Text(
             'جميع الأطباء في منطقتك غير متاحين الآن. يرجى المحاولة لاحقاً أو الاتصال بالطوارئ مباشرة.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
@@ -814,15 +836,20 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
     );
   }
 
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000; // Convert to km
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) /
+        1000; // Convert to km
   }
 
   Widget _buildPastRequestsSection() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -845,28 +872,27 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                 ),
                 child: Icon(
                   Icons.history,
-                  color: Colors.blue[600],
+                  color: AppColor.lightSecondary,
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
               const Text(
                 'طلبات الطوارئ السابقة',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 16),
           StreamBuilder<List<RequestModel>>(
             stream: _requestService.getPatientEmergencyRequests(
-              ref.read(currentUserDataProvider).when(
-                data: (user) => user?.uid ?? '',
-                loading: () => '',
-                error: (_, __) => '',
-              ),
+              ref
+                  .read(currentUserDataProvider)
+                  .when(
+                    data: (user) => user?.uid ?? '',
+                    loading: () => '',
+                    error: (_, __) => '',
+                  ),
             ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -896,10 +922,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                       const SizedBox(height: 8),
                       Text(
                         'لا توجد طلبات سابقة',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
                       ),
                     ],
                   ),
@@ -909,7 +932,9 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: requests.length > 3 ? 3 : requests.length, // Show only last 3
+                itemCount: requests.length > 3
+                    ? 3
+                    : requests.length, // Show only last 3
                 itemBuilder: (context, index) {
                   final request = requests[index];
                   return _buildPastRequestCard(request);
@@ -920,11 +945,13 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
           // Show "View All" button if there are more than 3 requests
           StreamBuilder<List<RequestModel>>(
             stream: _requestService.getPatientEmergencyRequests(
-              ref.read(currentUserDataProvider).when(
-                data: (user) => user?.uid ?? '',
-                loading: () => '',
-                error: (_, __) => '',
-              ),
+              ref
+                  .read(currentUserDataProvider)
+                  .when(
+                    data: (user) => user?.uid ?? '',
+                    loading: () => '',
+                    error: (_, __) => '',
+                  ),
             ),
             builder: (context, snapshot) {
               if (snapshot.hasData && snapshot.data!.length > 3) {
@@ -954,7 +981,6 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
       ),
@@ -981,30 +1007,21 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
               const Spacer(),
               Text(
                 _formatDateTime(request.createdAt),
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             request.symptoms,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(
             'مستوى الأولوية: ${_getUrgencyText(request.urgencyLevel)}',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
           ),
         ],
       ),
@@ -1055,7 +1072,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inMinutes < 1) {
       return 'الآن';
     } else if (difference.inMinutes < 60) {

@@ -3,8 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../data/models/user_model.dart';
+
 import '../../../data/models/request_model.dart';
+import '../../../data/models/user_model.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/request_service.dart';
 import '../../../providers/auth_provider.dart';
@@ -14,10 +16,12 @@ class PatientDashboardScreen extends ConsumerStatefulWidget {
   const PatientDashboardScreen({super.key});
 
   @override
-  ConsumerState<PatientDashboardScreen> createState() => _PatientDashboardScreenState();
+  ConsumerState<PatientDashboardScreen> createState() =>
+      _PatientDashboardScreenState();
 }
 
-class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen> {
+class _PatientDashboardScreenState
+    extends ConsumerState<PatientDashboardScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final RequestService _requestService = RequestService();
   final NotificationRequestService _notificationService = NotificationRequestService();
@@ -27,7 +31,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
     final currentUserAsync = ref.watch(currentUserDataProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: currentUserAsync.when(
         data: (user) {
           if (user == null) {
@@ -110,7 +114,11 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
                         ? NetworkImage(user.profileImage!)
                         : null,
                     child: user.profileImage == null
-                        ? const Icon(Icons.person, size: 30, color: Color(0xFF1E40AF))
+                        ? const Icon(
+                            Icons.person,
+                            size: 30,
+                            color: Color(0xFF1E40AF),
+                          )
                         : null,
                   ),
                   const SizedBox(width: 16),
@@ -129,10 +137,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
                         const SizedBox(height: 4),
                         const Text(
                           'كيف يمكننا مساعدتك اليوم؟',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white70,
-                          ),
+                          style: TextStyle(fontSize: 16, color: Colors.white70),
                         ),
                       ],
                     ),
@@ -176,11 +181,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
             padding: EdgeInsets.all(20),
             child: Row(
               children: [
-                Icon(
-                  Icons.emergency,
-                  size: 48,
-                  color: Colors.white,
-                ),
+                Icon(Icons.emergency, size: 48, color: Colors.white),
                 SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -198,18 +199,12 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
                       SizedBox(height: 4),
                       Text(
                         'اطلب طبيب فوراً',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
-                        ),
+                        style: TextStyle(fontSize: 16, color: Colors.white70),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.white,
-                ),
+                Icon(Icons.arrow_forward_ios, color: Colors.white),
               ],
             ),
           ),
@@ -222,7 +217,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -253,10 +248,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
               const Expanded(
                 child: Text(
                   'رصيد المحفظة',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               TextButton(
@@ -336,13 +328,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'الخدمات السريعة',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text('الخدمات السريعة', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -358,7 +344,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
             final action = actions[index];
             return Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -419,10 +405,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
           children: [
             const Text(
               'الطلبات الأخيرة',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
             TextButton(
@@ -465,10 +448,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
                     SizedBox(height: 16),
                     Text(
                       'لا توجد طلبات حتى الآن',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -522,7 +502,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -538,7 +518,10 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -562,10 +545,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
               const Spacer(),
               Text(
                 _formatDateTime(request.createdAt),
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
           ),
@@ -577,15 +557,13 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
               Expanded(
                 child: Text(
                   'خط العرض: ${request.patientLocation.latitude.toStringAsFixed(4)}, خط الطول: ${request.patientLocation.longitude.toStringAsFixed(4)}',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
                 ),
               ),
             ],
           ),
-          if (request.status == RequestStatus.completed && request.doctorId != null) ...[
+          if (request.status == RequestStatus.completed &&
+              request.doctorId != null) ...[
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -609,7 +587,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -624,10 +602,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
         children: [
           const Text(
             'الإعدادات',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           _buildSettingItem(
@@ -707,15 +682,11 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
     Widget? trailing,
   }) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isDestructive ? Colors.red : Colors.grey[600],
-      ),
+      leading: Icon(icon, color: isDestructive ? Colors.red : Colors.grey[600]),
       title: Text(
         title,
-        style: TextStyle(
-          color: isDestructive ? Colors.red : Colors.black,
-          fontWeight: FontWeight.w500,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: isDestructive ? Colors.red : Colors.grey[600],
         ),
       ),
       trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16),
@@ -743,7 +714,10 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
                     error: (_, __) => null,
                   );
                   if (currentUser != null) {
-                    await _firestoreService.updateUserCurrency(currentUser.uid, currency);
+                    await _firestoreService.updateUserCurrency(
+                      currentUser.uid,
+                      currency,
+                    );
                     ref.invalidate(currentUserDataProvider);
                     if (mounted) {
                       Navigator.pop(context);
@@ -797,7 +771,10 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('تسجيل الخروج', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'تسجيل الخروج',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -823,15 +800,13 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
       //   queryParameters: {'requestId': request.id},
       // );
 
-    await  context.push(
+      await context.push(
         // '/patient/rate-doctor',
         // extra: doctor,
         // queryParameters: {'requestId': request.id},
         '/patient/rate-doctor?requestId=${request.id}',
         extra: doctor,
-
       );
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
