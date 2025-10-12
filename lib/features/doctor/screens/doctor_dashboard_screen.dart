@@ -9,13 +9,10 @@ import '../../../data/models/rating_model.dart';
 import '../../../data/models/request_model.dart';
 import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../services/fcm_service.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/rating_service.dart';
-
 import '../../../services/request_service.dart';
 import '../../notifications/notification_request_service.dart';
-
 
 class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({super.key});
@@ -27,10 +24,10 @@ class DoctorDashboardScreen extends ConsumerStatefulWidget {
 
 class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   final FirestoreService _firestoreService = FirestoreService();
-  final FCMService _fcmService = FCMService();
   final RequestService _requestService = RequestService();
   final RatingService _ratingService = RatingService();
-  final NotificationRequestService _notificationService = NotificationRequestService();
+  final NotificationRequestService _notificationService =
+      NotificationRequestService();
 
   bool _showReviews = true;
 
@@ -155,7 +152,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     );
   }
 
-
   Widget _buildHeader(UserModel user) {
     return Container(
       decoration: const BoxDecoration(
@@ -234,7 +230,11 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                         if (user.rating != null)
                           Row(
                             children: [
-                              Icon(Icons.star, size: 16, color: Colors.amber[300]),
+                              Icon(
+                                Icons.star,
+                                size: 16,
+                                color: Colors.amber[300],
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 user.rating!.toStringAsFixed(1),
@@ -257,7 +257,11 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                         onPressed: () {
                           context.push('/doctor/notifications');
                         },
-                        icon: const Icon(Icons.notifications, size: 30, color: Colors.white),
+                        icon: const Icon(
+                          Icons.notifications,
+                          size: 30,
+                          color: Colors.white,
+                        ),
                       ),
                       StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
@@ -266,8 +270,11 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                             .where('read', isEqualTo: false)
                             .snapshots(),
                         builder: (context, snapshot) {
-                          final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                          if (count == 0) return const SizedBox(); // لو مفيش notifications
+                          final count = snapshot.hasData
+                              ? snapshot.data!.docs.length
+                              : 0;
+                          if (count == 0)
+                            return const SizedBox(); // لو مفيش notifications
                           return Positioned(
                             right: 4,
                             top: 4,
@@ -305,7 +312,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       ),
     );
   }
-
 
   Widget _buildStatusCard(UserModel user) {
     return Container(
@@ -631,7 +637,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -738,7 +743,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       final lat = request.patientLocation.latitude;
@@ -794,78 +798,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               ],
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWalletCard(UserModel user) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet,
-                  color: Colors.blue,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Text(
-                  'رصيد المحفظة',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              TextButton(
-                onPressed: () => context.push('/doctor/wallet'),
-                child: const Text('إدارة المحفظة'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text(
-                '${user.walletBalance.toStringAsFixed(2)} ${user.currency.name}',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
-              ),
-              const Spacer(),
-              ElevatedButton.icon(
-                onPressed: () => context.push('/doctor/wallet/withdraw'),
-                icon: const Icon(Icons.money),
-                label: const Text('سحب الأموال'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -1032,9 +964,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           StreamBuilder<List<RatingModel>>(
             stream: _ratingService.getRatingsByUser(doctorId),
             builder: (context, snapshot) {
-
-
-
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
@@ -1060,7 +989,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -1168,7 +1096,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -1268,6 +1195,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       ),
     );
   }
+
   Future<void> _acceptRequest(RequestModel request) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1294,10 +1222,9 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       await _requestService.acceptEmergencyRequest(request.id);
 
       // 🔔 بعد القبول نرسل إشعار للمريض
-      final currentUser = ref.read(currentUserDataProvider).maybeWhen(
-        data: (u) => u,
-        orElse: () => null,
-      );
+      final currentUser = ref
+          .read(currentUserDataProvider)
+          .maybeWhen(data: (u) => u, orElse: () => null);
 
       await _notificationService.createRequestNotification(
         userId: request.patientId,
@@ -1326,6 +1253,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       }
     }
   }
+
   Future<void> _rejectRequest(RequestModel request) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1352,10 +1280,9 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       await _requestService.rejectEmergencyRequest(request.id);
 
       // 🔔 بعد الرفض نرسل إشعار للمريض
-      final currentUser = ref.read(currentUserDataProvider).maybeWhen(
-        data: (u) => u,
-        orElse: () => null,
-      );
+      final currentUser = ref
+          .read(currentUserDataProvider)
+          .maybeWhen(data: (u) => u, orElse: () => null);
 
       await _notificationService.createRequestNotification(
         userId: request.patientId,
@@ -1384,7 +1311,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       }
     }
   }
-
 
   Future<void> _completeRequest(RequestModel request) async {
     try {

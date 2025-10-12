@@ -1,6 +1,7 @@
 // Rate Patient Screen
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+
 import '../../../data/models/user_model.dart';
 import '../../../services/rating_service.dart';
 
@@ -8,11 +9,7 @@ class RatePatientScreen extends StatefulWidget {
   final UserModel patient;
   final String? requestId;
 
-  const RatePatientScreen({
-    super.key,
-    required this.patient,
-    this.requestId,
-  });
+  const RatePatientScreen({super.key, required this.patient, this.requestId});
 
   @override
   State<RatePatientScreen> createState() => _RatePatientScreenState();
@@ -21,7 +18,7 @@ class RatePatientScreen extends StatefulWidget {
 class _RatePatientScreenState extends State<RatePatientScreen> {
   final RatingService _ratingService = RatingService();
   final TextEditingController _commentController = TextEditingController();
-  
+
   double _rating = 0.0;
   bool _isSubmitting = false;
 
@@ -34,16 +31,12 @@ class _RatePatientScreenState extends State<RatePatientScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text(
           'تقييم المريض',
-          style: TextStyle(
-            fontFamily: 'Janna',
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontFamily: 'Janna', fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Colors.green[600],
         elevation: 0,
       ),
@@ -53,19 +46,19 @@ class _RatePatientScreenState extends State<RatePatientScreen> {
           children: [
             // Patient Info Card
             _buildPatientInfoCard(),
-            
+
             const SizedBox(height: 24),
-            
+
             // Rating Section
             _buildRatingSection(),
-            
+
             const SizedBox(height: 24),
-            
+
             // Comment Section
             _buildCommentSection(),
-            
+
             const SizedBox(height: 32),
-            
+
             // Submit Button
             _buildSubmitButton(),
           ],
@@ -78,7 +71,6 @@ class _RatePatientScreenState extends State<RatePatientScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -156,7 +148,6 @@ class _RatePatientScreenState extends State<RatePatientScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -185,10 +176,8 @@ class _RatePatientScreenState extends State<RatePatientScreen> {
             allowHalfRating: true,
             itemCount: 5,
             itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
-            itemBuilder: (context, _) => Icon(
-              Icons.star,
-              color: Colors.amber[600],
-            ),
+            itemBuilder: (context, _) =>
+                Icon(Icons.star, color: Colors.amber[600]),
             onRatingUpdate: (rating) {
               setState(() {
                 _rating = rating;
@@ -214,7 +203,6 @@ class _RatePatientScreenState extends State<RatePatientScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -303,8 +291,8 @@ class _RatePatientScreenState extends State<RatePatientScreen> {
         toUserId: widget.patient.uid,
         role: 'patient',
         rating: _rating,
-        comment: _commentController.text.trim().isNotEmpty 
-            ? _commentController.text.trim() 
+        comment: _commentController.text.trim().isNotEmpty
+            ? _commentController.text.trim()
             : null,
         requestId: widget.requestId,
       );

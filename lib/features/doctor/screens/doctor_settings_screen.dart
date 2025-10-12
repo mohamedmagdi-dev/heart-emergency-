@@ -626,22 +626,6 @@ class DoctorSettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _changePassword(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('تغيير كلمة المرور'),
-        content: const Text('هذه الميزة قيد التطوير'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showLogoutDialog(
     BuildContext context,
     WidgetRef ref,

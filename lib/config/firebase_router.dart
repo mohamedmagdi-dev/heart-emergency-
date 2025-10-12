@@ -30,13 +30,10 @@ import '../features/doctor/screens/rate_patient_screen.dart';
 import '../features/patient/screens/emergency_request_screen.dart';
 import '../features/patient/screens/medical_file_screen.dart';
 import '../features/patient/screens/nearby_doctors_screen.dart';
-import '../features/patient/screens/patient_notification_screen.dart';
-import '../features/patient/screens/simple_payment_screen.dart';
-import '../features/patient/screens/simple_wallet_screen.dart';
-import '../features/patient/screens/simple_appointment_screen.dart';
 import '../features/patient/screens/patient_appointment.dart';
 // Patient
 import '../features/patient/screens/patient_dashboard_screen.dart';
+import '../features/patient/screens/patient_notification_screen.dart';
 import '../features/patient/screens/patient_requests_screen.dart';
 import '../features/patient/screens/patient_settings_screen.dart';
 import '../features/patient/screens/rate_doctor_screen.dart';
@@ -412,7 +409,7 @@ GoRouter createFirebaseRouter() {
         path: '/doctor/notifications',
         builder: (context, state) {
           return DoctorNotificationsScreen();
-        }
+        },
       ),
 
       // Admin Routes

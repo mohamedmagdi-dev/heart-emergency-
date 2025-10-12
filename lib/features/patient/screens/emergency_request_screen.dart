@@ -9,8 +9,6 @@ import '../../../core/constants/app_colors.dart';
 import '../../../data/models/request_model.dart';
 import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../services/fcm_service.dart';
-import '../../../services/firestore_service.dart';
 import '../../../services/request_service.dart';
 
 class EmergencyRequestScreen extends ConsumerStatefulWidget {
@@ -26,8 +24,6 @@ class _EmergencyRequestScreenState
   final _formKey = GlobalKey<FormState>();
   final _symptomsController = TextEditingController();
   final _notesController = TextEditingController();
-  final FirestoreService _firestoreService = FirestoreService();
-  final FCMService _fcmService = FCMService();
   final RequestService _requestService = RequestService();
 
   Position? _currentPosition;
