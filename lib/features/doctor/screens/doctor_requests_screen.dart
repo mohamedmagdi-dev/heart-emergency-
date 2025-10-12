@@ -1,6 +1,6 @@
 // Doctor requests management screen
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../../data/models/doctor_request_model.dart';
 import '../../../data/models/user_model.dart';
 import '../../../services/doctor_request_service.dart';
@@ -19,16 +19,12 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFEF2F2),
       appBar: AppBar(
         title: const Text(
           'طلبات المرضى',
-          style: TextStyle(
-            fontFamily: 'Janna',
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontFamily: 'Janna', fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Colors.red[600],
         elevation: 0,
       ),
@@ -44,11 +40,7 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red[300],
-                  ),
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
                   const SizedBox(height: 16),
                   Text(
                     'خطأ في تحميل الطلبات',
@@ -80,11 +72,7 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.inbox_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
+                  Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
                     'لا توجد طلبات جديدة',
@@ -125,9 +113,7 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -202,9 +188,9 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
                 );
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Request message
             if (request.message != null && request.message!.isNotEmpty) ...[
               Container(
@@ -230,25 +216,18 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       request.message!,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'Janna',
-                      ),
+                      style: const TextStyle(fontSize: 14, fontFamily: 'Janna'),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
             ],
-            
+
             // Request time
             Row(
               children: [
-                Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: Colors.grey[500],
-                ),
+                Icon(Icons.access_time, size: 16, color: Colors.grey[500]),
                 const SizedBox(width: 4),
                 Text(
                   _formatDateTime(request.createdAt),
@@ -260,18 +239,22 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Action buttons
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : () => _acceptRequest(request),
+                    onPressed: _isLoading
+                        ? null
+                        : () => _acceptRequest(request),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green[600],
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(
+                        context,
+                      ).scaffoldBackgroundColor,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -283,7 +266,9 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text(
@@ -298,7 +283,9 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : () => _rejectRequest(request),
+                    onPressed: _isLoading
+                        ? null
+                        : () => _rejectRequest(request),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red[600],
                       foregroundColor: Colors.white,
@@ -317,7 +304,6 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-
               ],
             ),
           ],
@@ -381,7 +367,7 @@ class _DoctorRequestsScreenState extends State<DoctorRequestsScreen> {
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inMinutes < 1) {
       return 'الآن';
     } else if (difference.inMinutes < 60) {
