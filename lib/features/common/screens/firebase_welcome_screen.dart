@@ -1,6 +1,7 @@
 // Firebase Welcome Screen with Role Selection
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:heart_emergency/core/constants/app_colors.dart';
 
 class FirebaseWelcomeScreen extends StatelessWidget {
   const FirebaseWelcomeScreen({super.key});
@@ -17,37 +18,39 @@ class FirebaseWelcomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Logo
-                const Icon(
+                Icon(
                   Icons.favorite,
                   size: 120,
-                  color: Colors.red,
+                  color: AppColor.lightPrimary,
                 ),
                 const SizedBox(height: 24),
-                
+
                 // App title
-                const Text(
+                Text(
                   'من قلب الطوارئ',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Janna',
-                    color: Colors.red,
+                    color: AppColor.lightPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
-                
-                const Text(
+
+                Text(
                   'خدمات طبية طارئة سريعة وآمنة',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
                     fontFamily: 'Janna',
-                    color: Colors.grey,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
                 const SizedBox(height: 64),
-                
+
                 // Patient button
                 _RoleCard(
                   icon: Icons.person,
@@ -57,7 +60,7 @@ class FirebaseWelcomeScreen extends StatelessWidget {
                   onTap: () => context.go('/patient/auth'),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Doctor button
                 _RoleCard(
                   icon: Icons.local_hospital,
@@ -67,7 +70,7 @@ class FirebaseWelcomeScreen extends StatelessWidget {
                   onTap: () => context.go('/doctor/auth'),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Admin button
                 _RoleCard(
                   icon: Icons.admin_panel_settings,
@@ -76,9 +79,9 @@ class FirebaseWelcomeScreen extends StatelessWidget {
                   color: Colors.orange,
                   onTap: () => context.go('/admin/login'),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Info text
                 Text(
                   'اختر نوع حسابك للمتابعة',
@@ -165,4 +168,3 @@ class _RoleCard extends StatelessWidget {
     );
   }
 }
-

@@ -2,11 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../data/models/user_model.dart';
+
 import '../../../data/models/rating_model.dart';
+import '../../../data/models/user_model.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/rating_service.dart';
-import '../../../providers/auth_provider.dart';
 
 class RatedDoctorsScreen extends ConsumerStatefulWidget {
   const RatedDoctorsScreen({super.key});
@@ -52,27 +53,25 @@ class _RatedDoctorsScreenState extends ConsumerState<RatedDoctorsScreen> {
 
       // Get all ratings by this patient
       final ratings = await _ratingService.getRatingsByPatient(currentUser.uid);
-      
+
       // Get unique doctors and their latest ratings
       final Map<String, RatingModel> doctorRatings = {};
       for (final rating in ratings) {
         doctorRatings[rating.toUserId] = rating;
       }
 
-
       final List<Map<String, dynamic>> ratedDoctors = [];
       for (final entry in doctorRatings.entries) {
         final doctor = await _firestoreService.getUser(entry.key);
         if (doctor != null) {
-          ratedDoctors.add({
-            'doctor': doctor,
-            'rating': entry.value,
-          });
+          ratedDoctors.add({'doctor': doctor, 'rating': entry.value});
         }
       }
 
       // Sort by rating date (most recent first)
-      ratedDoctors.sort((a, b) => b['rating'].createdAt.compareTo(a['rating'].createdAt));
+      ratedDoctors.sort(
+        (a, b) => b['rating'].createdAt.compareTo(a['rating'].createdAt),
+      );
 
       setState(() {
         _ratedDoctors = ratedDoctors;
@@ -203,7 +202,6 @@ class _RatedDoctorsScreenState extends ConsumerState<RatedDoctorsScreen> {
         ],
       ),
       child: Material(
-        color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () => _showRatingDetails(doctor, rating),
@@ -221,7 +219,11 @@ class _RatedDoctorsScreenState extends ConsumerState<RatedDoctorsScreen> {
                           ? NetworkImage(doctor.profileImage!)
                           : null,
                       child: doctor.profileImage == null
-                          ? const Icon(Icons.person, size: 30, color: Colors.amber)
+                          ? const Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Colors.amber,
+                            )
                           : null,
                     ),
                     const SizedBox(width: 16),
@@ -251,7 +253,9 @@ class _RatedDoctorsScreenState extends ConsumerState<RatedDoctorsScreen> {
                             children: [
                               ...List.generate(5, (index) {
                                 return Icon(
-                                  index < rating.rating ? Icons.star : Icons.star_border,
+                                  index < rating.rating
+                                      ? Icons.star
+                                      : Icons.star_border,
                                   size: 16,
                                   color: Colors.amber[600],
                                 );
@@ -273,7 +277,10 @@ class _RatedDoctorsScreenState extends ConsumerState<RatedDoctorsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.amber[100],
                             borderRadius: BorderRadius.circular(12),
@@ -420,7 +427,7 @@ class _RatedDoctorsScreenState extends ConsumerState<RatedDoctorsScreen> {
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inDays > 0) {
       return 'منذ ${difference.inDays} يوم';
     } else if (difference.inHours > 0) {

@@ -1,10 +1,11 @@
 // Medical File Screen for Patients
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/models/user_model.dart';
+
 import '../../../data/models/request_model.dart';
-import '../../../services/firestore_service.dart';
+import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../services/firestore_service.dart';
 
 class MedicalFileScreen extends ConsumerStatefulWidget {
   const MedicalFileScreen({super.key});
@@ -49,11 +50,13 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
       }
 
       // Get patient's medical history (completed requests)
-      final allRequests = await _firestoreService.getPatientRequests(currentUser.uid).first;
+      final allRequests = await _firestoreService
+          .getPatientRequests(currentUser.uid)
+          .first;
       final completedRequests = allRequests
           .where((r) => r.status == RequestStatus.completed)
           .toList();
-      
+
       // Sort by completion date (most recent first)
       completedRequests.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -159,7 +162,6 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -199,18 +201,12 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'رقم الهوية: ${_patient!.uid.substring(0, 8)}...',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'تاريخ التسجيل: ${_formatDate(_patient!.createdAt)}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                   ],
                 ),
@@ -228,10 +224,7 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
       children: [
         const Text(
           'التاريخ الطبي',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         if (_medicalHistory.isEmpty)
@@ -247,10 +240,7 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
                 SizedBox(height: 16),
                 Text(
                   'لا يوجد تاريخ طبي',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -280,7 +270,6 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -321,10 +310,7 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
                     ),
                     Text(
                       _formatDateTime(request.createdAt),
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
                   ],
                 ),
@@ -349,16 +335,10 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
           const SizedBox(height: 12),
           Text(
             'الأعراض:',
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
           const SizedBox(height: 4),
-          Text(
-            request.symptoms,
-            style: const TextStyle(fontSize: 14),
-          ),
+          Text(request.symptoms, style: const TextStyle(fontSize: 14)),
           if (request.doctorId != null) ...[
             const SizedBox(height: 12),
             FutureBuilder<UserModel?>(
@@ -371,10 +351,7 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
                     const SizedBox(width: 4),
                     Text(
                       'الطبيب: ${doctor?.name ?? 'غير محدد'}',
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                   ],
                 );
@@ -388,10 +365,7 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
               const SizedBox(width: 4),
               Text(
                 'الموقع: ${request.patientLocation.latitude.toStringAsFixed(4)}, ${request.patientLocation.longitude.toStringAsFixed(4)}',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
           ),
@@ -405,13 +379,14 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
     final thisMonth = DateTime.now().month;
     final thisYear = DateTime.now().year;
     final thisMonthVisits = _medicalHistory
-        .where((r) => r.createdAt.month == thisMonth && r.createdAt.year == thisYear)
+        .where(
+          (r) => r.createdAt.month == thisMonth && r.createdAt.year == thisYear,
+        )
         .length;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -426,10 +401,7 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
         children: [
           const Text(
             'ملخص الصحة',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
@@ -482,7 +454,12 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -505,10 +482,7 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
         ],
       ),
@@ -546,7 +520,7 @@ class _MedicalFileScreenState extends ConsumerState<MedicalFileScreen> {
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inDays > 0) {
       return 'منذ ${difference.inDays} يوم';
     } else if (difference.inHours > 0) {

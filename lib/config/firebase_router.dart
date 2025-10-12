@@ -1,58 +1,58 @@
 // Firebase-based Router with Authentication Guards
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Common
 import '../data/models/user_model.dart';
-import '../features/common/screens/firebase_welcome_screen.dart';
-
+// Admin
+import '../features/admin/screens/admin_dashboard_screen.dart';
+import '../features/auth/screens/doctor_verification_pending_screen.dart';
+import '../features/auth/screens/firebase_admin_login_screen.dart';
+import '../features/auth/screens/firebase_doctor_auth_screen.dart';
 // Auth
 import '../features/auth/screens/firebase_patient_auth_screen.dart';
-import '../features/auth/screens/firebase_doctor_auth_screen.dart';
-import '../features/auth/screens/firebase_admin_login_screen.dart';
-import '../features/auth/screens/doctor_verification_pending_screen.dart';
-
+import '../features/common/screens/firebase_welcome_screen.dart';
 // Doctor
 import '../features/doctor/screens/doctor_dashboard_screen.dart';
 import '../features/doctor/screens/doctor_emergancy_map.dart';
-import '../features/doctor/screens/doctor_requests_screen.dart';
-import '../features/doctor/screens/doctor_reviews_screen.dart';
 import '../features/doctor/screens/doctor_profile_screen.dart';
 import '../features/doctor/screens/doctor_requests_history_screen.dart';
+import '../features/doctor/screens/doctor_requests_screen.dart';
+import '../features/doctor/screens/doctor_reviews_screen.dart';
 import '../features/doctor/screens/doctor_settings_screen.dart';
 import '../features/doctor/screens/doctor_statistics_screen.dart';
 import '../features/doctor/screens/forget_password_screen.dart';
 import '../features/doctor/screens/rate_patient_screen.dart';
-
+import '../features/patient/screens/emergency_request_screen.dart';
+import '../features/patient/screens/medical_file_screen.dart';
+import '../features/patient/screens/nearby_doctors_screen.dart';
+import '../features/patient/screens/patient_appointment.dart';
 // Patient
 import '../features/patient/screens/patient_dashboard_screen.dart';
-import '../features/patient/screens/emergency_request_screen.dart';
-import '../features/patient/screens/simple_payment_screen.dart';
-import '../features/patient/screens/simple_wallet_screen.dart';
-import '../features/patient/screens/simple_appointment_screen.dart';
-import '../features/patient/screens/patient_appointment.dart';
 import '../features/patient/screens/patient_requests_screen.dart';
-import '../features/patient/screens/request_tracking_screen.dart'; // FIXED: Added import
+import '../features/patient/screens/patient_settings_screen.dart';
 import '../features/patient/screens/rate_doctor_screen.dart';
-import '../features/patient/screens/nearby_doctors_screen.dart';
 import '../features/patient/screens/rated_doctors_screen.dart';
 import '../features/patient/screens/request_history_screen.dart';
-import '../features/patient/screens/medical_file_screen.dart';
-import '../features/patient/screens/patient_settings_screen.dart';
-
-// Admin
-import '../features/admin/screens/admin_dashboard_screen.dart';
+import '../features/patient/screens/request_tracking_screen.dart'; // FIXED: Added import
+import '../features/patient/screens/simple_appointment_screen.dart';
+import '../features/patient/screens/simple_payment_screen.dart';
+import '../features/patient/screens/simple_wallet_screen.dart';
 import '../features/splash/splash_screen.dart';
 
 // Wallet - removed, using simple wallet screen instead
 
 // Auth guard to check user authentication and role
-Future<String?> _authGuard(BuildContext context, GoRouterState state, String requiredRole) async {
+Future<String?> _authGuard(
+  BuildContext context,
+  GoRouterState state,
+  String requiredRole,
+) async {
   final user = FirebaseAuth.instance.currentUser;
-  
+
   if (user == null) {
     // Not logged in, redirect based on role
     if (requiredRole == 'patient') return '/patient/auth';
@@ -67,7 +67,7 @@ Future<String?> _authGuard(BuildContext context, GoRouterState state, String req
         .collection('users')
         .doc(user.uid)
         .get();
-    
+
     if (!userDoc.exists) {
       await FirebaseAuth.instance.signOut();
       return '/';
@@ -111,42 +111,56 @@ GoRouter createFirebaseRouter() {
       final user = FirebaseAuth.instance.currentUser;
       final path = state.uri.toString();
 
-      // Public routes
-      if (path == '/' || 
-          path == '/patient/auth' || 
-          path == '/doctor/auth' || 
-          path == '/admin/login'
-      || path == '/doctor/forgot-password'
-      ) {
-        return null;
-      }
-
-      // If not logged in, redirect to home
-      if (user == null) {
-        return '/';
-      }
-
-      // Auto-redirect logged-in users trying to access auth pages
-      if (path == '/patient/auth' || path == '/doctor/auth' || path == '/admin/login') {
+      // If user is logged in and trying to access splash, home, or auth pages
+      if (user != null &&
+          (path == '/splash' ||
+              path == '/' ||
+              path == '/patient/auth' ||
+              path == '/doctor/auth' ||
+              path == '/admin/login')) {
         try {
           final userDoc = await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .get();
-          
+
           if (userDoc.exists) {
             final role = userDoc.data()?['role'];
             final isVerified = userDoc.data()?['verified'] ?? false;
-            
+            final isBlocked = userDoc.data()?['isBlocked'] ?? false;
+
+            // If user is blocked, sign out and redirect to home
+            if (isBlocked) {
+              await FirebaseAuth.instance.signOut();
+              return '/';
+            }
+
+            // Redirect based on role
             if (role == 'patient') return '/patient/dashboard';
             if (role == 'doctor') {
-              return isVerified ? '/doctor/dashboard' : '/doctor/pending-verification';
+              return isVerified
+                  ? '/doctor/dashboard'
+                  : '/doctor/pending-verification';
             }
             if (role == 'admin') return '/admin/dashboard';
           }
         } catch (e) {
           print('Redirect error: $e');
         }
+      }
+
+      // Public routes
+      if (path == '/' ||
+          path == '/patient/auth' ||
+          path == '/doctor/auth' ||
+          path == '/admin/login' ||
+          path == '/doctor/forgot-password') {
+        return null;
+      }
+
+      // If not logged in, redirect to home
+      if (user == null) {
+        return '/';
       }
 
       return null;
@@ -158,13 +172,11 @@ GoRouter createFirebaseRouter() {
         builder: (context, state) => const SplashScreen(),
       ),
 
-
       // Home/Welcome page
       GoRoute(
         path: '/',
         builder: (context, state) => const FirebaseWelcomeScreen(),
       ),
-
 
       // Patient Auth (Login & Signup)
       GoRoute(
@@ -190,7 +202,7 @@ GoRouter createFirebaseRouter() {
         path: '/admin/login',
         builder: (context, state) => const FirebaseAdminLoginScreen(),
       ),
-// forgetPassword routes
+      // forgetPassword routes
       GoRoute(
         path: '/doctor/forgot-password',
         builder: (context, state) => const ForgotPasswordScreen(),
@@ -252,10 +264,7 @@ GoRouter createFirebaseRouter() {
               body: Center(child: Text('خطأ: لم يتم العثور على بيانات الطبيب')),
             );
           }
-          return RateDoctorScreen(
-            doctor: doctor,
-            requestId: requestId,
-          );
+          return RateDoctorScreen(doctor: doctor, requestId: requestId);
         },
         redirect: (context, state) => _authGuard(context, state, 'patient'),
       ),
@@ -322,10 +331,7 @@ GoRouter createFirebaseRouter() {
               body: Center(child: Text('خطأ: لم يتم العثور على بيانات المريض')),
             );
           }
-          return RatePatientScreen(
-            patient: patient,
-            requestId: requestId,
-          );
+          return RatePatientScreen(patient: patient, requestId: requestId);
         },
         redirect: (context, state) => _authGuard(context, state, 'doctor'),
       ),
@@ -336,12 +342,12 @@ GoRouter createFirebaseRouter() {
         builder: (context, state) => const AdminDashboardScreen(),
         redirect: (context, state) => _authGuard(context, state, 'admin'),
       ),
-      GoRoute(path: '/doctor/reviews',
+      GoRoute(
+        path: '/doctor/reviews',
         builder: (context, state) {
           final doctorId = state.extra as String;
           return DoctorReviewsScreen(doctorId: doctorId);
         },
-
       ),
 
       // GoRoute(
@@ -402,9 +408,8 @@ GoRouter createFirebaseRouter() {
         path: '/doctor/settings',
         builder: (context, state) => const DoctorSettingsScreen(),
       ),
-
     ],
-    
+
     // Error handling
     errorBuilder: (context, state) => Scaffold(
       body: Center(
@@ -428,4 +433,3 @@ GoRouter createFirebaseRouter() {
     ),
   );
 }
-

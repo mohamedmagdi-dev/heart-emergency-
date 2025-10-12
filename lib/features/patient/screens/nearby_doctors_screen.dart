@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../data/models/user_model.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/location_service.dart';
@@ -10,7 +11,8 @@ class NearbyDoctorsScreen extends ConsumerStatefulWidget {
   const NearbyDoctorsScreen({super.key});
 
   @override
-  ConsumerState<NearbyDoctorsScreen> createState() => _NearbyDoctorsScreenState();
+  ConsumerState<NearbyDoctorsScreen> createState() =>
+      _NearbyDoctorsScreenState();
 }
 
 class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
@@ -161,7 +163,7 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
 
   Widget _buildDoctorCard(UserModel doctor) {
     final distance = _calculateDistance(doctor);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -176,7 +178,6 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
         ],
       ),
       child: Material(
-        color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () => _showDoctorDetails(doctor),
@@ -194,7 +195,11 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
                           ? NetworkImage(doctor.profileImage!)
                           : null,
                       child: doctor.profileImage == null
-                          ? const Icon(Icons.person, size: 30, color: Colors.blue)
+                          ? const Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Colors.blue,
+                            )
                           : null,
                     ),
                     const SizedBox(width: 16),
@@ -223,7 +228,11 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Icon(Icons.star, size: 16, color: Colors.amber[600]),
+                                Icon(
+                                  Icons.star,
+                                  size: 16,
+                                  color: Colors.amber[600],
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   doctor.rating!.toStringAsFixed(1),
@@ -250,9 +259,14 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: doctor.available == true ? Colors.green : Colors.red,
+                            color: doctor.available == true
+                                ? Colors.green
+                                : Colors.red,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -268,7 +282,11 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                            Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               '${distance.toStringAsFixed(1)} كم',
@@ -355,7 +373,9 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
             ],
             Text('الحالة: ${doctor.available == true ? 'متاح' : 'غير متاح'}'),
             const SizedBox(height: 8),
-            Text('المسافة: ${_calculateDistance(doctor).toStringAsFixed(1)} كم'),
+            Text(
+              'المسافة: ${_calculateDistance(doctor).toStringAsFixed(1)} كم',
+            ),
           ],
         ),
         actions: [

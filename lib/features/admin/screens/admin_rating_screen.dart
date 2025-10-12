@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../services/rating_service.dart';
+
 import '../../../data/models/rating_model.dart';
-import '../../../data/models/user_model.dart';
+import '../../../services/rating_service.dart';
 
 class AdminRatingsScreen extends StatefulWidget {
-  const AdminRatingsScreen({Key? key}) : super(key: key);
+  const AdminRatingsScreen({super.key});
 
   @override
   State<AdminRatingsScreen> createState() => _AdminRatingsScreenState();
@@ -99,14 +99,20 @@ class _AdminRatingsScreenState extends State<AdminRatingsScreen> {
                   itemCount: ratings.length,
                   itemBuilder: (context, index) {
                     final rating = ratings[index];
-                    final date =
-                    (rating.createdAt ?? DateTime.now());
+                    final date = (rating.createdAt ?? DateTime.now());
 
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       elevation: 2,
                       child: ListTile(
-                        leading: Icon(Icons.star, color: Colors.amber[700], size: 30),
+                        leading: Icon(
+                          Icons.star,
+                          color: Colors.amber[700],
+                          size: 30,
+                        ),
                         title: Text(
                           '⭐ ${rating.rating.toStringAsFixed(1)} - ${rating.role == "doctor" ? "تقييم لدكتور" : "تقييم لمريض"}',
                           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -146,12 +152,14 @@ class _AdminRatingsScreenState extends State<AdminRatingsScreen> {
         children: [
           Icon(icon, color: color, size: 30),
           const SizedBox(height: 5),
-          Text(value,
-              style: TextStyle(
-                color: color,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              )),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           Text(
             label,
             textAlign: TextAlign.center,

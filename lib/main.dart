@@ -90,27 +90,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heart_emergency/services/fcm_service.dart';
-
 import 'package:hive_flutter/adapters.dart';
 
 import 'config/firebase_router.dart';
 import 'core/cache/shared_pref_cache.dart';
 import 'core/cubits/theme_cubit.dart';
-import 'core/cubits/theme_state.dart';
+import 'core/utils/shared_preferences_helper.dart';
 import 'data/local/hive_manager.dart';
 import 'firebase_options.dart';
- // <— import your ThemeCubit
-import 'services/notification_service.dart';
 import 'services/notification_listener.dart';
-
-
+// <— import your ThemeCubit
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
@@ -124,8 +119,10 @@ void main() async {
   final fcmService = FCMService();
   await fcmService.initialize();
 
+  // Initialize SharedPreferencesHelper
+  await SharedPreferencesHelper.init();
+
   final themeCubit = ThemeCubit();
-  await themeCubit.loadTheme();
 
   // ✅ Cache the router once so it doesn't rebuild on theme change
   final router = createFirebaseRouter();
@@ -133,7 +130,9 @@ void main() async {
   // Initialize local notifications service
   // Keep icon default to app launcher icon
   // No UI changes are introduced here
-  await NotificationService().initialize(androidDefaultIcon: '@mipmap/ic_launcher');
+  await NotificationService().initialize(
+    androidDefaultIcon: '@mipmap/ic_launcher',
+  );
 
   // Start Firestore notifications listener after auth is ready
   // If the user is not authenticated, it will no-op
@@ -142,9 +141,7 @@ void main() async {
   runApp(
     BlocProvider.value(
       value: themeCubit,
-      child: ProviderScope(
-        child: EmergencyApp(router: router),
-      ),
+      child: ProviderScope(child: EmergencyApp(router: router)),
     ),
   );
 }
@@ -155,56 +152,19 @@ class EmergencyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, state) {
-        final isDark = state.isDark;
-
+    return BlocBuilder<ThemeCubit, ThemeData>(
+      builder: (context, theme) {
         return Directionality(
           textDirection: TextDirection.rtl,
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'من قلب الطوارئ',
-            routerConfig: router, // ✅ use the cached router here
-            themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
-            theme: ThemeData(
-              primarySwatch: Colors.red,
-              fontFamily: 'Janna',
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.red,
-                brightness: Brightness.light,
-              ),
-              inputDecorationTheme: InputDecorationTheme(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                filled: true,
-                fillColor: Colors.grey[100],
-              ),
-              elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-            darkTheme: ThemeData(
-              brightness: Brightness.dark,
-              primarySwatch: Colors.red,
-              fontFamily: 'Janna',
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.red,
-                brightness: Brightness.dark,
-              ),
-            ),
+            routerConfig: router,
+            theme: theme,
+            themeMode: ThemeMode.system,
           ),
         );
       },
     );
   }
 }
-
-

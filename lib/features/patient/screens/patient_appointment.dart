@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../data/models/user_model.dart';
 import '../../../services/doctor_request_service.dart';
 import '../../../services/firestore_service.dart';
@@ -15,11 +16,12 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
-  final TextEditingController _requestMessageController = TextEditingController();
+  final TextEditingController _requestMessageController =
+      TextEditingController();
 
   final FirestoreService _firestoreService = FirestoreService();
   final DoctorRequestService _doctorRequestService = DoctorRequestService();
-  
+
   List<UserModel> _doctors = [];
   bool _isLoading = false;
   bool _isRequesting = false;
@@ -50,18 +52,18 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل الأطباء: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('خطأ في تحميل الأطباء: $e')));
       }
     }
   }
 
   Future<void> _requestDoctor(String doctorId) async {
     if (_requestMessageController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى كتابة رسالة للطبيب')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('يرجى كتابة رسالة للطبيب')));
       return;
     }
 
@@ -71,18 +73,18 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
         doctorId: doctorId,
         message: _requestMessageController.text.trim(),
       );
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إرسال الطلب بنجاح')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('تم إرسال الطلب بنجاح')));
         _requestMessageController.clear();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في إرسال الطلب: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('خطأ في إرسال الطلب: $e')));
       }
     } finally {
       setState(() => _isRequesting = false);
@@ -99,7 +101,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
           children: [
             Text(
               'اكتب رسالة للطبيب لتوضيح حالتك:',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
             TextField(
@@ -132,62 +134,50 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFEF2F2), // from-red-50 equivalent
       body: SafeArea(
         child: Column(
           children: [
             // Header
             Container(
-              color: Colors.white,
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 16),
-                    // Header content
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                          },
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.arrow_right,
-                                color: Colors.grey,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'العودة للرئيسية',
-                                style: TextStyle(
-                                  fontFamily: 'Janna',
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
+              constraints: const BoxConstraints(maxWidth: 1200),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  // Header content
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.arrow_right,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'العودة للرئيسية',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                        Text(
-                          'حجز موعد طبي',
-                          style: TextStyle(
-                            fontFamily: 'Janna',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[900],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        'حجز موعد طبي',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ),
             ),
+
             // Main content
             Expanded(
               child: SingleChildScrollView(
@@ -200,7 +190,6 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -217,9 +206,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
                                 border: Border(
-                                  bottom: BorderSide(
-                                    color: Colors.grey[100]!,
-                                  ),
+                                  bottom: BorderSide(color: Colors.grey[100]!),
                                 ),
                               ),
                               child: Column(
@@ -227,21 +214,16 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                                 children: [
                                   Text(
                                     'حجز موعد جديد',
-                                    style: TextStyle(
-                                      fontFamily: 'Janna',
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[900],
-                                    ),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.headlineSmall,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     'اختر الطبيب المناسب وحجز موعدك',
-                                    style: TextStyle(
-                                      fontFamily: 'Janna',
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyLarge,
                                   ),
                                 ],
                               ),
@@ -253,43 +235,58 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                                 children: [
                                   // Doctors selection
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'اختر طبيبًا',
-                                        style: TextStyle(
-                                          fontFamily: 'Janna',
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.grey[900],
-                                        ),
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium,
                                       ),
                                       const SizedBox(height: 16),
                                       // Doctors grid
                                       if (_isLoading)
-                                        const Center(child: CircularProgressIndicator())
-                                      else if (_doctors.isEmpty)
                                         const Center(
+                                          child: CircularProgressIndicator(),
+                                        )
+                                      else if (_doctors.isEmpty)
+                                        Center(
                                           child: Text(
                                             'لا توجد أطباء متاحين حالياً',
-                                            style: TextStyle(fontSize: 16),
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleLarge,
                                           ),
                                         )
                                       else
                                         LayoutBuilder(
                                           builder: (context, constraints) {
-                                            final isTablet = constraints.maxWidth > 600;
+                                            final isTablet =
+                                                constraints.maxWidth > 600;
                                             return GridView(
                                               shrinkWrap: true,
-                                              physics: const NeverScrollableScrollPhysics(),
-                                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                                crossAxisCount: isTablet ? 2 : 1,
-                                                crossAxisSpacing: 16,
-                                                mainAxisSpacing: 16,
-                                                childAspectRatio: isTablet ? 2.8 : 2.1,
-                                              ),
+                                              physics:
+                                                  const NeverScrollableScrollPhysics(),
+                                              gridDelegate:
+                                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                                    crossAxisCount: isTablet
+                                                        ? 2
+                                                        : 1,
+                                                    crossAxisSpacing: 16,
+                                                    mainAxisSpacing: 16,
+                                                    childAspectRatio: isTablet
+                                                        ? 2.8
+                                                        : 2.1,
+                                                  ),
                                               children: _doctors
-                                                  .map((doctor) => _buildDoctorCard(doctor))
+                                                  .map(
+                                                    (doctor) =>
+                                                        _buildDoctorCard(
+                                                          context,
+                                                          doctor,
+                                                        ),
+                                                  )
                                                   .toList(),
                                             );
                                           },
@@ -309,25 +306,28 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
-                                      onPressed: _selectedDoctorId != null &&
-                                          _dateController.text.isNotEmpty &&
-                                          _timeController.text.isNotEmpty &&
-                                          _reasonController.text.isNotEmpty
+                                      onPressed:
+                                          _selectedDoctorId != null &&
+                                              _dateController.text.isNotEmpty &&
+                                              _timeController.text.isNotEmpty &&
+                                              _reasonController.text.isNotEmpty
                                           ? () {
-                                        _bookAppointment();
-                                      }
+                                              _bookAppointment();
+                                            }
                                           : null,
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.red[600],
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(vertical: 16),
-                                        textStyle: TextStyle(
-                                          fontFamily: 'Janna',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
                                         ),
+                                        textStyle: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         elevation: 0,
                                       ),
@@ -351,7 +351,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
     );
   }
 
-  Widget _buildDoctorCard(UserModel doctor) {
+  Widget _buildDoctorCard(BuildContext context, UserModel doctor) {
     final isSelected = _selectedDoctorId == doctor.uid;
 
     return Container(
@@ -383,11 +383,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                     color: Colors.blue[100],
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.blue[600],
-                    size: 20,
-                  ),
+                  child: Icon(Icons.person, color: Colors.blue[600], size: 20),
                 ),
                 const SizedBox(width: 12),
                 // Doctor info
@@ -397,36 +393,32 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                     children: [
                       Text(
                         doctor.name,
-                        style: TextStyle(
-                          fontFamily: 'Janna',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[900],
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         doctor.specialization ?? 'غير محدد',
-                        style: TextStyle(
-                          fontFamily: 'Janna',
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        doctor.currency.name,
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 8),
                       // Rating
                       if (doctor.rating != null)
                         Row(
                           children: [
-                            Icon(Icons.star, size: 14, color: Colors.amber[600]),
+                            Icon(
+                              Icons.star,
+                              size: 14,
+                              color: Colors.amber[600],
+                            ),
                             const SizedBox(width: 4),
                             Text(
-                              '${doctor.rating!.toStringAsFixed(1)}',
-                              style: TextStyle(
-                                fontFamily: 'Janna',
-                                color: Colors.grey[500],
-                                fontSize: 10,
-                              ),
+                              doctor.rating!.toStringAsFixed(1),
+                              style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ],
                         ),
@@ -444,18 +436,20 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected ? Colors.red[500]! : Colors.grey[300]!,
+                          color: isSelected
+                              ? Colors.red[500]!
+                              : Colors.grey[300]!,
                           width: 2,
                         ),
                       ),
                       child: isSelected
                           ? Container(
-                        margin: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.red[500],
-                        ),
-                      )
+                              margin: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.red[500],
+                              ),
+                            )
                           : null,
                     ),
                     const SizedBox(height: 8),
@@ -464,11 +458,16 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                       width: 80,
                       height: 32,
                       child: ElevatedButton(
-                        onPressed: _isRequesting ? null : () => _showRequestDialog(doctor),
+                        onPressed: _isRequesting
+                            ? null
+                            : () => _showRequestDialog(doctor),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue[600],
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           textStyle: const TextStyle(fontSize: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(6),
@@ -480,7 +479,9 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                                 height: 12,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Text('طلب طبيب'),
@@ -537,9 +538,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.grey[300]!,
-                          ),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -581,9 +580,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.grey[300]!,
-                          ),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -631,16 +628,11 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Colors.grey[300]!,
-                  ),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Colors.red[500]!,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide(color: Colors.red[500]!, width: 2),
                 ),
                 contentPadding: const EdgeInsets.all(16),
               ),
@@ -660,7 +652,8 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
     );
     if (picked != null) {
       setState(() {
-        _dateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        _dateController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
   }
@@ -680,7 +673,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
   void _bookAppointment() {
     if (_selectedDoctorId != null) {
       final selectedDoctor = _doctors.firstWhere(
-            (doctor) => doctor.uid == _selectedDoctorId,
+        (doctor) => doctor.uid == _selectedDoctorId,
       );
 
       // Show booking confirmation dialog
@@ -694,20 +687,13 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
       builder: (context) => AlertDialog(
         title: Text(
           'تأكيد الحجز',
-          style: TextStyle(
-            fontFamily: 'Janna',
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontFamily: 'Janna', fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.medical_services,
-              color: Colors.blue,
-              size: 48,
-            ),
+            Icon(Icons.medical_services, color: Colors.blue, size: 48),
             const SizedBox(height: 16),
             Text(
               'د. ${doctor.name}',
@@ -720,31 +706,21 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
             const SizedBox(height: 4),
             Text(
               doctor.specialization ?? 'غير محدد',
-              style: TextStyle(
-                fontFamily: 'Janna',
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontFamily: 'Janna', color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
               'التاريخ: ${_dateController.text}',
-              style: TextStyle(
-                fontFamily: 'Janna',
-              ),
+              style: TextStyle(fontFamily: 'Janna'),
             ),
             Text(
               'الوقت: ${_timeController.text}',
-              style: TextStyle(
-                fontFamily: 'Janna',
-              ),
+              style: TextStyle(fontFamily: 'Janna'),
             ),
             const SizedBox(height: 16),
             Text(
               'هل تريد تأكيد حجز الموعد؟',
-              style: TextStyle(
-                fontFamily: 'Janna',
-                fontSize: 14,
-              ),
+              style: TextStyle(fontFamily: 'Janna', fontSize: 14),
               textAlign: TextAlign.center,
             ),
           ],
@@ -761,12 +737,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                     foregroundColor: Colors.grey[600],
                     side: BorderSide(color: Colors.grey[300]!),
                   ),
-                  child: Text(
-                    'إلغاء',
-                    style: TextStyle(
-                      fontFamily: 'Janna',
-                    ),
-                  ),
+                  child: Text('إلغاء', style: TextStyle(fontFamily: 'Janna')),
                 ),
               ),
               const SizedBox(width: 8),
@@ -780,12 +751,7 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                     backgroundColor: Colors.red[600],
                     foregroundColor: Colors.white,
                   ),
-                  child: Text(
-                    'تأكيد',
-                    style: TextStyle(
-                      fontFamily: 'Janna',
-                    ),
-                  ),
+                  child: Text('تأكيد', style: TextStyle(fontFamily: 'Janna')),
                 ),
               ),
             ],
@@ -801,43 +767,27 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
       builder: (context) => AlertDialog(
         title: Text(
           'تم الحجز بنجاح',
-          style: TextStyle(
-            fontFamily: 'Janna',
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontFamily: 'Janna', fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.check_circle,
-              color: Colors.green,
-              size: 48,
-            ),
+            Icon(Icons.check_circle, color: Colors.green, size: 48),
             const SizedBox(height: 16),
             Text(
               'تم حجز موعد مع د. ${doctor.name}',
-              style: TextStyle(
-                fontFamily: 'Janna',
-                fontSize: 16,
-              ),
+              style: TextStyle(fontFamily: 'Janna', fontSize: 16),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'التاريخ: ${_dateController.text}',
-              style: TextStyle(
-                fontFamily: 'Janna',
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontFamily: 'Janna', color: Colors.grey[600]),
             ),
             Text(
               'الوقت: ${_timeController.text}',
-              style: TextStyle(
-                fontFamily: 'Janna',
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontFamily: 'Janna', color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
@@ -863,17 +813,11 @@ class _AppointmentBookingPageState extends State<AppointmentBookingPage> {
                 backgroundColor: Colors.red[600],
                 foregroundColor: Colors.white,
               ),
-              child: Text(
-                'تم',
-                style: TextStyle(
-                  fontFamily: 'Janna',
-                ),
-              ),
+              child: Text('تم', style: TextStyle(fontFamily: 'Janna')),
             ),
           ),
         ],
       ),
     );
   }
-
 }

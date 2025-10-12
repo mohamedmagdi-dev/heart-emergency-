@@ -1,19 +1,20 @@
 // Patient Settings Screen
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/cubits/theme_cubit.dart';
-import '../../../core/cubits/theme_state.dart';
 import '../../../data/models/user_model.dart';
-import '../../../services/firestore_service.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../services/firestore_service.dart';
 
 class PatientSettingsScreen extends ConsumerStatefulWidget {
   const PatientSettingsScreen({super.key});
 
   @override
-  ConsumerState<PatientSettingsScreen> createState() => _PatientSettingsScreenState();
+  ConsumerState<PatientSettingsScreen> createState() =>
+      _PatientSettingsScreenState();
 }
 
 class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
@@ -27,8 +28,6 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('إعدادات المريض'),
-        backgroundColor: Colors.indigo[600],
-        foregroundColor: Colors.white,
         actions: [
           IconButton(
             onPressed: () => _showLogoutDialog(),
@@ -70,153 +69,140 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProfileSection(user),
+          _buildProfileSection(context, user),
           const SizedBox(height: 24),
-          _buildAppearanceSection(themeCubit),
+          _buildAppearanceSection(context, themeCubit),
           const SizedBox(height: 24),
-          _buildCurrencySection(user),
+          _buildCurrencySection(context, user),
           const SizedBox(height: 24),
-          _buildNotificationSection(),
+          _buildNotificationSection(context),
           const SizedBox(height: 24),
-          _buildPrivacySection(),
+          _buildPrivacySection(context),
           const SizedBox(height: 24),
-          _buildAccountSection(),
+          _buildAccountSection(context),
           const SizedBox(height: 24),
-          _buildSupportSection(),
+          _buildSupportSection(context),
         ],
       ),
     );
   }
 
-  Widget _buildProfileSection(UserModel user) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'الملف الشخصي',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+  Widget _buildProfileSection(BuildContext context, UserModel user) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'الملف الشخصي',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.indigo[100],
-                backgroundImage: user.profileImage != null
-                    ? NetworkImage(user.profileImage!)
-                    : null,
-                child: user.profileImage == null
-                    ? const Icon(Icons.person, size: 40, color: Colors.indigo)
-                    : null,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.name,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user.email,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'رقم الهوية: ${user.uid.substring(0, 8)}...',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.secondary.withOpacity(0.1),
+                  backgroundImage: user.profileImage != null
+                      ? NetworkImage(user.profileImage!)
+                      : null,
+                  child: user.profileImage == null
+                      ? Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Theme.of(context).colorScheme.secondary,
+                        )
+                      : null,
                 ),
-              ),
-              IconButton(
-                onPressed: () => _editProfile(user),
-                icon: const Icon(Icons.edit),
-                tooltip: 'تعديل الملف الشخصي',
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppearanceSection(ThemeCubit themeCubit) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'المظهر',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.name,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.email,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'رقم الهوية: ${user.uid.substring(0, 8)}...',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _editProfile(user),
+                  icon: const Icon(Icons.edit),
+                  tooltip: 'تعديل الملف الشخصي',
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          BlocBuilder<ThemeCubit, ThemeState>(
-            builder: (context, state) {
-              return ListTile(
-                leading: const Icon(Icons.brightness_6),
-                title: const Text('الوضع الليلي'),
-                subtitle: const Text('تفعيل الوضع المظلم'),
-                trailing: Switch(
-                  value: state.isDark,
-                  onChanged: (value) async => await themeCubit.setDark(value),
-                ),
-                contentPadding: EdgeInsets.zero,
-              );
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCurrencySection(UserModel user) {
+  Widget _buildAppearanceSection(BuildContext context, ThemeCubit themeCubit) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'المظهر',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            BlocBuilder<ThemeCubit, ThemeData>(
+              builder: (context, state) {
+                return ListTile(
+                  leading: const Icon(Icons.brightness_6),
+                  title: const Text('الوضع الليلي'),
+                  subtitle: const Text('تفعيل الوضع المظلم'),
+                  trailing: Switch(
+                    value: themeCubit.isDark,
+                    onChanged: (value) async => themeCubit.toggleTheme(value),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrencySection(BuildContext context, UserModel user) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -231,16 +217,13 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
         children: [
           const Text(
             'العملة',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ListTile(
             leading: const Icon(Icons.currency_exchange),
             title: const Text('العملة الحالية'),
-            subtitle: Text('${user.currency.name}'),
+            subtitle: Text(user.currency.name),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () => _showCurrencyDialog(user),
             contentPadding: EdgeInsets.zero,
@@ -250,11 +233,11 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
     );
   }
 
-  Widget _buildNotificationSection() {
+  Widget _buildNotificationSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -269,10 +252,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
         children: [
           const Text(
             'الإشعارات',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ListTile(
@@ -280,7 +260,8 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
             title: const Text('إشعارات الطوارئ'),
             subtitle: const Text('تلقي إشعارات فورية للطوارئ'),
             trailing: Switch(
-              value: true, // This should be connected to actual notification settings
+              value:
+                  true, // This should be connected to actual notification settings
               onChanged: (value) {
                 // Handle notification toggle
               },
@@ -292,7 +273,8 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
             title: const Text('إشعارات الرسائل'),
             subtitle: const Text('تلقي إشعارات الرسائل من الأطباء'),
             trailing: Switch(
-              value: true, // This should be connected to actual notification settings
+              value:
+                  true, // This should be connected to actual notification settings
               onChanged: (value) {
                 // Handle notification toggle
               },
@@ -304,11 +286,11 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
     );
   }
 
-  Widget _buildPrivacySection() {
+  Widget _buildPrivacySection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -323,10 +305,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
         children: [
           const Text(
             'الخصوصية',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ListTile(
@@ -334,7 +313,8 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
             title: const Text('إخفاء الموقع'),
             subtitle: const Text('عدم مشاركة موقعك مع الأطباء'),
             trailing: Switch(
-              value: false, // This should be connected to actual privacy settings
+              value:
+                  false, // This should be connected to actual privacy settings
               onChanged: (value) {
                 // Handle privacy toggle
               },
@@ -346,7 +326,8 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
             title: const Text('الملف الشخصي الخاص'),
             subtitle: const Text('إخفاء معلوماتك الشخصية'),
             trailing: Switch(
-              value: false, // This should be connected to actual privacy settings
+              value:
+                  false, // This should be connected to actual privacy settings
               onChanged: (value) {
                 // Handle privacy toggle
               },
@@ -358,11 +339,11 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
     );
   }
 
-  Widget _buildAccountSection() {
+  Widget _buildAccountSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -377,10 +358,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
         children: [
           const Text(
             'الحساب',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ListTile(
@@ -403,11 +381,11 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
     );
   }
 
-  Widget _buildSupportSection() {
+  Widget _buildSupportSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -422,10 +400,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
         children: [
           const Text(
             'الدعم',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ListTile(
@@ -480,10 +455,15 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
           children: Currency.values.map((currency) {
             return ListTile(
               title: Text(currency.name),
-              trailing: user.currency == currency ? const Icon(Icons.check) : null,
+              trailing: user.currency == currency
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () async {
                 try {
-                  await _firestoreService.updateUserCurrency(user.uid, currency);
+                  await _firestoreService.updateUserCurrency(
+                    user.uid,
+                    currency,
+                  );
                   ref.invalidate(currentUserDataProvider);
                   if (mounted) {
                     Navigator.pop(context);
@@ -528,7 +508,9 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('حذف الحساب'),
-        content: const Text('هل أنت متأكد من رغبتك في حذف الحساب نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'),
+        content: const Text(
+          'هل أنت متأكد من رغبتك في حذف الحساب نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -639,7 +621,10 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('تسجيل الخروج', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'تسجيل الخروج',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),

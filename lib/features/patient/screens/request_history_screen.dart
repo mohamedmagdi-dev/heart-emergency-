@@ -2,17 +2,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../data/models/request_model.dart';
 import '../../../data/models/user_model.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/request_service.dart';
-import '../../../providers/auth_provider.dart';
 
 class RequestHistoryScreen extends ConsumerStatefulWidget {
   const RequestHistoryScreen({super.key});
 
   @override
-  ConsumerState<RequestHistoryScreen> createState() => _RequestHistoryScreenState();
+  ConsumerState<RequestHistoryScreen> createState() =>
+      _RequestHistoryScreenState();
 }
 
 class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
@@ -52,8 +54,10 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
       }
 
       // Get all requests for this patient
-      final requests = await _firestoreService.getPatientRequests(currentUser.uid).first;
-      
+      final requests = await _firestoreService
+          .getPatientRequests(currentUser.uid)
+          .first;
+
       // Sort by creation date (most recent first)
       requests.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -72,13 +76,21 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
   List<RequestModel> get _filteredRequests {
     switch (_selectedFilter) {
       case 'pending':
-        return _requests.where((r) => r.status == RequestStatus.pending).toList();
+        return _requests
+            .where((r) => r.status == RequestStatus.pending)
+            .toList();
       case 'accepted':
-        return _requests.where((r) => r.status == RequestStatus.accepted).toList();
+        return _requests
+            .where((r) => r.status == RequestStatus.accepted)
+            .toList();
       case 'completed':
-        return _requests.where((r) => r.status == RequestStatus.completed).toList();
+        return _requests
+            .where((r) => r.status == RequestStatus.completed)
+            .toList();
       case 'rejected':
-        return _requests.where((r) => r.status == RequestStatus.rejected).toList();
+        return _requests
+            .where((r) => r.status == RequestStatus.rejected)
+            .toList();
       default:
         return _requests;
     }
@@ -126,7 +138,7 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
         itemBuilder: (context, index) {
           final filter = filters[index];
           final isSelected = _selectedFilter == filter['key'];
-          
+
           return Container(
             margin: const EdgeInsets.only(right: 8),
             child: FilterChip(
@@ -197,7 +209,9 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
             const Icon(Icons.history, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              _selectedFilter == 'all' ? 'لا توجد طلبات' : 'لا توجد طلبات بهذا الحالة',
+              _selectedFilter == 'all'
+                  ? 'لا توجد طلبات'
+                  : 'لا توجد طلبات بهذا الحالة',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
@@ -233,7 +247,7 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
     Color statusColor;
     String statusText;
     IconData statusIcon;
-    
+
     switch (request.status) {
       case RequestStatus.pending:
         statusColor = Colors.orange;
@@ -256,7 +270,7 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
         statusIcon = Icons.check_circle_outline;
         break;
     }
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -271,7 +285,6 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
         ],
       ),
       child: Material(
-        color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () => _showRequestDetails(request),
@@ -283,7 +296,10 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -307,10 +323,7 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
                     const Spacer(),
                     Text(
                       _formatDateTime(request.createdAt),
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                      ),
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
                 ),
@@ -346,7 +359,11 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
                       final doctor = snapshot.data;
                       return Row(
                         children: [
-                          const Icon(Icons.person, size: 16, color: Colors.grey),
+                          const Icon(
+                            Icons.person,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'الطبيب: ${doctor?.name ?? 'غير محدد'}',
@@ -370,7 +387,8 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
                         label: const Text('التفاصيل'),
                       ),
                     ),
-                    if (request.status == RequestStatus.completed && request.doctorId != null) ...[
+                    if (request.status == RequestStatus.completed &&
+                        request.doctorId != null) ...[
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
@@ -419,7 +437,9 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
               ),
             ],
             const SizedBox(height: 8),
-            Text('الموقع: ${request.patientLocation.latitude.toStringAsFixed(4)}, ${request.patientLocation.longitude.toStringAsFixed(4)}'),
+            Text(
+              'الموقع: ${request.patientLocation.latitude.toStringAsFixed(4)}, ${request.patientLocation.longitude.toStringAsFixed(4)}',
+            ),
           ],
         ),
         actions: [
@@ -427,7 +447,8 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('إغلاق'),
           ),
-          if (request.status == RequestStatus.completed && request.doctorId != null)
+          if (request.status == RequestStatus.completed &&
+              request.doctorId != null)
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
@@ -485,7 +506,7 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inDays > 0) {
       return 'منذ ${difference.inDays} يوم';
     } else if (difference.inHours > 0) {
