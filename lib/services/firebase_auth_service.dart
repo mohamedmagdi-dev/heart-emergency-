@@ -49,6 +49,7 @@ class FirebaseAuthService {
         verified: role == 'admin', // Admin auto-verified, doctors need manual verification
         certificates: certificates,
         fcmToken: fcmToken,
+        available: false,
       );
 
       await _firestore.collection('users').doc(user.uid).set(userData.toMap());

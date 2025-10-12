@@ -27,8 +27,10 @@ import '../features/doctor/screens/doctor_statistics_screen.dart';
 import '../features/doctor/screens/forget_password_screen.dart';
 import '../features/doctor/screens/rate_patient_screen.dart';
 import '../features/patient/screens/emergency_request_screen.dart';
-import '../features/patient/screens/medical_file_screen.dart';
-import '../features/patient/screens/nearby_doctors_screen.dart';
+import '../features/patient/screens/patient_notification_screen.dart';
+import '../features/patient/screens/simple_payment_screen.dart';
+import '../features/patient/screens/simple_wallet_screen.dart';
+import '../features/patient/screens/simple_appointment_screen.dart';
 import '../features/patient/screens/patient_appointment.dart';
 // Patient
 import '../features/patient/screens/patient_dashboard_screen.dart';
@@ -183,6 +185,13 @@ GoRouter createFirebaseRouter() {
         path: '/patient/auth',
         builder: (context, state) => const FirebasePatientAuthScreen(),
       ),
+      GoRoute(
+        path: '/patient/notifications',
+        builder: (context, state) {
+          final userId = state.extra as String;
+          return PatientNotificationsScreen(userId: userId);
+        },
+      ),
 
       // Doctor Auth (Login & Signup)
       GoRoute(
@@ -334,6 +343,14 @@ GoRouter createFirebaseRouter() {
           return RatePatientScreen(patient: patient, requestId: requestId);
         },
         redirect: (context, state) => _authGuard(context, state, 'doctor'),
+      ),
+
+      // doctor notification routes
+      GoRoute(
+        path: '/doctor/notifications',
+        builder: (context, state) {
+          return DoctorNotificationsScreen();
+        }
       ),
 
       // Admin Routes

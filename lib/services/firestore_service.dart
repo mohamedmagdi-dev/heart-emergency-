@@ -15,6 +15,7 @@ class FirestoreService {
   static const String usersCollection = 'users';
   static const String requestsCollection = 'requests';
   static const String transactionsCollection = 'transactions';
+  static const String notificationsCollection = 'notifications';
 
   // ==================== USER OPERATIONS ====================
 
@@ -79,49 +80,94 @@ class FirestoreService {
             .toList());
   }
 
-  // Get nearby doctors
+  // // Get nearby doctors
+  // Future<List<UserModel>> getNearbyDoctors({
+  //   required double latitude,
+  //   required double longitude,
+  //   double radiusKm = 50.0,
+  // }) async {
+  //   try {
+  //     // First try the optimized query with composite index
+  //     try {
+  //       final snapshot = await _firestore
+  //           .collection(usersCollection)
+  //           .where('role', isEqualTo: 'doctor')
+  //           .where('verified', isEqualTo: true)
+  //           .where('available', isEqualTo: true)
+  //           .get();
+  //
+  //       final doctors = snapshot.docs
+  //           .map((doc) => UserModel.fromMap(doc.data()))
+  //           .where((doctor) => doctor.location != null)
+  //           .toList();
+  //
+  //       return _filterAndSortDoctorsByDistance(doctors, latitude, longitude, radiusKm);
+  //     } catch (e) {
+  //       // Fallback: Get all doctors and filter in memory if composite index is missing
+  //       print('Composite index missing, falling back to memory filtering: $e');
+  //
+  //       final snapshot = await _firestore
+  //           .collection(usersCollection)
+  //           .where('role', isEqualTo: 'doctor')
+  //           .where('verified', isEqualTo: true)
+  //           .get();
+  //
+  //       final allDoctors = snapshot.docs
+  //           .map((doc) => UserModel.fromMap(doc.data()))
+  //           .where((doctor) => doctor.location != null)
+  //           .toList();
+  //
+  //       // Filter by availability in memory
+  //       final availableDoctors = allDoctors.where((doctor) => doctor.available == true).toList();
+  //
+  //       return _filterAndSortDoctorsByDistance(availableDoctors, latitude, longitude, radiusKm);
+  //     }
+  //   } catch (e) {
+  //     throw 'فشل في جلب الأطباء القريبين: $e';
+  //   }
+  // }
+  // In firestore_service.dart, replace the old getNearbyDoctors function with this one
+
+  // Get nearby doctors (Correct and Efficient Version)
   Future<List<UserModel>> getNearbyDoctors({
     required double latitude,
     required double longitude,
-    double radiusKm = 50.0,
+    // double radiusKm = 50.0,
+    double radiusKm = 5000.0,
   }) async {
+    // Convert radius from km to degrees for a rough bounding box
+    // This creates a square area around the user to query
+    double latRange = radiusKm / 111.0;
+    double lonRange = radiusKm / (111.0 * cos(latitude * (pi / 180.0)));
+
+    GeoPoint lowerBound = GeoPoint(latitude - latRange, longitude - lonRange);
+    GeoPoint upperBound = GeoPoint(latitude + latRange, longitude + lonRange);
+
     try {
-      // First try the optimized query with composite index
-      try {
-        final snapshot = await _firestore
-            .collection(usersCollection)
-            .where('role', isEqualTo: 'doctor')
-            .where('verified', isEqualTo: true)
-            .where('available', isEqualTo: true)
-            .get();
+      // This query is much more efficient. It asks Firestore for doctors
+      // ONLY within the geographic square (bounding box).
+      final snapshot = await _firestore
+          .collection(usersCollection)
+          .where('role', isEqualTo: 'doctor')
+          .where('verified', isEqualTo: true)
+          .where('available', isEqualTo: true)
+          .where('location', isGreaterThan: lowerBound)
+          .where('location', isLessThan: upperBound)
+          .get();
 
-        final doctors = snapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data()))
-            .where((doctor) => doctor.location != null)
-            .toList();
+      // Now we have a much smaller list of potential doctors
+      final doctorsInBox = snapshot.docs
+          .map((doc) => UserModel.fromMap(doc.data()))
+          .toList();
 
-        return _filterAndSortDoctorsByDistance(doctors, latitude, longitude, radiusKm);
-      } catch (e) {
-        // Fallback: Get all doctors and filter in memory if composite index is missing
-        print('Composite index missing, falling back to memory filtering: $e');
-        
-        final snapshot = await _firestore
-            .collection(usersCollection)
-            .where('role', isEqualTo: 'doctor')
-            .where('verified', isEqualTo: true)
-            .get();
+      // Use your existing helper function to do the final precise filtering
+      // (to make the square a circle) and sort them by distance.
+      return _filterAndSortDoctorsByDistance(doctorsInBox, latitude, longitude, radiusKm);
 
-        final allDoctors = snapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data()))
-            .where((doctor) => doctor.location != null)
-            .toList();
-
-        // Filter by availability in memory
-        final availableDoctors = allDoctors.where((doctor) => doctor.available == true).toList();
-        
-        return _filterAndSortDoctorsByDistance(availableDoctors, latitude, longitude, radiusKm);
-      }
     } catch (e) {
+      print('Error fetching nearby doctors: $e');
+      // The error message in the debug console will likely contain a link
+      // to create the necessary composite index in your Firestore database.
       throw 'فشل في جلب الأطباء القريبين: $e';
     }
   }
@@ -168,14 +214,15 @@ class FirestoreService {
   }
 
   // Update doctor verification status
-  Future<void> updateDoctorVerification(String doctorId, bool verified) async {
-    try {
-      await updateUser(doctorId, {'verified': verified});
-    } catch (e) {
-      throw 'فشل في تحديث حالة التحقق: $e';
-    }
-  }
-
+  //correct version
+  // Future<void> updateDoctorVerification(String doctorId, bool verified) async {
+  //   try {
+  //     await updateUser(doctorId, {'verified': verified});
+  //   } catch (e) {
+  //     throw 'فشل في تحديث حالة التحقق: $e';
+  //   }
+  // }
+  //
   // Update user currency
   Future<void> updateUserCurrency(String uid, Currency currency) async {
     try {
@@ -184,6 +231,24 @@ class FirestoreService {
       throw 'فشل في تحديث العملة: $e';
     }
   }
+  Future<void> updateDoctorVerification(String doctorId, bool verified) async {
+    try {
+      await updateUser(doctorId, {'verified': verified});
+
+      // إرسال إشعار للدكتور بعد التوثيق أو الرفض
+      await sendNotification(
+        userId: doctorId,
+        title: 'حالة التحقق من الحساب',
+        body: verified
+            ? 'تم توثيق حسابك بنجاح ✅'
+            : 'تم رفض توثيق حسابك ❌',
+        type: 'verification_update',
+      );
+    } catch (e) {
+      throw 'فشل في تحديث حالة التحقق: $e';
+    }
+  }
+
 
   // FIXED: Update doctor availability status
   Future<void> updateDoctorAvailability(String doctorId, bool available) async {
@@ -206,16 +271,41 @@ class FirestoreService {
   // ==================== REQUEST OPERATIONS ====================
 
   // Create emergency request
+  //correct
+  // Future<String> createEmergencyRequest(RequestModel request) async {
+  //   try {
+  //     final docRef = await _firestore.collection(requestsCollection).add(request.toMap());
+  //     // Update the request with the generated ID
+  //     await docRef.update({'id': docRef.id});
+  //     return docRef.id;
+  //   } catch (e) {
+  //     throw 'فشل في إنشاء طلب الطوارئ: $e';
+  //   }
+  // }
   Future<String> createEmergencyRequest(RequestModel request) async {
     try {
+      // إنشاء الطلب في Firestore
       final docRef = await _firestore.collection(requestsCollection).add(request.toMap());
-      // Update the request with the generated ID
+
+      // 📢 إرسال إشعار للطبيب (فقط لو doctorId مش null)
+      if (request.doctorId != null) {
+        await sendNotification(
+          userId: request.doctorId!,
+          title: 'طلب جديد من مريض',
+          body: 'مريض جديد أرسل لك طلب استشارة.',
+          type: 'new_request',
+        );
+      }
+
+      // تحديث الطلب بالـ ID الذي تم توليده
       await docRef.update({'id': docRef.id});
+
       return docRef.id;
     } catch (e) {
       throw 'فشل في إنشاء طلب الطوارئ: $e';
     }
   }
+
 
   // FIXED: Get request by ID as stream for real-time updates
   Stream<RequestModel?> getRequestById(String requestId) {
@@ -268,16 +358,58 @@ class FirestoreService {
   }
 
   // Update request status
+  // correct
+  // Future<void> updateRequestStatus(String requestId, RequestStatus status) async {
+  //   try {
+  //     await _firestore.collection(requestsCollection).doc(requestId).update({
+  //       'status': status.name,
+  //       'updatedAt': Timestamp.now(),
+  //     });
+  //   } catch (e) {
+  //     throw 'فشل في تحديث حالة الطلب: $e';
+  //   }
+  // }
   Future<void> updateRequestStatus(String requestId, RequestStatus status) async {
     try {
+      // 1️⃣ نجيب الطلب أولاً علشان نعرف الـ patientId
+      final doc = await _firestore.collection(requestsCollection).doc(requestId).get();
+      if (!doc.exists) throw 'الطلب غير موجود';
+
+      final request = RequestModel.fromMap(doc.data()!, documentId: doc.id);
+
+      // 2️⃣ نحدث حالة الطلب
       await _firestore.collection(requestsCollection).doc(requestId).update({
         'status': status.name,
         'updatedAt': Timestamp.now(),
       });
+
+      // 3️⃣ نرسل إشعار للمريض
+      await sendNotification(
+        userId: request.patientId,
+        title: 'رد على طلبك',
+        body: status == RequestStatus.accepted
+            ? 'تم قبول طلبك من الطبيب ✅'
+            : 'تم رفض طلبك من الطبيب ❌',
+        type: 'request_response',
+      );
+
+      // 4️⃣ (اختياري) نرسل إشعار للطبيب كمان إنه تم تنفيذ الإجراء
+      if (request.doctorId != null) {
+        await sendNotification(
+          userId: request.doctorId!,
+          title: 'تم تحديث حالة الطلب',
+          body: status == RequestStatus.accepted
+              ? 'لقد قبلت طلب المريض بنجاح ✅'
+              : 'لقد رفضت طلب المريض ❌',
+          type: 'doctor_update',
+        );
+      }
+
     } catch (e) {
       throw 'فشل في تحديث حالة الطلب: $e';
     }
   }
+
 
   // Get all requests (for admin)
   Stream<List<RequestModel>> getAllRequests() {
@@ -485,4 +617,25 @@ class FirestoreService {
       throw 'فشل في تحديث حالة الحظر: $e';
     }
   }
+  // ==================== NOTIFICATIONS OPERATIONS ====================
+  Future<void> sendNotification({
+    required String userId,
+    required String title,
+    required String body,
+    required String type,
+  }) async {
+    try {
+      await _firestore.collection(notificationsCollection).add({
+        'userId': userId,
+        'title': title,
+        'body': body,
+        'type': type,
+        'createdAt': FieldValue.serverTimestamp(),
+        'read': false,
+      });
+    } catch (e) {
+      throw 'فشل في إرسال الإشعار: $e';
+    }
+  }
+
 }

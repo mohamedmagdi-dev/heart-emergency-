@@ -65,10 +65,10 @@ class FCMNotificationService {
           .collection('users')
           .doc(userId)
           .get();
-      
+
       final userData = userDoc.data();
       final token = userData?['fcmToken'] as String?;
-      
+
       if (token == null) {
         print('No FCM token found for user: $userId');
         return false;
@@ -94,7 +94,7 @@ class FCMNotificationService {
     Map<String, dynamic>? data,
   }) async {
     final results = <String, bool>{};
-    
+
     for (final userId in userIds) {
       results[userId] = await sendNotificationToUserId(
         userId: userId,
@@ -103,7 +103,7 @@ class FCMNotificationService {
         data: data,
       );
     }
-    
+
     return results;
   }
 
@@ -120,9 +120,9 @@ class FCMNotificationService {
           .where('role', isEqualTo: role)
           .where('fcmToken', isNotEqualTo: null)
           .get();
-      
+
       final userIds = usersSnapshot.docs.map((doc) => doc.id).toList();
-      
+
       return await sendNotificationToMultipleUsers(
         userIds: userIds,
         title: title,

@@ -84,8 +84,10 @@
 //     );
 //   }
 // }
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -97,10 +99,12 @@ import 'core/cache/shared_pref_cache.dart';
 import 'core/cubits/theme_cubit.dart';
 import 'core/utils/shared_preferences_helper.dart';
 import 'data/local/hive_manager.dart';
+import 'features/notifications/notfication_services.dart';
 import 'firebase_options.dart';
 import 'services/notification_listener.dart';
 // <— import your ThemeCubit
 import 'services/notification_service.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -130,13 +134,17 @@ void main() async {
   // Initialize local notifications service
   // Keep icon default to app launcher icon
   // No UI changes are introduced here
-  await NotificationService().initialize(
-    androidDefaultIcon: '@mipmap/ic_launcher',
-  );
+  await NotificationService.init();
 
   // Start Firestore notifications listener after auth is ready
   // If the user is not authenticated, it will no-op
   NotificationListenerService().start();
+  // // تهيئة إشعارات التطبيق
+  // await NotificationService().initialize(
+  //   androidDefaultIcon: '@mipmap/ic_launcher',
+  // );
+
+  // تسجيل background handler
 
   runApp(
     BlocProvider.value(

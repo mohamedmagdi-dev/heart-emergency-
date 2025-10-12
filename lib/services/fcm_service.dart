@@ -12,7 +12,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 class FCMService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = 
+  final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -200,7 +200,7 @@ class FCMService {
         'createdAt': FieldValue.serverTimestamp(),
         'sent': true, // Assuming successful for now
       });
-      
+
       print('Notification queued: $title to token: ${token.substring(0, 20)}...');
     } catch (e) {
       print('Error sending notification: $e');
@@ -219,7 +219,7 @@ class FCMService {
       final userDoc = await _firestore.collection('users').doc(userId).get();
       final userData = userDoc.data();
       final token = userData?['fcmToken'] as String?;
-      
+
       if (token != null) {
         await sendNotificationToUser(
           token: token,
@@ -248,11 +248,11 @@ class FCMService {
           .where('role', isEqualTo: role)
           .where('fcmToken', isNotEqualTo: null)
           .get();
-      
+
       for (final doc in usersSnapshot.docs) {
         final userData = doc.data();
         final token = userData['fcmToken'] as String?;
-        
+
         if (token != null) {
           await sendNotificationToUser(
             token: token,

@@ -1,4 +1,5 @@
 // Patient Dashboard with real Firestore integration
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,8 @@ import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/request_service.dart';
+import '../../../providers/auth_provider.dart';
+import '../../notifications/notification_request_service.dart';
 
 class PatientDashboardScreen extends ConsumerStatefulWidget {
   const PatientDashboardScreen({super.key});
@@ -21,6 +24,7 @@ class _PatientDashboardScreenState
     extends ConsumerState<PatientDashboardScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final RequestService _requestService = RequestService();
+  final NotificationRequestService _notificationService = NotificationRequestService();
 
   @override
   Widget build(BuildContext context) {
@@ -71,13 +75,13 @@ class _PatientDashboardScreenState
                 children: [
                   _buildEmergencyButton(),
                   const SizedBox(height: 16),
-                  _buildWalletCard(user),
+                  // _buildWalletCard(user),
                   const SizedBox(height: 16),
                   _buildQuickActions(),
                   const SizedBox(height: 16),
                   _buildRecentRequests(user.uid),
                   const SizedBox(height: 16),
-                  _buildSettingsCard(),
+                  _buildSettingsCard(user),
                 ],
               ),
             ),
@@ -579,7 +583,7 @@ class _PatientDashboardScreenState
     );
   }
 
-  Widget _buildSettingsCard() {
+  Widget _buildSettingsCard(UserModel user) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -606,11 +610,54 @@ class _PatientDashboardScreenState
             title: 'تغيير العملة',
             onTap: () => _showCurrencyDialog(),
           ),
+          // _buildSettingItem(
+          //   icon: Icons.notifications,
+          //   title: 'إعدادات الإشعارات',
+          //   onTap: () => context.push('/patient/notification-settings'),
+          // ),
           _buildSettingItem(
             icon: Icons.notifications,
-            title: 'إعدادات الإشعارات',
-            onTap: () => context.push('/patient/notification-settings'),
+            title: 'الإشعارات',
+            onTap: () => context.push('/patient/notifications', extra: user.uid),
+            trailing: StreamBuilder<QuerySnapshot>(
+              // stream: _notificationService.getUserNotifications(user.uid),
+             stream: _notificationService.getUnreadUserNotifications(user.uid),
+              builder: (context, snapshot) {
+                // if (!snapshot.hasData) {
+                //   return const SizedBox.shrink();
+                // }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const SizedBox.shrink(); // لو مفيش، اخفي الدايرة
+                }
+
+                final docs = snapshot.data!.docs;
+                final unreadCount = docs
+                    .where((d) => (d.data() as Map<String, dynamic>)['read'] == false)
+                    .length;
+
+                // لو مافيش إشعارات غير مقروءة، ماظهرش أي رقم
+                if (unreadCount == 0) return const SizedBox.shrink();
+
+                // غير كده، رجّع دائرة حمراء فيها العدد
+                return Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    unreadCount.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
+
           _buildSettingItem(
             icon: Icons.settings,
             title: 'الإعدادات',
@@ -632,6 +679,7 @@ class _PatientDashboardScreenState
     required String title,
     required VoidCallback onTap,
     bool isDestructive = false,
+    Widget? trailing,
   }) {
     return ListTile(
       leading: Icon(icon, color: isDestructive ? Colors.red : Colors.grey[600]),
@@ -641,7 +689,7 @@ class _PatientDashboardScreenState
           color: isDestructive ? Colors.red : Colors.grey[600],
         ),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
       contentPadding: EdgeInsets.zero,
     );

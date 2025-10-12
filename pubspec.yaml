@@ -90,16 +90,26 @@ dependencies:
   equatable: ^2.0.7
   # Date and Time
   timeago: ^3.6.1
+  googleapis_auth: ^2.0.0
+  dio: ^5.9.0
   
   # Charts and Analytics
   fl_chart: ^0.66.0
   
   # Crypto for file hashing
   crypto: ^3.0.3
+  # rename of app
+  rename: ^3.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.4
+flutter_icons:
+  android: true
+  ios: true
+  linux: true
+  image_path: assets/images/app_logo.png
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

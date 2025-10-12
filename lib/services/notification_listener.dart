@@ -6,7 +6,8 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'notification_service.dart';
+import '../features/notifications/notfication_services.dart';
+
 
 class NotificationListenerService {
   NotificationListenerService._internal();
@@ -47,11 +48,17 @@ class NotificationListenerService {
 
           // Avoid duplicate delivery if the sender marked delivered
           if (!delivered) {
-            NotificationService().showInstantNotification(
+            // NotificationService().showInstantNotification(
+            //   title: title,
+            //   body: body,
+            //   payload: data['payload']?.toString(),
+            // );
+            NotificationService.showLocalNotification(
               title: title,
               body: body,
               payload: data['payload']?.toString(),
             );
+
 
             // Mark as delivered
             doc.doc.reference.update({'delivered': true}).catchError((_) {

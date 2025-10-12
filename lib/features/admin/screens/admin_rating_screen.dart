@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/rating_model.dart';
-import '../../../services/rating_service.dart';
+
 
 class AdminRatingsScreen extends StatefulWidget {
   const AdminRatingsScreen({super.key});

@@ -623,6 +623,14 @@ class _EmergencyRequestScreenState
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        'العملة: ${doctor.currency.name.isNotEmpty ? doctor.currency.name : 'Not set'}',
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       if (doctor.specialization != null)
                         Text(doctor.specialization!),
                       Text('المسافة: ${distance.toStringAsFixed(1)} كم'),

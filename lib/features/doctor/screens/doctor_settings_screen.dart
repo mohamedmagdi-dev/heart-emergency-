@@ -519,17 +519,19 @@ class DoctorSettingsScreen extends ConsumerWidget {
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.currency_exchange),
-              title: const Text('العملة الحالية'),
-              subtitle: Text(user.currency.name),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () => _showCurrencyDialog(context, ref, user),
-              contentPadding: EdgeInsets.zero,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          ListTile(
+            leading: const Icon(Icons.currency_exchange),
+            title: const Text('العملة الحالية'),
+            // subtitle: Text('${user.currency.name}'),
+            // الكود الجديد
+            subtitle: Text(user.currency.arabicName),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () => _showCurrencyDialog(context, ref, user),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
       ),
     );
   }
@@ -551,26 +553,25 @@ class DoctorSettingsScreen extends ConsumerWidget {
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.lock),
-              title: const Text('تغيير كلمة المرور'),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () => _changePassword(context),
-              contentPadding: EdgeInsets.zero,
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    _showLogoutDialog(context, ref, authController),
-                icon: const Icon(Icons.logout),
-                label: const Text('تسجيل الخروج'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Theme.of(context).colorScheme.onError,
-                ),
+          ),
+          const SizedBox(height: 16),
+          // ListTile(
+          //   leading: const Icon(Icons.lock),
+          //   title: const Text('تغيير كلمة المرور'),
+          //   trailing: const Icon(Icons.arrow_forward_ios),
+          //   onTap: () => _changePassword(context),
+          //   contentPadding: EdgeInsets.zero,
+          // ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _showLogoutDialog(context, ref, authController),
+              icon: const Icon(Icons.logout),
+              label: const Text('تسجيل الخروج'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
               ),
             ),
           ],
@@ -592,10 +593,10 @@ class DoctorSettingsScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: Currency.values.map((currency) {
             return ListTile(
-              title: Text(currency.name),
-              trailing: user.currency == currency
-                  ? const Icon(Icons.check)
-                  : null,
+              // title: Text(currency.name),
+              // الكود الجديد
+              title: Text(currency.arabicName),
+              trailing: user.currency == currency ? const Icon(Icons.check) : null,
               onTap: () async {
                 try {
                   final firestore = FirestoreService();
