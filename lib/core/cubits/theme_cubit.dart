@@ -31,24 +31,46 @@
 //   }
 // }
 
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:heart_emergency/core/cubits/theme_state.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:heart_emergency/core/theme/app_theme.dart';
+import 'package:heart_emergency/core/utils/shared_preferences_helper.dart';
 
-
-class ThemeCubit extends Cubit<ThemeState> {
-  ThemeCubit() : super(const ThemeState(isDark: false));
-
-  Future<void> loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isDark = prefs.getBool('isDarkMode') ?? false;
-    emit(ThemeState(isDark: isDark));
+class ThemeCubit extends Cubit<ThemeData> {
+  ThemeCubit() : super(AppTheme.lightTheme) {
+    _loadTheme();
   }
 
-  Future<void> setDark(bool isDark) async {
-    emit(ThemeState(isDark: isDark));
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', isDark);
+  bool get isDark => state.brightness == Brightness.dark;
+
+  Future<void> _loadTheme() async {
+    try {
+      bool isDark = await SharedPreferencesHelper.getBool("isDarkMode");
+      debugPrint('ThemeCubit: loadTheme isDark: $isDark');
+      emit(isDark ? AppTheme.darkTheme : AppTheme.lightTheme);
+    } catch (e) {
+      debugPrint('ThemeCubit: Error loading theme: $e');
+      emit(AppTheme.lightTheme);
+    }
+  }
+
+  Future<void> toggleTheme(bool isDark) async {
+    try {
+      debugPrint('ThemeCubit: toggleTheme toDark: $isDark');
+      await SharedPreferencesHelper.setBool("isDarkMode", isDark);
+      emit(isDark ? AppTheme.darkTheme : AppTheme.lightTheme);
+    } catch (e) {
+      debugPrint('ThemeCubit: Error toggling theme: $e');
+    }
+  }
+
+  Future<void> setTheme(bool isDark) async {
+    try {
+      debugPrint('ThemeCubit: setTheme isDark: $isDark');
+      await SharedPreferencesHelper.setBool("isDarkMode", isDark);
+      emit(isDark ? AppTheme.darkTheme : AppTheme.lightTheme);
+    } catch (e) {
+      debugPrint('ThemeCubit: Error setting theme: $e');
+    }
   }
 }
-

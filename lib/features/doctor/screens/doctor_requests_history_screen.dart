@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../data/models/request_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/request_service.dart';
-import '../../../data/models/request_model.dart';
 
 class DoctorRequestsHistoryScreen extends ConsumerWidget {
   const DoctorRequestsHistoryScreen({super.key});
@@ -14,9 +15,8 @@ class DoctorRequestsHistoryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('تاريخ الطلبات'),
         backgroundColor: Colors.orange[700],
-        foregroundColor: Colors.white,
+        foregroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
-      backgroundColor: const Color(0xFFF8FAFC),
       body: userAsync.when(
         data: (user) {
           if (user == null) return const Center(child: Text('غير مسجل الدخول'));
@@ -43,10 +43,13 @@ class DoctorRequestsHistoryScreen extends ConsumerWidget {
                   return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
                       ],
                     ),
                     child: Column(
@@ -56,21 +59,41 @@ class DoctorRequestsHistoryScreen extends ConsumerWidget {
                           children: [
                             _statusChip(r.status),
                             const Spacer(),
-                            Text(_formatDateTime(r.createdAt), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                            Text(
+                              _formatDateTime(r.createdAt),
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(r.symptoms, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text(
+                          r.symptoms,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                         const SizedBox(height: 4),
-                        Text('الأولوية: ${r.urgencyLevel}', style: const TextStyle(color: Colors.grey)),
+                        Text(
+                          'الأولوية: ${r.urgencyLevel}',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                            const Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
                             const SizedBox(width: 4),
                             Expanded(
-                              child: Text('(${r.patientLocation.latitude.toStringAsFixed(4)}, ${r.patientLocation.longitude.toStringAsFixed(4)})',
-                                  style: const TextStyle(color: Colors.grey)),
+                              child: Text(
+                                '(${r.patientLocation.latitude.toStringAsFixed(4)}, ${r.patientLocation.longitude.toStringAsFixed(4)})',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
                             ),
                           ],
                         ),
@@ -93,18 +116,36 @@ class DoctorRequestsHistoryScreen extends ConsumerWidget {
     String text;
     switch (status) {
       case RequestStatus.pending:
-        color = Colors.orange; text = 'معلق'; break;
+        color = Colors.orange;
+        text = 'معلق';
+        break;
       case RequestStatus.accepted:
-        color = Colors.blue; text = 'مقبول'; break;
+        color = Colors.blue;
+        text = 'مقبول';
+        break;
       case RequestStatus.rejected:
-        color = Colors.red; text = 'مرفوض'; break;
+        color = Colors.red;
+        text = 'مرفوض';
+        break;
       case RequestStatus.completed:
-        color = Colors.green; text = 'مكتمل'; break;
+        color = Colors.green;
+        text = 'مكتمل';
+        break;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 
@@ -117,5 +158,3 @@ class DoctorRequestsHistoryScreen extends ConsumerWidget {
     return 'منذ ${diff.inDays} يوم';
   }
 }
-
-

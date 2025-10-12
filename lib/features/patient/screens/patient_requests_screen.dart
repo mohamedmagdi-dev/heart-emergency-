@@ -373,6 +373,7 @@
 // Patient requests status screen
 
 import 'package:flutter/material.dart';
+
 import '../../../data/models/doctor_request_model.dart';
 import '../../../data/models/user_model.dart';
 import '../../../services/doctor_request_service.dart';
@@ -390,16 +391,12 @@ class _PatientRequestsScreenState extends State<PatientRequestsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFEF2F2),
       appBar: AppBar(
         title: const Text(
           'طلباتي للأطباء',
-          style: TextStyle(
-            fontFamily: 'Janna',
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontFamily: 'Janna', fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Colors.red[600],
         elevation: 0,
       ),
@@ -415,11 +412,7 @@ class _PatientRequestsScreenState extends State<PatientRequestsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red[300],
-                  ),
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
                   const SizedBox(height: 16),
                   Text(
                     'خطأ في تحميل الطلبات',
@@ -451,11 +444,7 @@ class _PatientRequestsScreenState extends State<PatientRequestsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.inbox_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
+                  Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
                     'لا توجد طلبات',
@@ -496,9 +485,7 @@ class _PatientRequestsScreenState extends State<PatientRequestsScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -518,12 +505,12 @@ class _PatientRequestsScreenState extends State<PatientRequestsScreen> {
                           : null,
                       child: doctor?.profileImage == null
                           ? Text(
-                        doctor?.name.substring(0, 1) ?? 'د',
-                        style: TextStyle(
-                          color: Colors.blue[700],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
+                              doctor?.name.substring(0, 1) ?? 'د',
+                              style: TextStyle(
+                                color: Colors.blue[700],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
                           : null,
                     ),
                     const SizedBox(width: 12),
@@ -584,10 +571,7 @@ class _PatientRequestsScreenState extends State<PatientRequestsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       request.message!,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'Janna',
-                      ),
+                      style: const TextStyle(fontSize: 14, fontFamily: 'Janna'),
                     ),
                   ],
                 ),
@@ -596,7 +580,8 @@ class _PatientRequestsScreenState extends State<PatientRequestsScreen> {
             ],
 
             // Response message
-            if (request.responseMessage != null && request.responseMessage!.isNotEmpty) ...[
+            if (request.responseMessage != null &&
+                request.responseMessage!.isNotEmpty) ...[
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -637,11 +622,7 @@ class _PatientRequestsScreenState extends State<PatientRequestsScreen> {
             // Request time
             Row(
               children: [
-                Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: Colors.grey[500],
-                ),
+                Icon(Icons.access_time, size: 16, color: Colors.grey[500]),
                 const SizedBox(width: 4),
                 Text(
                   _formatDateTime(request.createdAt),

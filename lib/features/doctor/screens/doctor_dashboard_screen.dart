@@ -1,16 +1,15 @@
 // Doctor Dashboard with real-time Firestore integration
 
-
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../data/models/user_model.dart';
+
+import '../../../data/models/rating_model.dart';
 import '../../../data/models/request_model.dart';
-import '../../../services/firestore_service.dart';
+import '../../../data/models/user_model.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../services/fcm_service.dart';
-import '../../../services/request_service.dart';
+import '../../../services/firestore_service.dart';
 import '../../../services/rating_service.dart';
 import '../../../data/models/rating_model.dart';
 import '../../../providers/auth_provider.dart';
@@ -39,7 +38,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     final currentUserAsync = ref.watch(currentUserDataProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       body: currentUserAsync.when(
         data: (user) {
           if (user == null) {
@@ -87,28 +85,18 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   color: Colors.orange[50],
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Icon(
-                  Icons.pending,
-                  size: 64,
-                  color: Colors.orange[600],
-                ),
+                child: Icon(Icons.pending, size: 64, color: Colors.orange[600]),
               ),
               const SizedBox(height: 24),
               const Text(
                 'في انتظار التحقق',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               const Text(
                 'حسابك قيد المراجعة من قبل الإدارة. سيتم إشعارك عند اكتمال عملية التحقق.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
@@ -446,6 +434,41 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
             children: [
               Row(
                 children: [
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.white,
+                        backgroundImage: user.profileImage != null
+                            ? NetworkImage(user.profileImage!)
+                            : null,
+                        child: user.profileImage == null
+                            ? const Icon(
+                                Icons.person,
+                                size: 30,
+                                color: Color(0xFF059669),
+                              )
+                            : null,
+                      ),
+                      if (user.verified == true)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.verified,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                   const SizedBox(width: 16),
 
                   // Doctor Info
@@ -550,7 +573,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -568,8 +590,11 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               color: Colors.green.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.medical_services,
-                color: Colors.green, size: 32),
+            child: const Icon(
+              Icons.medical_services,
+              color: Colors.green,
+              size: 32,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -578,10 +603,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               children: [
                 const Text(
                   'الحالة',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -593,7 +615,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                         color: (user.available ?? true)
                             ? Colors.green
                             : Colors
-                                .red, // FIXED: Dynamic color based on availability
+                                  .red, // FIXED: Dynamic color based on availability
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -618,17 +640,21 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           // FIXED: Availability toggle switch
           Switch(
             value: user.available ?? true,
-            activeColor: Colors.green,
+            activeThumbColor: Colors.green,
             onChanged: (value) async {
               try {
                 await _firestoreService.updateDoctorAvailability(
-                    user.uid, value);
+                  user.uid,
+                  value,
+                );
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(value
-                          ? 'تم تفعيل استقبال الطوارئ'
-                          : 'تم إيقاف استقبال الطوارئ'),
+                      content: Text(
+                        value
+                            ? 'تم تفعيل استقبال الطوارئ'
+                            : 'تم إيقاف استقبال الطوارئ',
+                      ),
                       backgroundColor: value ? Colors.green : Colors.orange,
                     ),
                   );
@@ -675,7 +701,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           child: StreamBuilder<List<RequestModel>>(
             stream: _firestoreService.getDoctorRequests(user.uid),
             builder: (context, snapshot) {
-              final completedRequests = snapshot.data
+              final completedRequests =
+                  snapshot.data
                       ?.where((r) => r.status == RequestStatus.completed)
                       .length ??
                   0;
@@ -701,7 +728,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -724,18 +750,12 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
             textAlign: TextAlign.center,
           ),
         ],
@@ -751,10 +771,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           children: [
             const Text(
               'الطلبات المعلقة',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
             TextButton(
@@ -776,7 +793,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               final errorMessage = snapshot.error.toString();
               final isIndexError =
                   errorMessage.contains('failed-precondition') ||
-                      errorMessage.contains('requires an index');
+                  errorMessage.contains('requires an index');
 
               return Container(
                 padding: const EdgeInsets.all(16),
@@ -800,8 +817,9 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                           : 'خطأ في تحميل الطلبات',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color:
-                            isIndexError ? Colors.orange[700] : Colors.red[700],
+                        color: isIndexError
+                            ? Colors.orange[700]
+                            : Colors.red[700],
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -810,10 +828,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                           ? 'يرجى الانتظار بضع دقائق حتى يتم إعداد النظام بالكامل.'
                           : 'خطأ: ${snapshot.error}',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                     if (isIndexError) ...[
                       const SizedBox(height: 12),
@@ -841,7 +856,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               return Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Column(
@@ -850,10 +864,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                     SizedBox(height: 16),
                     Text(
                       'لا توجد طلبات معلقة',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -898,8 +909,10 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -923,10 +936,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               const Spacer(),
               Text(
                 _formatDateTime(request.createdAt),
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
           ),
@@ -956,10 +966,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               Expanded(
                 child: Text(
                   'خط العرض: ${request.patientLocation.latitude.toStringAsFixed(4)}, خط الطول: ${request.patientLocation.longitude.toStringAsFixed(4)}',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
                 ),
               ),
             ],
@@ -997,11 +1004,13 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                     onPressed: () async {
                       final lat = request.patientLocation.latitude;
                       final lng = request.patientLocation.longitude;
-                      final patient =
-                          await _firestoreService.getUser(request.patientId);
+                      final patient = await _firestoreService.getUser(
+                        request.patientId,
+                      );
                       if (!mounted) return;
                       context.push(
-                          '/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent(patient?.name ?? 'مريض')}');
+                        '/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent(patient?.name ?? 'مريض')}',
+                      );
                     },
                     icon: const Icon(Icons.map),
                     label: const Text('الخريطة'),
@@ -1086,10 +1095,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               const Expanded(
                 child: Text(
                   'رصيد المحفظة',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               TextButton(
@@ -1165,10 +1171,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       children: [
         const Text(
           'الخدمات السريعة',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         GridView.builder(
@@ -1196,7 +1199,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                 ],
               ),
               child: Material(
-                color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
                   onTap: () {
@@ -1274,8 +1276,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         if (!_showReviews)
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
             child: Row(
               children: [
                 const Icon(Icons.reviews, color: Colors.grey),
@@ -1300,10 +1301,13 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12)),
-                  child: const Text('لا توجد مراجعات بعد',
-                      style: TextStyle(color: Colors.grey)),
+                    color: Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'لا توجد مراجعات بعد',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 );
               }
               final r =
@@ -1314,31 +1318,42 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12)),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.star,
-                                color: Colors.amber[600], size: 18),
+                            Icon(
+                              Icons.star,
+                              color: Colors.amber[600],
+                              size: 18,
+                            ),
                             const SizedBox(width: 4),
-                            Text('${r.rating}',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w600)),
+                            Text(
+                              '${r.rating}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             const Spacer(),
                             Text(
                               _formatDateTime(r.createdAt),
                               style: const TextStyle(
-                                  color: Colors.grey, fontSize: 12),
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
                         if (r.comment != null && r.comment!.isNotEmpty) ...[
                           const SizedBox(height: 6),
-                          Text(r.comment!,
-                              style: const TextStyle(fontSize: 14)),
+                          Text(
+                            r.comment!,
+                            style: const TextStyle(fontSize: 14),
+                          ),
                         ],
                       ],
                     ),
@@ -1392,10 +1407,13 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12)),
-                child: const Text('لا توجد طلبات',
-                    style: TextStyle(color: Colors.grey)),
+                  color: Colors.grey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'لا توجد طلبات',
+                  style: TextStyle(color: Colors.grey),
+                ),
               );
             }
             return ListView.builder(
@@ -1408,8 +1426,9 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12)),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1417,30 +1436,42 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                         children: [
                           _statusChip(r.status),
                           const Spacer(),
-                          Text(_formatDateTime(r.createdAt),
-                              style: const TextStyle(
-                                  color: Colors.grey, fontSize: 12)),
+                          Text(
+                            _formatDateTime(r.createdAt),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text(r.symptoms,
-                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Text(
+                        r.symptoms,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.location_on,
-                              size: 16, color: Colors.grey),
+                          const Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(width: 4),
                           Text(
-                              '(${r.patientLocation.latitude.toStringAsFixed(4)}, ${r.patientLocation.longitude.toStringAsFixed(4)})',
-                              style: const TextStyle(color: Colors.grey)),
+                            '(${r.patientLocation.latitude.toStringAsFixed(4)}, ${r.patientLocation.longitude.toStringAsFixed(4)})',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
                           const Spacer(),
                           TextButton.icon(
                             onPressed: () {
                               final lat = r.patientLocation.latitude;
                               final lng = r.patientLocation.longitude;
                               context.push(
-                                  '/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent('مريض')}');
+                                '/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent('مريض')}',
+                              );
                             },
                             icon: const Icon(Icons.map),
                             label: const Text('إظهار المسار'),
@@ -1482,11 +1513,17 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8)),
-      child: Text(text,
-          style: TextStyle(
-              color: color, fontWeight: FontWeight.w600, fontSize: 12)),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
     );
   }
   Future<void> _acceptRequest(RequestModel request) async {

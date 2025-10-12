@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../data/models/user_model.dart';
+import 'package:heart_emergency/core/cubits/theme_cubit.dart';
+
+import '../../../data/models/rating_model.dart';
 import '../../../data/models/request_model.dart';
 import '../../../data/models/transaction_model.dart';
-import '../../../data/models/rating_model.dart';
-import '../../../services/firestore_service.dart';
-import '../../../services/fcm_service.dart';
-import '../../../services/rating_service.dart';
-import '../../../providers/auth_provider.dart';
+import '../../../data/models/user_model.dart';
 import '../../../features/common/widgets/local_file_viewer.dart'; // FIXED: Added for file viewing
+import '../../../providers/auth_provider.dart';
+import '../../../services/fcm_service.dart';
+import '../../../services/firestore_service.dart';
+import '../../../services/rating_service.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -29,7 +32,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -41,15 +44,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   @override
   Widget build(BuildContext context) {
     final currentUserAsync = ref.watch(currentUserDataProvider);
-
+    final themeCubit = context.read<ThemeCubit>();
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       body: currentUserAsync.when(
         data: (user) {
           if (user == null || user.role != 'admin') {
             return const Center(child: Text('غير مصرح لك بالوصول'));
           }
-          return _buildDashboard(user);
+          return _buildDashboard(themeCubit, user);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
@@ -71,7 +73,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     );
   }
 
-  Widget _buildDashboard(UserModel user) {
+  Widget _buildDashboard(ThemeCubit themeCubit, UserModel user) {
     return Column(
       children: [
         _buildHeader(user),
@@ -82,9 +84,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             children: [
               _buildOverviewTab(),
               _buildUsersTab(),
-              _buildTransactionsTab(),
               _buildRatingsTab(),
-              _buildSettingsTab(),
+              _buildSettingsTab(themeCubit, user),
             ],
           ),
         ),
@@ -132,10 +133,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ),
                     const Text(
                       'لوحة تحكم الإدارة',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.white70),
                     ),
                   ],
                 ),
@@ -152,21 +150,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   }
 
   Widget _buildTabBar() {
-    return Container(
-      color: Colors.white,
-      child: TabBar(
-        controller: _tabController,
-        labelColor: const Color(0xFF7C3AED),
-        unselectedLabelColor: Colors.grey,
-        indicatorColor: const Color(0xFF7C3AED),
-        tabs: const [
-          Tab(icon: Icon(Icons.dashboard), text: 'نظرة عامة'),
-          Tab(icon: Icon(Icons.people), text: 'المستخدمون'),
-          Tab(icon: Icon(Icons.payment), text: 'المعاملات'),
-          Tab(icon: Icon(Icons.star), text: 'التقييمات'),
-          Tab(icon: Icon(Icons.settings), text: 'الإعدادات'),
-        ],
-      ),
+    return TabBar(
+      controller: _tabController,
+      labelColor: const Color(0xFF7C3AED),
+      unselectedLabelColor: Colors.grey,
+      indicatorColor: const Color(0xFF7C3AED),
+      tabs: const [
+        Tab(icon: Icon(Icons.dashboard), text: 'نظرة عامة'),
+        Tab(icon: Icon(Icons.people), text: 'المستخدمون'),
+        Tab(icon: Icon(Icons.star), text: 'التقييمات'),
+        Tab(icon: Icon(Icons.settings), text: 'الإعدادات'),
+      ],
     );
   }
 
@@ -239,7 +233,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ),
                     _buildStatCard(
                       title: 'إجمالي العمولات',
-                      value: '${totalRevenue.toStringAsFixed(2)}',
+                      value: totalRevenue.toStringAsFixed(2),
                       icon: Icons.monetization_on,
                       color: Colors.purple,
                     ),
@@ -323,7 +317,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -338,10 +331,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         children: [
           const Text(
             'النشاط الأخير',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           StreamBuilder<List<RequestModel>>(
@@ -351,9 +341,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               final recentRequests = requests.take(5).toList();
 
               if (recentRequests.isEmpty) {
-                return const Center(
-                  child: Text('لا توجد أنشطة حديثة'),
-                );
+                return const Center(child: Text('لا توجد أنشطة حديثة'));
               }
 
               return ListView.builder(
@@ -398,10 +386,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
       child: Row(
         children: [
           Container(
@@ -426,10 +411,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 ),
                 Text(
                   _formatDateTime(request.createdAt),
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
@@ -444,24 +426,19 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       length: 2,
       child: Column(
         children: [
-          Container(
-            color: Colors.white,
-            child: const TabBar(
-              labelColor: Color(0xFF7C3AED),
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: Color(0xFF7C3AED),
-              tabs: [
-                Tab(text: 'المرضى'),
-                Tab(text: 'الأطباء'),
-              ],
-            ),
+          const TabBar(
+            labelColor: Color(0xFF7C3AED),
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: Color(0xFF7C3AED),
+            tabs: [
+              Tab(text: 'المرضى'),
+              Tab(text: 'الأطباء'),
+            ],
           ),
+
           Expanded(
             child: TabBarView(
-              children: [
-                _buildPatientsTab(),
-                _buildDoctorsTab(),
-              ],
+              children: [_buildPatientsTab(), _buildDoctorsTab()],
             ),
           ),
         ],
@@ -581,7 +558,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -619,10 +595,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ),
                     Text(
                       user.email,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                     // Text(
                     //   'رصيد المحفظة: ${user.walletBalance.toStringAsFixed(2)} ${user.currency.name}',
@@ -733,7 +706,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: doctor.verified == true
                                 ? Colors.green.withOpacity(0.1)
@@ -795,116 +770,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     );
   }
 
-  Widget _buildTransactionsTab() {
-    return StreamBuilder<List<TransactionModel>>(
-      stream: _firestoreService.getAllTransactions(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final transactions = snapshot.data ?? [];
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: transactions.length,
-          itemBuilder: (context, index) {
-            final transaction = transactions[index];
-            return _buildTransactionCard(transaction);
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildTransactionCard(TransactionModel transaction) {
-    Color statusColor;
-    IconData statusIcon;
-
-    switch (transaction.status) {
-      case TransactionStatus.success:
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle;
-        break;
-      case TransactionStatus.failed:
-        statusColor = Colors.red;
-        statusIcon = Icons.error;
-        break;
-      case TransactionStatus.pending:
-        statusColor = Colors.orange;
-        statusIcon = Icons.pending;
-        break;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(statusIcon, color: statusColor, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${transaction.amount.toStringAsFixed(2)} ${transaction.currency.name}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'عمولة: ${transaction.commission.toStringAsFixed(2)} ${transaction.currency.name}',
-                      style: const TextStyle(
-                        color: Colors.green,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                _formatDateTime(transaction.createdAt),
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsTab() {
+  Widget _buildSettingsTab(ThemeCubit themeCubit, UserModel user) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          _buildProfileSection(context, user),
+          _buildAppearanceSection(context, themeCubit),
           _buildSettingsCard(
             title: 'إعدادات النظام',
             items: [
@@ -913,18 +785,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 title: 'نسبة العمولة',
                 subtitle: '12%',
                 onTap: () => _showCommissionDialog(),
-              ),
-              _buildSettingItem(
-                icon: Icons.currency_exchange,
-                title: 'أسعار الصرف',
-                subtitle: 'إدارة أسعار العملات',
-                onTap: () => context.push('/admin/exchange-rates'),
-              ),
-              _buildSettingItem(
-                icon: Icons.notifications,
-                title: 'إعدادات الإشعارات',
-                subtitle: 'إدارة الإشعارات العامة',
-                onTap: () => context.push('/admin/notification-settings'),
               ),
             ],
           ),
@@ -958,7 +818,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -973,14 +832,104 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ...items,
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfileSection(BuildContext context, UserModel user) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('الملف الشخصي', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Color(0xFF7C3AED).withOpacity(0.1),
+                  backgroundImage: user.profileImage != null
+                      ? NetworkImage(user.profileImage!)
+                      : null,
+                  child: user.profileImage == null
+                      ? Icon(Icons.person, size: 40, color: Color(0xFF7C3AED))
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'د. ${user.name}',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.email,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      if (user.specialization != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          user.specialization!,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppearanceSection(BuildContext context, ThemeCubit themeCubit) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('المظهر', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            BlocBuilder<ThemeCubit, ThemeData>(
+              builder: (context, state) {
+                return ListTile(
+                  leading: const Icon(Icons.brightness_6),
+                  title: const Text('الوضع الليلي'),
+                  subtitle: const Text('تفعيل الوضع المظلم'),
+                  trailing: Switch(
+                    value: themeCubit.isDark,
+                    onChanged: (value) async => themeCubit.toggleTheme(value),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1000,10 +949,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         ),
         child: Icon(icon, color: const Color(0xFF7C3AED)),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
@@ -1164,7 +1110,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                verified ? 'تم تحقق الطبيب بنجاح' : 'تم إلغاء تحقق الطبيب'),
+              verified ? 'تم تحقق الطبيب بنجاح' : 'تم إلغاء تحقق الطبيب',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -1522,8 +1469,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     );
   }
 
-  Widget _buildRatingStatCard(String value, String label, IconData icon,
-      Color color, Color backgroundColor) {
+  Widget _buildRatingStatCard(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+    Color backgroundColor,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1546,10 +1498,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: color.withOpacity(0.8),
-            ),
+            style: TextStyle(fontSize: 12, color: color.withOpacity(0.8)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1563,10 +1512,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       children: [
         const Text(
           'جميع التقييمات',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         StreamBuilder<List<RatingModel>>(
@@ -1600,10 +1546,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     SizedBox(height: 16),
                     Text(
                       'لا توجد تقييمات حتى الآن',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -1630,7 +1573,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -1707,10 +1649,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       const SizedBox(height: 4),
                       Text(
                         'إلى: ${toUser?.name ?? 'مستخدم غير معروف'}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
                   );
@@ -1723,25 +1662,19 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: Colors.grey,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 rating.comment!,
-                style: TextStyle(
-                  color: Colors.grey[700],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[700], fontSize: 14),
               ),
             ),
           ],
           const SizedBox(height: 8),
           Text(
             _formatDateTime(rating.createdAt),
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey[500], fontSize: 12),
           ),
         ],
       ),

@@ -649,20 +649,21 @@
 // }
 // Patient Settings Screen
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/cubits/theme_cubit.dart';
-import '../../../core/cubits/theme_state.dart';
 import '../../../data/models/user_model.dart';
-import '../../../services/firestore_service.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../services/firestore_service.dart';
 
 class PatientSettingsScreen extends ConsumerStatefulWidget {
   const PatientSettingsScreen({super.key});
 
   @override
-  ConsumerState<PatientSettingsScreen> createState() => _PatientSettingsScreenState();
+  ConsumerState<PatientSettingsScreen> createState() =>
+      _PatientSettingsScreenState();
 }
 
 class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
@@ -719,15 +720,15 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProfileSection(user),
+          _buildProfileSection(context, user),
           const SizedBox(height: 24),
-          _buildAppearanceSection(themeCubit),
+          _buildAppearanceSection(context, themeCubit),
           const SizedBox(height: 24),
-          _buildCurrencySection(user),
+          _buildCurrencySection(context, user),
           const SizedBox(height: 24),
           _buildAccountSection(),
           const SizedBox(height: 24),
-          _buildSupportSection(),
+          _buildSupportSection(context),
         ],
       ),
     );
@@ -799,8 +800,8 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
                         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         fontSize: 12,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -855,7 +856,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
     );
   }
 
-  Widget _buildCurrencySection(UserModel user) {
+  Widget _buildCurrencySection(BuildContext context, UserModel user) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -884,7 +885,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
           ListTile(
             leading: Icon(Icons.currency_exchange, color: Theme.of(context).colorScheme.primary),
             title: const Text('العملة الحالية'),
-            subtitle: Text('${user.currency.name}'),
+            subtitle: Text(user.currency.name),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () => _showCurrencyDialog(user),
             contentPadding: EdgeInsets.zero,
@@ -933,7 +934,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
     );
   }
 
-  Widget _buildSupportSection() {
+  Widget _buildSupportSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -981,10 +982,15 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
           children: Currency.values.map((currency) {
             return ListTile(
               title: Text(currency.name),
-              trailing: user.currency == currency ? const Icon(Icons.check) : null,
+              trailing: user.currency == currency
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () async {
                 try {
-                  await _firestoreService.updateUserCurrency(user.uid, currency);
+                  await _firestoreService.updateUserCurrency(
+                    user.uid,
+                    currency,
+                  );
                   ref.invalidate(currentUserDataProvider);
                   if (mounted) {
                     Navigator.pop(context);
@@ -1013,7 +1019,9 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('حذف الحساب'),
-        content: const Text('هل أنت متأكد من رغبتك في حذف الحساب نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'),
+        content: const Text(
+          'هل أنت متأكد من رغبتك في حذف الحساب نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1092,7 +1100,10 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('تسجيل الخروج', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'تسجيل الخروج',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),

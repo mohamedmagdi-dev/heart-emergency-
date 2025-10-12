@@ -311,11 +311,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/cubits/theme_cubit.dart';
-import '../../../core/cubits/theme_state.dart';
 import '../../../data/models/user_model.dart';
-import '../../../services/firestore_service.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../services/firestore_service.dart';
 
 class DoctorSettingsScreen extends ConsumerWidget {
   const DoctorSettingsScreen({super.key});
@@ -329,8 +329,6 @@ class DoctorSettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('إعدادات الطبيب'),
-        backgroundColor: Colors.green[600],
-        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -343,7 +341,13 @@ class DoctorSettingsScreen extends ConsumerWidget {
           if (user == null) {
             return const Center(child: Text('المستخدم غير مسجل الدخول'));
           }
-          return _buildSettingsContent(context, ref, user, themeCubit, authController);
+          return _buildSettingsContent(
+            context,
+            ref,
+            user,
+            themeCubit,
+            authController,
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
@@ -365,15 +369,21 @@ class DoctorSettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSettingsContent(BuildContext context, WidgetRef ref, UserModel user, ThemeCubit themeCubit, AuthController authController) {
+  Widget _buildSettingsContent(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel user,
+    ThemeCubit themeCubit,
+    AuthController authController,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProfileSection(user),
+          _buildProfileSection(context, user),
           const SizedBox(height: 24),
-          _buildAppearanceSection(themeCubit),
+          _buildAppearanceSection(context, themeCubit),
           const SizedBox(height: 24),
           _buildCurrencySection(context, ref, user),
           const SizedBox(height: 24),
@@ -383,149 +393,131 @@ class DoctorSettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileSection(UserModel user) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'الملف الشخصي',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+  Widget _buildProfileSection(BuildContext context, UserModel user) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'الملف الشخصي',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.green[100],
-                backgroundImage: user.profileImage != null
-                    ? NetworkImage(user.profileImage!)
-                    : null,
-                child: user.profileImage == null
-                    ? const Icon(Icons.person, size: 40, color: Colors.green)
-                    : null,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'د. ${user.name}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user.email,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                    if (user.specialization != null) ...[
-                      const SizedBox(height: 4),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withOpacity(0.1),
+                  backgroundImage: user.profileImage != null
+                      ? NetworkImage(user.profileImage!)
+                      : null,
+                  child: user.profileImage == null
+                      ? Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Theme.of(context).colorScheme.primary,
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        user.specialization!,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
+                        'د. ${user.name}',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.email,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      if (user.specialization != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          user.specialization!,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppearanceSection(ThemeCubit themeCubit) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'المظهر',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          BlocBuilder<ThemeCubit, ThemeState>(
-            builder: (context, state) {
-              return ListTile(
-                leading: const Icon(Icons.brightness_6),
-                title: const Text('الوضع الليلي'),
-                subtitle: const Text('تفعيل الوضع المظلم'),
-                trailing: Switch(
-                  value: state.isDark,
-                  onChanged: (value) async => await themeCubit.setDark(value),
-                ),
-                contentPadding: EdgeInsets.zero,
-              );
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCurrencySection(BuildContext context, WidgetRef ref, UserModel user) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+  Widget _buildAppearanceSection(BuildContext context, ThemeCubit themeCubit) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'المظهر',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            BlocBuilder<ThemeCubit, ThemeData>(
+              builder: (context, state) {
+                return ListTile(
+                  leading: const Icon(Icons.brightness_6),
+                  title: const Text('الوضع الليلي'),
+                  subtitle: const Text('تفعيل الوضع المظلم'),
+                  trailing: Switch(
+                    value: themeCubit.isDark,
+                    onChanged: (value) async => themeCubit.toggleTheme(value),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                );
+              },
+            ),
+          ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'العملة',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+    );
+  }
+
+  Widget _buildCurrencySection(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel user,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'العملة',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 16),
@@ -544,28 +536,22 @@ class DoctorSettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAccountSection(BuildContext context, WidgetRef ref, AuthController authController) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'الحساب',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+  Widget _buildAccountSection(
+    BuildContext context,
+    WidgetRef ref,
+    AuthController authController,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'الحساب',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 16),
@@ -588,13 +574,17 @@ class DoctorSettingsScreen extends ConsumerWidget {
                 foregroundColor: Colors.white,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  void _showCurrencyDialog(BuildContext context, WidgetRef ref, UserModel user) {
+  void _showCurrencyDialog(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel user,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -651,7 +641,10 @@ class DoctorSettingsScreen extends ConsumerWidget {
   }
 
   void _showLogoutDialog(
-      BuildContext context, WidgetRef ref, AuthController authController) {
+    BuildContext context,
+    WidgetRef ref,
+    AuthController authController,
+  ) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(

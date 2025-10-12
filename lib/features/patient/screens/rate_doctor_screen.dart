@@ -1,6 +1,7 @@
 // Rate Doctor Screen
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+
 import '../../../data/models/user_model.dart';
 import '../../../services/rating_service.dart';
 
@@ -8,11 +9,7 @@ class RateDoctorScreen extends StatefulWidget {
   final UserModel doctor;
   final String? requestId;
 
-  const RateDoctorScreen({
-    super.key,
-    required this.doctor,
-    this.requestId,
-  });
+  const RateDoctorScreen({super.key, required this.doctor, this.requestId});
 
   @override
   State<RateDoctorScreen> createState() => _RateDoctorScreenState();
@@ -21,7 +18,7 @@ class RateDoctorScreen extends StatefulWidget {
 class _RateDoctorScreenState extends State<RateDoctorScreen> {
   final RatingService _ratingService = RatingService();
   final TextEditingController _commentController = TextEditingController();
-  
+
   double _rating = 0.0;
   bool _isSubmitting = false;
 
@@ -34,16 +31,12 @@ class _RateDoctorScreenState extends State<RateDoctorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text(
           'تقييم الطبيب',
-          style: TextStyle(
-            fontFamily: 'Janna',
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontFamily: 'Janna', fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Colors.blue[600],
         elevation: 0,
       ),
@@ -53,19 +46,19 @@ class _RateDoctorScreenState extends State<RateDoctorScreen> {
           children: [
             // Doctor Info Card
             _buildDoctorInfoCard(),
-            
+
             const SizedBox(height: 24),
-            
+
             // Rating Section
             _buildRatingSection(),
-            
+
             const SizedBox(height: 24),
-            
+
             // Comment Section
             _buildCommentSection(),
-            
+
             const SizedBox(height: 32),
-            
+
             // Submit Button
             _buildSubmitButton(),
           ],
@@ -78,7 +71,6 @@ class _RateDoctorScreenState extends State<RateDoctorScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -137,7 +129,7 @@ class _RateDoctorScreenState extends State<RateDoctorScreen> {
                       Icon(Icons.star, size: 16, color: Colors.amber[600]),
                       const SizedBox(width: 4),
                       Text(
-                        '${widget.doctor.rating!.toStringAsFixed(1)}',
+                        widget.doctor.rating!.toStringAsFixed(1),
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 12,
@@ -158,7 +150,6 @@ class _RateDoctorScreenState extends State<RateDoctorScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -187,10 +178,8 @@ class _RateDoctorScreenState extends State<RateDoctorScreen> {
             allowHalfRating: true,
             itemCount: 5,
             itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
-            itemBuilder: (context, _) => Icon(
-              Icons.star,
-              color: Colors.amber[600],
-            ),
+            itemBuilder: (context, _) =>
+                Icon(Icons.star, color: Colors.amber[600]),
             onRatingUpdate: (rating) {
               setState(() {
                 _rating = rating;
@@ -216,7 +205,6 @@ class _RateDoctorScreenState extends State<RateDoctorScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -305,8 +293,8 @@ class _RateDoctorScreenState extends State<RateDoctorScreen> {
         toUserId: widget.doctor.uid,
         role: 'doctor',
         rating: _rating,
-        comment: _commentController.text.trim().isNotEmpty 
-            ? _commentController.text.trim() 
+        comment: _commentController.text.trim().isNotEmpty
+            ? _commentController.text.trim()
             : null,
         requestId: widget.requestId,
       );
