@@ -32,7 +32,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -84,9 +84,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             children: [
               _buildOverviewTab(),
               _buildUsersTab(),
-              _buildTransactionsTab(),
               _buildRatingsTab(),
-              _buildSettingsTab(themeCubit),
+              _buildSettingsTab(themeCubit, user),
             ],
           ),
         ),
@@ -162,7 +161,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       tabs: const [
         Tab(icon: Icon(Icons.dashboard), text: 'نظرة عامة'),
         Tab(icon: Icon(Icons.people), text: 'المستخدمون'),
-        Tab(icon: Icon(Icons.payment), text: 'المعاملات'),
         Tab(icon: Icon(Icons.star), text: 'التقييمات'),
         Tab(icon: Icon(Icons.settings), text: 'الإعدادات'),
       ],
@@ -760,113 +758,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     );
   }
 
-  Widget _buildTransactionsTab() {
-    return StreamBuilder<List<TransactionModel>>(
-      stream: _firestoreService.getAllTransactions(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final transactions = snapshot.data ?? [];
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: transactions.length,
-          itemBuilder: (context, index) {
-            final transaction = transactions[index];
-            return _buildTransactionCard(transaction);
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildTransactionCard(TransactionModel transaction) {
-    Color statusColor;
-    IconData statusIcon;
-
-    switch (transaction.status) {
-      case TransactionStatus.success:
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle;
-        break;
-      case TransactionStatus.failed:
-        statusColor = Colors.red;
-        statusIcon = Icons.error;
-        break;
-      case TransactionStatus.pending:
-        statusColor = Colors.orange;
-        statusIcon = Icons.pending;
-        break;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(statusIcon, color: statusColor, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${transaction.amount.toStringAsFixed(2)} ${transaction.currency.name}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'عمولة: ${transaction.commission.toStringAsFixed(2)} ${transaction.currency.name}',
-                      style: const TextStyle(
-                        color: Colors.green,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                _formatDateTime(transaction.createdAt),
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsTab(ThemeCubit themeCubit) {
+  Widget _buildSettingsTab(ThemeCubit themeCubit, UserModel user) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          _buildProfileSection(context, user),
           _buildAppearanceSection(context, themeCubit),
           _buildSettingsCard(
             title: 'إعدادات النظام',
@@ -940,6 +837,70 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           const SizedBox(height: 16),
           ...items,
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfileSection(BuildContext context, UserModel user) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('الملف الشخصي', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Color(0xFF7C3AED).withOpacity(0.1),
+                  backgroundImage: user.profileImage != null
+                      ? NetworkImage(user.profileImage!)
+                      : null,
+                  child: user.profileImage == null
+                      ? Icon(Icons.person, size: 40, color: Color(0xFF7C3AED))
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'د. ${user.name}',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.email,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      if (user.specialization != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          user.specialization!,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
