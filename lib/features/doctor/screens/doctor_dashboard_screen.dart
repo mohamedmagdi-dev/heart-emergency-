@@ -993,6 +993,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
+                
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       final lat = request.patientLocation.latitude;
@@ -1004,7 +1005,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                           '/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent(patient?.name ?? 'مريض')}');
                     },
                     icon: const Icon(Icons.map),
-                    label: const Text('الخريطة'),
+                    label: FittedBox(child: const Text('الخريطة')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,

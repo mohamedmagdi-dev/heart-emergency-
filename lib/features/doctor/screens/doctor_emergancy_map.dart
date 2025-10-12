@@ -383,9 +383,11 @@
 //
 //
 //
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:heart_emergency/core/constants/app_strings.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -608,6 +610,7 @@ class _DoctorEmergencyMapScreenState extends State<DoctorEmergencyMapScreen> {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName:AppStrings.packageName,
                 maxZoom: 19,
               ),
               if (_routePoints.isNotEmpty)
