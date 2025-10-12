@@ -654,6 +654,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/cubits/theme_cubit.dart';
+
 import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/firestore_service.dart';
@@ -734,7 +735,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
     );
   }
 
-  Widget _buildProfileSection(UserModel user) {
+  Widget _buildProfileSection(BuildContext context, UserModel user) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -769,7 +770,11 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
                     ? NetworkImage(user.profileImage!)
                     : null,
                 child: user.profileImage == null
-                    ? Icon(Icons.person, size: 40, color: Theme.of(context).colorScheme.primary)
+                    ? Icon(
+                  Icons.person,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.primary,
+                )
                     : null,
               ),
               const SizedBox(width: 16),
@@ -789,7 +794,10 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
                     Text(
                       user.email,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -797,11 +805,14 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
                     Text(
                       'رقم الهوية: ${user.uid.substring(0, 8)}...',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
                         fontSize: 12,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -810,8 +821,7 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
       ),
     );
   }
-
-  Widget _buildAppearanceSection(ThemeCubit themeCubit) {
+  Widget _buildAppearanceSection(BuildContext context, ThemeCubit themeCubit) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -837,15 +847,18 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          BlocBuilder<ThemeCubit, ThemeState>(
+          BlocBuilder<ThemeCubit, ThemeData>(
             builder: (context, state) {
               return ListTile(
-                leading: Icon(Icons.brightness_6, color: Theme.of(context).colorScheme.primary),
+                leading: Icon(
+                  Icons.brightness_6,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 title: const Text('الوضع الليلي'),
                 subtitle: const Text('تفعيل الوضع المظلم'),
                 trailing: Switch(
-                  value: state.isDark,
-                  onChanged: (value) async => await themeCubit.setDark(value),
+                  value: themeCubit.isDark,
+                  onChanged: (value) async => await themeCubit.toggleTheme(value),
                 ),
                 contentPadding: EdgeInsets.zero,
               );
@@ -855,6 +868,52 @@ class _PatientSettingsScreenState extends ConsumerState<PatientSettingsScreen> {
       ),
     );
   }
+
+
+  // Widget _buildAppearanceSection(BuildContext context,ThemeCubit themeCubit) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(20),
+  //     decoration: BoxDecoration(
+  //       color: Theme.of(context).colorScheme.surface,
+  //       borderRadius: BorderRadius.circular(16),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Theme.of(context).shadowColor.withOpacity(0.1),
+  //           blurRadius: 10,
+  //           offset: const Offset(0, 2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'المظهر',
+  //           style: TextStyle(
+  //             fontSize: 18,
+  //             fontWeight: FontWeight.bold,
+  //             color: Theme.of(context).colorScheme.onSurface,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 16),
+  //         BlocBuilder<ThemeCubit, ThemeState>(
+  //           builder: (context, state) {
+  //             return ListTile(
+  //               leading: Icon(Icons.brightness_6, color: Theme.of(context).colorScheme.primary),
+  //               title: const Text('الوضع الليلي'),
+  //               subtitle: const Text('تفعيل الوضع المظلم'),
+  //               trailing: Switch(
+  //                 value: state.isDark,
+  //                 onChanged: (value) async => await themeCubit.setDark(value),
+  //               ),
+  //               contentPadding: EdgeInsets.zero,
+  //             );
+  //           },
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildCurrencySection(BuildContext context, UserModel user) {
     return Container(

@@ -1,5 +1,6 @@
 // Doctor Dashboard with real-time Firestore integration
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +14,7 @@ import '../../../services/firestore_service.dart';
 import '../../../services/rating_service.dart';
 import '../../../data/models/rating_model.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../services/request_service.dart';
 import '../../notifications/notification_request_service.dart';
 import 'doctor_notification_screen.dart';
 

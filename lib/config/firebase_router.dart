@@ -18,6 +18,7 @@ import '../features/common/screens/firebase_welcome_screen.dart';
 // Doctor
 import '../features/doctor/screens/doctor_dashboard_screen.dart';
 import '../features/doctor/screens/doctor_emergancy_map.dart';
+import '../features/doctor/screens/doctor_notification_screen.dart';
 import '../features/doctor/screens/doctor_profile_screen.dart';
 import '../features/doctor/screens/doctor_requests_history_screen.dart';
 import '../features/doctor/screens/doctor_requests_screen.dart';
@@ -27,6 +28,8 @@ import '../features/doctor/screens/doctor_statistics_screen.dart';
 import '../features/doctor/screens/forget_password_screen.dart';
 import '../features/doctor/screens/rate_patient_screen.dart';
 import '../features/patient/screens/emergency_request_screen.dart';
+import '../features/patient/screens/medical_file_screen.dart';
+import '../features/patient/screens/nearby_doctors_screen.dart';
 import '../features/patient/screens/patient_notification_screen.dart';
 import '../features/patient/screens/simple_payment_screen.dart';
 import '../features/patient/screens/simple_wallet_screen.dart';

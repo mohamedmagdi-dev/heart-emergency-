@@ -519,7 +519,7 @@ class DoctorSettingsScreen extends ConsumerWidget {
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-          ),
+
           const SizedBox(height: 16),
           ListTile(
             leading: const Icon(Icons.currency_exchange),
@@ -533,6 +533,7 @@ class DoctorSettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+      )
     );
   }
 
@@ -553,7 +554,7 @@ class DoctorSettingsScreen extends ConsumerWidget {
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-          ),
+
           const SizedBox(height: 16),
           // ListTile(
           //   leading: const Icon(Icons.lock),
@@ -574,6 +575,7 @@ class DoctorSettingsScreen extends ConsumerWidget {
                 foregroundColor: Colors.white,
               ),
             ),
+          ),
           ],
         ),
       ),

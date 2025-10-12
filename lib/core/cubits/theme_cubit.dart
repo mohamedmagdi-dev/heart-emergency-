@@ -1,36 +1,36 @@
-// // lib/providers/theme_cubit.dart
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
+// // // lib/providers/theme_cubit.dart
+// // import 'package:flutter_bloc/flutter_bloc.dart';
+// // import 'package:shared_preferences/shared_preferences.dart';
+// //
+// // enum AppTheme { light, dark }
+// //
+// // class ThemeCubit extends Cubit<AppTheme> {
+// //   ThemeCubit() : super(AppTheme.light) {
+// //     _loadTheme();
+// //   }
+// //
+// //   static const String _themeKey = 'app_theme';
+// //
+// //   Future<void> _loadTheme() async {
+// //     final prefs = await SharedPreferences.getInstance();
+// //     final themeIndex = prefs.getInt(_themeKey) ?? 0;
+// //     emit(AppTheme.values[themeIndex]);
+// //   }
+// //
+// //   Future<void> toggleTheme() async {
+// //     final newTheme = state == AppTheme.light ? AppTheme.dark : AppTheme.light;
+// //     final prefs = await SharedPreferences.getInstance();
+// //     await prefs.setInt(_themeKey, newTheme.index);
+// //     emit(newTheme);
+// //   }
+// //
+// //   Future<void> setTheme(AppTheme theme) async {
+// //     final prefs = await SharedPreferences.getInstance();
+// //     await prefs.setInt(_themeKey, theme.index);
+// //     emit(theme);
+// //   }
+// // }
 //
-// enum AppTheme { light, dark }
-//
-// class ThemeCubit extends Cubit<AppTheme> {
-//   ThemeCubit() : super(AppTheme.light) {
-//     _loadTheme();
-//   }
-//
-//   static const String _themeKey = 'app_theme';
-//
-//   Future<void> _loadTheme() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     final themeIndex = prefs.getInt(_themeKey) ?? 0;
-//     emit(AppTheme.values[themeIndex]);
-//   }
-//
-//   Future<void> toggleTheme() async {
-//     final newTheme = state == AppTheme.light ? AppTheme.dark : AppTheme.light;
-//     final prefs = await SharedPreferences.getInstance();
-//     await prefs.setInt(_themeKey, newTheme.index);
-//     emit(newTheme);
-//   }
-//
-//   Future<void> setTheme(AppTheme theme) async {
-//     final prefs = await SharedPreferences.getInstance();
-//     await prefs.setInt(_themeKey, theme.index);
-//     emit(theme);
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heart_emergency/core/theme/app_theme.dart';
