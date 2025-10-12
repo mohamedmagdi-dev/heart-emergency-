@@ -27,7 +27,6 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
     super.initState();
     _getUserLocationAndNearbyDoctors();
   }
-
   Future<void> _getUserLocationAndNearbyDoctors() async {
     try {
       setState(() {
@@ -35,17 +34,30 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
         _error = null;
       });
 
-      // Get user's current location
+      // جلب موقع المستخدم الحالي
       final location = await _locationService.getCurrentLocation();
       _userLatitude = location.latitude;
       _userLongitude = location.longitude;
 
-      // Get nearby doctors
+      print('User location: $_userLatitude, $_userLongitude'); // Debug
+
+      // جلب الدكاترة القريبين
       final doctors = await _firestoreService.getNearbyDoctors(
         latitude: _userLatitude!,
         longitude: _userLongitude!,
-        radiusKm: 50.0, // 50km radius
+        radiusKm: 50.0,
       );
+
+      // Debug: print لكل دكتور والمسافة
+      for (var d in doctors) {
+        final dist = _locationService.calculateDistance(
+          _userLatitude!,
+          _userLongitude!,
+          d.location!.latitude,
+          d.location!.longitude,
+        );
+        print('Doctor ${d.name} at $dist km');
+      }
 
       setState(() {
         _nearbyDoctors = doctors;
@@ -56,8 +68,40 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen> {
         _error = e.toString();
         _isLoading = false;
       });
+      print('Error fetching doctors: $_error'); // Debug
     }
   }
+
+  // Future<void> _getUserLocationAndNearbyDoctors() async {
+  //   try {
+  //     setState(() {
+  //       _isLoading = true;
+  //       _error = null;
+  //     });
+  //
+  //     // Get user's current location
+  //     final location = await _locationService.getCurrentLocation();
+  //     _userLatitude = location.latitude;
+  //     _userLongitude = location.longitude;
+  //
+  //     // Get nearby doctors
+  //     final doctors = await _firestoreService.getNearbyDoctors(
+  //       latitude: _userLatitude!,
+  //       longitude: _userLongitude!,
+  //       radiusKm: 50.0, // 50km radius
+  //     );
+  //
+  //     setState(() {
+  //       _nearbyDoctors = doctors;
+  //       _isLoading = false;
+  //     });
+  //   } catch (e) {
+  //     setState(() {
+  //       _error = e.toString();
+  //       _isLoading = false;
+  //     });
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

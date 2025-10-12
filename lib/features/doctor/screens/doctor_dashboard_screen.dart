@@ -151,8 +151,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   _buildPendingRequests(user.uid),
                   const SizedBox(height: 16),
                   _buildPatientRequestsSection(user.uid),
-                  const SizedBox(height: 16),
-                  _buildWalletCard(user),
+                  // const SizedBox(height: 16),
+                  // _buildWalletCard(user),
                   const SizedBox(height: 16),
                   _buildQuickActions(),
                   const SizedBox(height: 16),
@@ -1489,98 +1489,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               color: color, fontWeight: FontWeight.w600, fontSize: 12)),
     );
   }
-  //
-  // Future<void> _acceptRequest(RequestModel request) async {
-  //   // Show confirmation dialog
-  //   final confirmed = await showDialog<bool>(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: const Text('قبول الطلب'),
-  //       content: const Text('هل أنت متأكد من قبول هذا الطلب؟'),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => Navigator.pop(context, false),
-  //           child: const Text('إلغاء'),
-  //         ),
-  //         ElevatedButton(
-  //           onPressed: () => Navigator.pop(context, true),
-  //           style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-  //           child: const Text('قبول', style: TextStyle(color: Colors.white)),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  //
-  //   if (confirmed != true) return;
-  //
-  //   try {
-  //     await _requestService.acceptEmergencyRequest(request.id);
-  //
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(
-  //           content: Text('تم قبول الطلب بنجاح'),
-  //           backgroundColor: Colors.green,
-  //         ),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //           content: Text('خطأ في قبول الطلب: $e'),
-  //           backgroundColor: Colors.red,
-  //         ),
-  //       );
-  //     }
-  //   }
-  // }
-  //
-  // Future<void> _rejectRequest(RequestModel request) async {
-  //   // Show confirmation dialog
-  //   final confirmed = await showDialog<bool>(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: const Text('رفض الطلب'),
-  //       content: const Text('هل أنت متأكد من رفض هذا الطلب؟'),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => Navigator.pop(context, false),
-  //           child: const Text('إلغاء'),
-  //         ),
-  //         ElevatedButton(
-  //           onPressed: () => Navigator.pop(context, true),
-  //           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-  //           child: const Text('رفض', style: TextStyle(color: Colors.white)),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  //
-  //   if (confirmed != true) return;
-  //
-  //   try {
-  //     await _requestService.rejectEmergencyRequest(request.id);
-  //
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(
-  //           content: Text('تم رفض الطلب'),
-  //           backgroundColor: Colors.orange,
-  //         ),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //           content: Text('خطأ في رفض الطلب: $e'),
-  //           backgroundColor: Colors.red,
-  //         ),
-  //       );
-  //     }
-  //   }
-  // }
   Future<void> _acceptRequest(RequestModel request) async {
     final confirmed = await showDialog<bool>(
       context: context,

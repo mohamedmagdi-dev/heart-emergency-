@@ -80,49 +80,94 @@ class FirestoreService {
             .toList());
   }
 
-  // Get nearby doctors
+  // // Get nearby doctors
+  // Future<List<UserModel>> getNearbyDoctors({
+  //   required double latitude,
+  //   required double longitude,
+  //   double radiusKm = 50.0,
+  // }) async {
+  //   try {
+  //     // First try the optimized query with composite index
+  //     try {
+  //       final snapshot = await _firestore
+  //           .collection(usersCollection)
+  //           .where('role', isEqualTo: 'doctor')
+  //           .where('verified', isEqualTo: true)
+  //           .where('available', isEqualTo: true)
+  //           .get();
+  //
+  //       final doctors = snapshot.docs
+  //           .map((doc) => UserModel.fromMap(doc.data()))
+  //           .where((doctor) => doctor.location != null)
+  //           .toList();
+  //
+  //       return _filterAndSortDoctorsByDistance(doctors, latitude, longitude, radiusKm);
+  //     } catch (e) {
+  //       // Fallback: Get all doctors and filter in memory if composite index is missing
+  //       print('Composite index missing, falling back to memory filtering: $e');
+  //
+  //       final snapshot = await _firestore
+  //           .collection(usersCollection)
+  //           .where('role', isEqualTo: 'doctor')
+  //           .where('verified', isEqualTo: true)
+  //           .get();
+  //
+  //       final allDoctors = snapshot.docs
+  //           .map((doc) => UserModel.fromMap(doc.data()))
+  //           .where((doctor) => doctor.location != null)
+  //           .toList();
+  //
+  //       // Filter by availability in memory
+  //       final availableDoctors = allDoctors.where((doctor) => doctor.available == true).toList();
+  //
+  //       return _filterAndSortDoctorsByDistance(availableDoctors, latitude, longitude, radiusKm);
+  //     }
+  //   } catch (e) {
+  //     throw 'فشل في جلب الأطباء القريبين: $e';
+  //   }
+  // }
+  // In firestore_service.dart, replace the old getNearbyDoctors function with this one
+
+  // Get nearby doctors (Correct and Efficient Version)
   Future<List<UserModel>> getNearbyDoctors({
     required double latitude,
     required double longitude,
-    double radiusKm = 50.0,
+    // double radiusKm = 50.0,
+    double radiusKm = 5000.0,
   }) async {
+    // Convert radius from km to degrees for a rough bounding box
+    // This creates a square area around the user to query
+    double latRange = radiusKm / 111.0;
+    double lonRange = radiusKm / (111.0 * cos(latitude * (pi / 180.0)));
+
+    GeoPoint lowerBound = GeoPoint(latitude - latRange, longitude - lonRange);
+    GeoPoint upperBound = GeoPoint(latitude + latRange, longitude + lonRange);
+
     try {
-      // First try the optimized query with composite index
-      try {
-        final snapshot = await _firestore
-            .collection(usersCollection)
-            .where('role', isEqualTo: 'doctor')
-            .where('verified', isEqualTo: true)
-            .where('available', isEqualTo: true)
-            .get();
+      // This query is much more efficient. It asks Firestore for doctors
+      // ONLY within the geographic square (bounding box).
+      final snapshot = await _firestore
+          .collection(usersCollection)
+          .where('role', isEqualTo: 'doctor')
+          .where('verified', isEqualTo: true)
+          .where('available', isEqualTo: true)
+          .where('location', isGreaterThan: lowerBound)
+          .where('location', isLessThan: upperBound)
+          .get();
 
-        final doctors = snapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data()))
-            .where((doctor) => doctor.location != null)
-            .toList();
+      // Now we have a much smaller list of potential doctors
+      final doctorsInBox = snapshot.docs
+          .map((doc) => UserModel.fromMap(doc.data()))
+          .toList();
 
-        return _filterAndSortDoctorsByDistance(doctors, latitude, longitude, radiusKm);
-      } catch (e) {
-        // Fallback: Get all doctors and filter in memory if composite index is missing
-        print('Composite index missing, falling back to memory filtering: $e');
-        
-        final snapshot = await _firestore
-            .collection(usersCollection)
-            .where('role', isEqualTo: 'doctor')
-            .where('verified', isEqualTo: true)
-            .get();
+      // Use your existing helper function to do the final precise filtering
+      // (to make the square a circle) and sort them by distance.
+      return _filterAndSortDoctorsByDistance(doctorsInBox, latitude, longitude, radiusKm);
 
-        final allDoctors = snapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data()))
-            .where((doctor) => doctor.location != null)
-            .toList();
-
-        // Filter by availability in memory
-        final availableDoctors = allDoctors.where((doctor) => doctor.available == true).toList();
-        
-        return _filterAndSortDoctorsByDistance(availableDoctors, latitude, longitude, radiusKm);
-      }
     } catch (e) {
+      print('Error fetching nearby doctors: $e');
+      // The error message in the debug console will likely contain a link
+      // to create the necessary composite index in your Firestore database.
       throw 'فشل في جلب الأطباء القريبين: $e';
     }
   }

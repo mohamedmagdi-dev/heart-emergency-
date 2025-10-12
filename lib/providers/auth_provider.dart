@@ -193,6 +193,8 @@ class AuthController {
       rethrow;
     }
   }
+  // token
+
 
   // Reset password
   Future<void> resetPassword(String email) async {

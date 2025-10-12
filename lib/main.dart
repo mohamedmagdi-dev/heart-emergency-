@@ -99,6 +99,7 @@ import 'config/firebase_router.dart';
 import 'core/cache/shared_pref_cache.dart';
 import 'core/cubits/theme_cubit.dart';
 import 'core/cubits/theme_state.dart';
+import 'core/theme/app_theme.dart';
 import 'data/local/hive_manager.dart';
 import 'features/notifications/notfication_services.dart';
 import 'firebase_options.dart';
@@ -176,40 +177,43 @@ class EmergencyApp extends StatelessWidget {
             title: 'من قلب الطوارئ',
             routerConfig: router, // ✅ use the cached router here
             themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
-            theme: ThemeData(
-              primarySwatch: Colors.red,
-              fontFamily: 'Janna',
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.red,
-                brightness: Brightness.light,
-              ),
-              inputDecorationTheme: InputDecorationTheme(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                filled: true,
-                fillColor: Colors.grey[100],
-              ),
-              elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-            darkTheme: ThemeData(
-              brightness: Brightness.dark,
-              primarySwatch: Colors.red,
-              fontFamily: 'Janna',
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.red,
-                brightness: Brightness.dark,
-              ),
-            ),
+            // theme: ThemeData(
+            //   primarySwatch: Colors.red,
+            //   fontFamily: 'Janna',
+            //   useMaterial3: true,
+            //   colorScheme: ColorScheme.fromSeed(
+            //     seedColor: Colors.red,
+            //     brightness: Brightness.light,
+            //   ),
+            //   inputDecorationTheme: InputDecorationTheme(
+            //     border: OutlineInputBorder(
+            //       borderRadius: BorderRadius.circular(8),
+            //     ),
+            //     filled: true,
+            //     fillColor: Colors.grey[100],
+            //   ),
+            //   elevatedButtonTheme: ElevatedButtonThemeData(
+            //     style: ElevatedButton.styleFrom(
+            //       elevation: 2,
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(8),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+            // darkTheme: ThemeData(
+            //   brightness: Brightness.dark,
+            //   primarySwatch: Colors.red,
+            //   fontFamily: 'Janna',
+            //   useMaterial3: true,
+            //   colorScheme: ColorScheme.fromSeed(
+            //     seedColor: Colors.red,
+            //     brightness: Brightness.dark,
+            //   ),
+            // ),
+            // themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
           ),
         );
       },

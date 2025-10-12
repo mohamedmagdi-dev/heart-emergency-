@@ -567,13 +567,13 @@ class DoctorSettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          ListTile(
-            leading: const Icon(Icons.lock),
-            title: const Text('تغيير كلمة المرور'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () => _changePassword(context),
-            contentPadding: EdgeInsets.zero,
-          ),
+          // ListTile(
+          //   leading: const Icon(Icons.lock),
+          //   title: const Text('تغيير كلمة المرور'),
+          //   trailing: const Icon(Icons.arrow_forward_ios),
+          //   onTap: () => _changePassword(context),
+          //   contentPadding: EdgeInsets.zero,
+          // ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,

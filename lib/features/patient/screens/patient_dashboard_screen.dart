@@ -25,7 +25,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
   @override
   Widget build(BuildContext context) {
     final currentUserAsync = ref.watch(currentUserDataProvider);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: currentUserAsync.when(
@@ -71,7 +71,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
                 children: [
                   _buildEmergencyButton(),
                   const SizedBox(height: 16),
-                  _buildWalletCard(user),
+                  // _buildWalletCard(user),
                   const SizedBox(height: 16),
                   _buildQuickActions(),
                   const SizedBox(height: 16),
@@ -438,7 +438,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
-            
+
             if (snapshot.hasError) {
               return Container(
                 padding: const EdgeInsets.all(16),
@@ -449,9 +449,9 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
                 child: Text('خطأ في تحميل الطلبات: ${snapshot.error}'),
               );
             }
-            
+
             final requests = snapshot.data ?? [];
-            
+
             if (requests.isEmpty) {
               return Container(
                 padding: const EdgeInsets.all(32),
@@ -474,7 +474,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
                 ),
               );
             }
-            
+
             return ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -494,7 +494,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
     Color statusColor;
     String statusText;
     IconData statusIcon;
-    
+
     switch (request.status) {
       case RequestStatus.pending:
         statusColor = Colors.orange;
@@ -517,7 +517,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
         statusIcon = Icons.check_circle_outline;
         break;
     }
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -645,10 +645,14 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
             title: 'الإشعارات',
             onTap: () => context.push('/patient/notifications', extra: user.uid),
             trailing: StreamBuilder<QuerySnapshot>(
-              stream: _notificationService.getUserNotifications(user.uid),
+              // stream: _notificationService.getUserNotifications(user.uid),
+             stream: _notificationService.getUnreadUserNotifications(user.uid),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const SizedBox.shrink();
+                // if (!snapshot.hasData) {
+                //   return const SizedBox.shrink();
+                // }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const SizedBox.shrink(); // لو مفيش، اخفي الدايرة
                 }
 
                 final docs = snapshot.data!.docs;
@@ -843,7 +847,7 @@ class _PatientDashboardScreenState extends ConsumerState<PatientDashboardScreen>
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inDays > 0) {
       return 'منذ ${difference.inDays} يوم';
     } else if (difference.inHours > 0) {
