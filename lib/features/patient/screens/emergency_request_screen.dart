@@ -226,11 +226,10 @@ class _EmergencyRequestScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('طلب طوارئ'),
         backgroundColor: Colors.red[600],
-        foregroundColor: Colors.white,
+        foregroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -318,7 +317,6 @@ class _EmergencyRequestScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -339,11 +337,11 @@ class _EmergencyRequestScreenState
                   color: Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                 child: const Icon(
-                   Icons.location_on,
-                   color: AppColor.lightPrimary,
-                   size: 24,
-                 ),
+                child: const Icon(
+                  Icons.location_on,
+                  color: AppColor.lightPrimary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               const Expanded(
@@ -400,7 +398,6 @@ class _EmergencyRequestScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -421,11 +418,11 @@ class _EmergencyRequestScreenState
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                 child: const Icon(
-                   Icons.medical_services,
-                   color: AppColor.lightSecondary,
-                   size: 24,
-                 ),
+                child: const Icon(
+                  Icons.medical_services,
+                  color: AppColor.lightSecondary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               const Expanded(
@@ -464,7 +461,6 @@ class _EmergencyRequestScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -485,11 +481,11 @@ class _EmergencyRequestScreenState
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                 child: const Icon(
-                   Icons.priority_high,
-                   color: AppColor.containerButtonColor3,
-                   size: 24,
-                 ),
+                child: const Icon(
+                  Icons.priority_high,
+                  color: AppColor.containerButtonColor3,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               const Expanded(
@@ -538,7 +534,6 @@ class _EmergencyRequestScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -559,11 +554,11 @@ class _EmergencyRequestScreenState
                   color: Colors.green.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                 child: const Icon(
-                   Icons.local_hospital,
-                   color: AppColor.containerButtonColor2,
-                   size: 24,
-                 ),
+                child: const Icon(
+                  Icons.local_hospital,
+                  color: AppColor.containerButtonColor2,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -599,11 +594,11 @@ class _EmergencyRequestScreenState
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? Colors.green : Colors.grey[300]!,
+                    color: isSelected ? Colors.red : Colors.grey[300]!,
                     width: isSelected ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  color: isSelected ? Colors.green[50] : null,
+                  color: isSelected ? Colors.red : null,
                 ),
                 child: ListTile(
                   leading: CircleAvatar(
@@ -847,7 +842,6 @@ class _EmergencyRequestScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -868,7 +862,11 @@ class _EmergencyRequestScreenState
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                 child: Icon(Icons.history, color: AppColor.lightSecondary, size: 24),
+                child: Icon(
+                  Icons.history,
+                  color: AppColor.lightSecondary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -975,7 +973,6 @@ class _EmergencyRequestScreenState
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
       ),
