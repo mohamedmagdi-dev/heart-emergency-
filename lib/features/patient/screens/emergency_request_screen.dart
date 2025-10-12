@@ -547,7 +547,7 @@ class _EmergencyRequestScreenState
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.grey.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -585,36 +585,44 @@ class _EmergencyRequestScreenState
                       doctor.location!.longitude,
                     )
                   : 0.0;
-
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? Colors.red : Colors.grey[300]!,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.secondary
+                        : Colors.grey[400]!,
                     width: isSelected ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  color: isSelected ? Colors.red : null,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.secondary.withOpacity(0.15)
+                      : Theme.of(context).cardColor,
                 ),
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: Colors.green[100],
+                    backgroundColor: Theme.of(context).brightness == Brightness.light
+                        ? AppColor.containerButtonColor3.withOpacity(0.2)
+                        : Colors.deepPurpleAccent.withOpacity(0.2),
                     backgroundImage: doctor.profileImage != null
                         ? NetworkImage(doctor.profileImage!)
                         : null,
                     child: doctor.profileImage == null
                         ? Text(
-                            doctor.name.substring(0, 1),
-                            style: TextStyle(
-                              color: Colors.green[700],
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
+                      doctor.name.substring(0, 1),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.secondary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
                         : null,
                   ),
                   title: Text(
                     'د. ${doctor.name}',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -622,14 +630,24 @@ class _EmergencyRequestScreenState
                       Text(
                         'العملة: ${doctor.currency.name.isNotEmpty ? doctor.currency.name : 'Not set'}',
                         style: TextStyle(
-                          color: Colors.grey[700],
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       if (doctor.specialization != null)
-                        Text(doctor.specialization!),
-                      Text('المسافة: ${distance.toStringAsFixed(1)} كم'),
+                        Text(
+                          doctor.specialization!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                      Text(
+                        'المسافة: ${distance.toStringAsFixed(1)} كم',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                        ),
+                      ),
                       if (doctor.rating != null)
                         Row(
                           children: [
@@ -639,17 +657,27 @@ class _EmergencyRequestScreenState
                               color: Colors.amber[600],
                             ),
                             const SizedBox(width: 4),
-                            Text(doctor.rating!.toStringAsFixed(1)),
+                            Text(
+                              doctor.rating!.toStringAsFixed(1),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
                           ],
                         ),
                     ],
                   ),
                   trailing: isSelected
-                      ? Icon(Icons.check_circle, color: Colors.green[600])
+                      ? Icon(
+                    Icons.check_circle,
+                    color: Theme.of(context).colorScheme.secondary,
+                  )
                       : null,
                   onTap: () => setState(() => _selectedDoctor = doctor),
                 ),
               );
+
+
             },
           ),
         ],

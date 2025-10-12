@@ -40,6 +40,9 @@ import '../features/patient/screens/rate_doctor_screen.dart';
 import '../features/patient/screens/rated_doctors_screen.dart';
 import '../features/patient/screens/request_history_screen.dart';
 import '../features/patient/screens/request_tracking_screen.dart'; // FIXED: Added import
+import '../features/patient/screens/simple_appointment_screen.dart';
+import '../features/patient/screens/simple_payment_screen.dart';
+import '../features/patient/screens/simple_wallet_screen.dart';
 import '../features/splash/splash_screen.dart';
 
 
