@@ -104,19 +104,19 @@ import 'features/notifications/notfication_services.dart';
 import 'firebase_options.dart';
 import 'services/notification_listener.dart';
 
-// 1. الدالة اللي بتشتغل لما ييجي إشعار والتطبيق مقفول تماماً
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print("Handling background message: ${message.messageId}");
-}
+// // 1. الدالة اللي بتشتغل لما ييجي إشعار والتطبيق مقفول تماماً
+// @pragma('vm:entry-point')
+// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+//   await Firebase.initializeApp();
+//   print("Handling background message: ${message.messageId}");
+// }
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   final localPlugin = NotificationService.plugin;
   final firebaseMessagingService = FirebaseMessagingService(localPlugin);
   firebaseMessagingService.listenToForegroundMessages();

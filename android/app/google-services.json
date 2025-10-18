@@ -1,6 +1,8 @@
+
 {
   "project_info": {
     "project_number": "118659624087",
+    "firebase_url": "https://heart-emergency-default-rtdb.firebaseio.com",
     "project_id": "heart-emergency",
     "storage_bucket": "heart-emergency.firebasestorage.app"
   },
