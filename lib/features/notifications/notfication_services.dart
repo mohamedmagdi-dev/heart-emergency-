@@ -41,6 +41,7 @@
 //         payload: payload);
 //   }
 // }
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -48,6 +49,9 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _plugin =
   FlutterLocalNotificationsPlugin();
 
+
+  // ⬅️🔑 لازم السطر ده يتضاف عشان نقدر نوصل للـ plugin من main.dart
+  static FlutterLocalNotificationsPlugin get plugin => _plugin;
   static Future<void> init() async {
     const AndroidInitializationSettings androidInit =
     AndroidInitializationSettings('@mipmap/ic_launcher');

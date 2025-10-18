@@ -1,7 +1,6 @@
 // Firebase Patient Authentication Screen (Login & Signup)
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,7 +9,6 @@ import '../../../core/utils/validators.dart';
 
 class FirebasePatientAuthScreen extends ConsumerStatefulWidget {
   const FirebasePatientAuthScreen({super.key});
-
   @override
   ConsumerState<FirebasePatientAuthScreen> createState() => _FirebasePatientAuthScreenState();
 }
@@ -22,7 +20,6 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-
   bool _isLogin = true;
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -71,19 +68,15 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
   }
 
   Future<void> _handleAuth() async {
-    // Old validation for email/password login
-    // if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
 
     try {
       final authController = ref.read(authControllerProvider);
 
       if (_isLogin) {
-        // ========================= NEW PHONE AUTH (OTP) LOGIN =========================
-        // 1) Validate phone input only (do not enforce password/email for OTP flow)
-        final rawPhone = _phoneController.text.trim();
-        if (rawPhone.isEmpty) {
+        // ========================= PHONE OTP LOGIN =========================
+        final phoneNumber = _phoneController.text.trim();
+        if (phoneNumber.isEmpty) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('يرجى إدخال رقم الهاتف')),
@@ -92,28 +85,31 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
           return;
         }
 
-        // 2) Normalize phone (basic trim only; do not force country code)
-        final phone = rawPhone;
-
-        // 3) Check Firestore if phone exists in users collection
-        final phoneExists = await _doesPhoneExist(phone);
-        if (!phoneExists) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('This phone number is not registered.')),
-            );
-          }
-          return;
-        }
-
-        // 4) Start Firebase Phone Verification
-        await FirebaseAuth.instance.verifyPhoneNumber(
-          phoneNumber: phone,
-          timeout: const Duration(seconds: 60),
-          verificationCompleted: (PhoneAuthCredential credential) async {
+        // Start phone OTP verification
+        await authController.signInWithPhoneOTP(
+          phoneNumber: phoneNumber,
+          onCodeSent: (String verificationId, int? resendToken) async {
+            _verificationId = verificationId;
+            if (mounted) {
+              await _showOTPDialog();
+            }
+          },
+          onVerificationFailed: (FirebaseAuthException e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('فشل إرسال رمز التحقق: ${e.message ?? e.code}')),
+              );
+            }
+          },
+          onVerificationCompleted: (PhoneAuthCredential credential) async {
             try {
-              final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-              await _postPhoneLoginNavigateIfPatient(userCredential.user?.uid);
+              final userData = await authController.verifyOTPAndCompleteLogin(
+                verificationId: _verificationId ?? '',
+                smsCode: '', // Auto-verification doesn't need SMS code
+              );
+              if (userData != null && mounted) {
+                context.go('/patient/dashboard');
+              }
             } catch (e) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -122,46 +118,13 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
               }
             }
           },
-          verificationFailed: (FirebaseAuthException e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('فشل إرسال رمز التحقق: ${e.message ?? e.code}')),
-              );
-            }
-          },
-          codeSent: (String verificationId, int? resendToken) async {
-            _verificationId = verificationId;
-            await _promptForOtpAndSignIn();
-          },
-          codeAutoRetrievalTimeout: (String verificationId) {
+          onCodeAutoRetrievalTimeout: (String verificationId) {
             _verificationId = verificationId;
           },
         );
-
-        // ========================= END NEW PHONE AUTH (OTP) LOGIN =========================
-
-        // Old email/phone+password login kept for reference (commented):
-        // final user = _usePhoneOnly
-        //   ? await authController.signInWithPhoneOnly(
-        //       phone: _phoneController.text.trim(),
-        //       password: _passwordController.text,
-        //     )
-        //   : await authController.signInWithEmail(
-        //       email: _emailController.text.trim(),
-        //       password: _passwordController.text,
-        //     );
-        // if (user != null && mounted) {
-        //   if (user.role == 'patient') {
-        //     context.go('/patient/dashboard');
-        //   } else {
-        //     ScaffoldMessenger.of(context).showSnackBar(
-        //       const SnackBar(content: Text('هذا الحساب ليس لمريض')),
-        //     );
-        //     await authController.signOut();
-        //   }
-        // }
+        // ========================= END PHONE OTP LOGIN =========================
       } else {
-        // Signup
+        // Signup (keep existing signup logic)
         if (!_isLogin && _currentPosition == null) {
           await _getCurrentLocation();
         }
@@ -194,28 +157,21 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
       }
     } catch (e) {
       if (mounted) {
-        // FIXED: Enhanced error handling with dialog for critical errors
         final errorMessage = e.toString();
-        if (errorMessage.contains('البريد الإلكتروني مستخدم بالفعل') ||
-            errorMessage.contains('كلمة المرور غير صحيحة') ||
-            errorMessage.contains('المستخدم غير موجود')) {
-          _showErrorDialog('خطأ في المصادقة', errorMessage);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
-              action: SnackBarAction(
-                label: 'إغلاق',
-                textColor: Colors.white,
-                onPressed: () {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                },
-              ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'إغلاق',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
             ),
-          );
-        }
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -224,21 +180,8 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
     }
   }
 
-  Future<bool> _doesPhoneExist(String phone) async {
-    try {
-      // Search exact match on 'users' collection phone field
-      final qs = await FirebaseFirestore.instance
-          .collection('users')
-          .where('phone', isEqualTo: phone)
-          .limit(1)
-          .get();
-      return qs.docs.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
-  }
 
-  Future<void> _promptForOtpAndSignIn() async {
+  Future<void> _showOTPDialog() async {
     if (_verificationId == null) return;
 
     String otpCode = '';
@@ -249,12 +192,22 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
       builder: (context) {
         return AlertDialog(
           title: const Text('أدخل رمز التحقق (OTP)'),
-          content: TextField(
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(hintText: 'رمز التحقق المرسل عبر SMS'),
-            onChanged: (value) {
-              otpCode = value.trim();
-            },
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('تم إرسال رمز التحقق إلى رقم هاتفك'),
+              const SizedBox(height: 16),
+              TextField(
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  hintText: 'رمز التحقق المرسل عبر SMS',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (value) {
+                  otpCode = value.trim();
+                },
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -265,13 +218,17 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
               onPressed: () async {
                 if (otpCode.isEmpty) return;
                 try {
-                  final credential = PhoneAuthProvider.credential(
+                  final authController = ref.read(authControllerProvider);
+                  final userData = await authController.verifyOTPAndCompleteLogin(
                     verificationId: _verificationId!,
                     smsCode: otpCode,
                   );
-                  final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-                  if (mounted) Navigator.of(context).pop();
-                  await _postPhoneLoginNavigateIfPatient(userCredential.user?.uid);
+                  if (mounted) {
+                    Navigator.of(context).pop();
+                    if (userData != null) {
+                      context.go('/patient/dashboard');
+                    }
+                  }
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -288,65 +245,7 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
     );
   }
 
-  Future<void> _postPhoneLoginNavigateIfPatient(String? uid) async {
-    if (uid == null) return;
-    try {
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      if (!userDoc.exists) {
-        // Not found in users collection
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('حساب المستخدم غير موجود في قاعدة البيانات')),
-          );
-        }
-        await FirebaseAuth.instance.signOut();
-        return;
-      }
-      final data = userDoc.data()!;
-      final role = data['role'] as String?;
-      if (role == 'patient') {
-        if (mounted) {
-          context.go('/patient/dashboard');
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('هذا الحساب ليس لمريض')),
-          );
-        }
-        await FirebaseAuth.instance.signOut();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل إكمال تسجيل الدخول: $e')),
-        );
-      }
-    }
-  }
 
-  // FIXED: Show error dialog for critical authentication errors
-  void _showErrorDialog(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.error, color: Colors.red[600]),
-            const SizedBox(width: 8),
-            Text(title),
-          ],
-        ),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('حسناً'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -381,42 +280,65 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
                 ),
                 const SizedBox(height: 32),
 
-                // 🟢 Added: Phone-only mode toggle
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                // Phone field for login (always visible)
+                if (_isLogin) ...[
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'رقم الهاتف',
+                      prefixIcon: Icon(Icons.phone),
+                      border: OutlineInputBorder(),
+                      hintText: 'أدخل رقم هاتفك المسجل',
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'يرجى إدخال رقم الهاتف';
+                      }
+                      return null;
+                    },
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _usePhoneOnly ? Icons.phone : Icons.email,
-                        color: _usePhoneOnly ? Colors.green : Colors.blue,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _usePhoneOnly
-                            ? 'تسجيل دخول بالهاتف فقط (بدون إيميل)'
-                            : 'تسجيل دخول بالإيميل والهاتف',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                  const SizedBox(height: 24),
+                ],
+
+                // 🟢 Added: Phone-only mode toggle (only for signup)
+                if (!_isLogin) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _usePhoneOnly ? Icons.phone : Icons.email,
+                          color: _usePhoneOnly ? Colors.green : Colors.blue,
                         ),
-                      ),
-                      Switch(
-                        value: _usePhoneOnly,
-                        onChanged: (value) {
-                          setState(() {
-                            _usePhoneOnly = value;
-                          });
-                        },
-                        activeColor: Colors.green,
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _usePhoneOnly
+                              ? 'تسجيل دخول بالهاتف فقط (بدون إيميل)'
+                              : 'تسجيل دخول بالإيميل والهاتف',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Switch(
+                          value: _usePhoneOnly,
+                          onChanged: (value) {
+                            setState(() {
+                              _usePhoneOnly = value;
+                            });
+                          },
+                          activeColor: Colors.green,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
+                ],
 
                 // Name field (signup only)
                 if (!_isLogin) ...[
@@ -462,22 +384,24 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
                   const SizedBox(height: 16),
                 ],
 
-                // Password field
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'كلمة المرور',
-                    prefixIcon: const Icon(Icons.lock),
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                // Password field (signup only)
+                if (!_isLogin) ...[
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'كلمة المرور',
+                      prefixIcon: const Icon(Icons.lock),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      ),
                     ),
+                    obscureText: _obscurePassword,
+                    validator: Validators.password,
                   ),
-                  obscureText: _obscurePassword,
-                  validator: Validators.password,
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
+                ],
 
                 // Confirm Password field (signup only)
                 if (!_isLogin) ...[
@@ -503,15 +427,26 @@ class _FirebasePatientAuthScreenState extends ConsumerState<FirebasePatientAuthS
                   const SizedBox(height: 16),
                 ],
 
-                // Forgot password (login only)
+                // Info text for login mode
                 if (_isLogin)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: () {
-                      context.go("/doctor/forgot-password");
-                      },
-                      child: const Text('نسيت كلمة المرور؟'),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'سيتم إرسال رمز التحقق إلى رقم هاتفك المسجل',
+                            style: TextStyle(fontSize: 14, color: Colors.blue),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 

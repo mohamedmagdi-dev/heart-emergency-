@@ -87,6 +87,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -98,15 +99,31 @@ import 'core/cache/shared_pref_cache.dart';
 import 'core/cubits/theme_cubit.dart';
 import 'core/utils/shared_preferences_helper.dart';
 import 'data/local/hive_manager.dart';
+import 'features/notifications/forground_background_notfications.dart';
 import 'features/notifications/notfication_services.dart';
 import 'firebase_options.dart';
 import 'services/notification_listener.dart';
+
+// 1. الدالة اللي بتشتغل لما ييجي إشعار والتطبيق مقفول تماماً
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling background message: ${message.messageId}");
+}
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  final localPlugin = NotificationService.plugin;
+  final firebaseMessagingService = FirebaseMessagingService(localPlugin);
+  firebaseMessagingService.listenToForegroundMessages();
 
+  // شغل التعامل مع ضغطات المستخدم على الإشعارات
+  firebaseMessagingService.handleNotificationClick();
+  firebaseMessagingService.handleTerminatedMessage();
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,

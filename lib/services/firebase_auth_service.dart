@@ -6,7 +6,6 @@ import '../data/models/user_model.dart';
 class FirebaseAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   // Get current user
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -180,6 +179,7 @@ class FirebaseAuthService {
       throw 'حدث خطأ أثناء تسجيل الدخول: $e';
     }
   }
+  //
 
   // Sign out
   Future<void> signOut() async {
@@ -257,6 +257,66 @@ class FirebaseAuthService {
     }
   }
 
+  // 🟢 Added: Phone OTP verification for patient login
+  Future<void> sendOTPToPhone({
+    required String phoneNumber,
+    required PhoneCodeSent onCodeSent,
+    required PhoneVerificationFailed onVerificationFailed,
+    required PhoneVerificationCompleted onVerificationCompleted,
+    required PhoneCodeAutoRetrievalTimeout onCodeAutoRetrievalTimeout,
+  }) async {
+    try {
+      await _auth.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: onVerificationCompleted,
+        verificationFailed: onVerificationFailed,
+        codeSent: onCodeSent,
+        codeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
+      );
+    } catch (e) {
+      throw 'فشل إرسال رمز التحقق: $e';
+    }
+  }
+
+  // 🟢 Added: Verify OTP code and sign in
+  Future<UserCredential> verifyOTPAndSignIn({
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+      
+      return await _auth.signInWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'فشل التحقق من رمز OTP: $e';
+    }
+  }
+
+  // 🟢 Added: Find user by phone number in Firestore
+  Future<UserModel?> findUserByPhone(String phoneNumber) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('phone', isEqualTo: phoneNumber)
+          .limit(1)
+          .get();
+      
+      if (querySnapshot.docs.isEmpty) {
+        return null;
+      }
+      
+      return UserModel.fromMap(querySnapshot.docs.first.data());
+    } catch (e) {
+      throw 'فشل البحث عن المستخدم: $e';
+    }
+  }
+
   // Handle Firebase Auth exceptions
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
@@ -278,6 +338,14 @@ class FirebaseAuthService {
         return 'فشل الاتصال بالإنترنت';
       case 'requires-recent-login':
         return 'يجب إعادة تسجيل الدخول لإجراء هذه العملية';
+      case 'invalid-verification-code':
+        return 'رمز التحقق غير صحيح';
+      case 'invalid-verification-id':
+        return 'معرف التحقق غير صحيح';
+      case 'invalid-phone-number':
+        return 'رقم الهاتف غير صحيح';
+      case 'quota-exceeded':
+        return 'تم تجاوز الحد المسموح من الرسائل';
       default:
         return 'حدث خطأ: ${e.message ?? e.code}';
     }

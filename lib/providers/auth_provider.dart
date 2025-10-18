@@ -248,6 +248,82 @@ class AuthController {
 
 
 
+  // 🟢 Added: Phone OTP login for patients
+  Future<UserModel?> signInWithPhoneOTP({
+    required String phoneNumber,
+    required PhoneCodeSent onCodeSent,
+    required PhoneVerificationFailed onVerificationFailed,
+    required PhoneVerificationCompleted onVerificationCompleted,
+    required PhoneCodeAutoRetrievalTimeout onCodeAutoRetrievalTimeout,
+  }) async {
+    try {
+      // First, check if phone number exists in Firestore and is a patient
+      final userData = await _authService.findUserByPhone(phoneNumber);
+      if (userData == null) {
+        throw 'هذا الرقم غير مسجل كمريض';
+      }
+      
+      if (userData.role != 'patient') {
+        throw 'هذا الرقم غير مسجل كمريض';
+      }
+
+      // Send OTP to phone
+      await _authService.sendOTPToPhone(
+        phoneNumber: phoneNumber,
+        onCodeSent: onCodeSent,
+        onVerificationFailed: onVerificationFailed,
+        onVerificationCompleted: onVerificationCompleted,
+        onCodeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
+      );
+
+      return userData;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // 🟢 Added: Verify OTP and complete login
+  Future<UserModel?> verifyOTPAndCompleteLogin({
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    try {
+      // Verify OTP and sign in with Firebase Auth
+      final userCredential = await _authService.verifyOTPAndSignIn(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+
+      final uid = userCredential.user?.uid;
+      if (uid == null) {
+        throw 'فشل التحقق من الهوية';
+      }
+
+      // Get user data from Firestore
+      final userData = await _authService.getUserData(uid);
+      if (userData == null) {
+        throw 'بيانات المستخدم غير موجودة';
+      }
+
+      // Update FCM token
+      final fcmToken = await _fcmService.getToken();
+      if (fcmToken != null) {
+        await _authService.updateUserData(uid, {'fcmToken': fcmToken});
+      }
+
+      // Save user data locally using SharedPreferences
+      await SharedPreferencesHelper.setString('user_id', userData.uid);
+      await SharedPreferencesHelper.setString('user_role', userData.role);
+      await SharedPreferencesHelper.setString('user_name', userData.name);
+      await SharedPreferencesHelper.setString('user_email', userData.email);
+      await SharedPreferencesHelper.setString('user_phone', userData.phone);
+
+      return userData;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     try {

@@ -23,6 +23,10 @@ abstract class AppColor {
   static const lightOnBackground = Color(0xFF1C1B1F);
   static const lightOnSurface = Color(0xFF1C1B1F);
   static const lightOnError = Color(0xFFFFFFFF);
+  static const Color blue =Color(0xff0666EB);
+  static const Color lightBlue =Color(0xffE5EFFD);
+  static const Color lightGray =Color(0xffE1E1E1);
+
 
   // Dark Theme Colors
   static const darkPrimary = Color(0xFFEF5350);
