@@ -48,6 +48,17 @@ class FirestoreService {
     return await getUser(currentUser.uid);
   }
 
+  // 🟢 Added: Get users by role
+  Stream<List<UserModel>> getUsersByRole(String role) {
+    return _firestore
+        .collection(usersCollection)
+        .where('role', isEqualTo: role)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => UserModel.fromMap(doc.data())).toList();
+    });
+  }
+
   // Update user
   Future<void> updateUser(String uid, Map<String, dynamic> data) async {
     try {
@@ -61,18 +72,6 @@ class FirestoreService {
   Stream<List<UserModel>> getAllUsers() {
     return _firestore
         .collection(usersCollection)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data()))
-            .toList());
-  }
-
-  // Get users by role
-  Stream<List<UserModel>> getUsersByRole(String role) {
-    return _firestore
-        .collection(usersCollection)
-        .where('role', isEqualTo: role)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs

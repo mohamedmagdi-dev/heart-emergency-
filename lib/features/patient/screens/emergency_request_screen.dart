@@ -24,6 +24,7 @@ class _EmergencyRequestScreenState
   final _formKey = GlobalKey<FormState>();
   final _symptomsController = TextEditingController();
   final _notesController = TextEditingController();
+  final _priceController = TextEditingController();
   final RequestService _requestService = RequestService();
 
   Position? _currentPosition;
@@ -44,6 +45,7 @@ class _EmergencyRequestScreenState
   void dispose() {
     _symptomsController.dispose();
     _notesController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
@@ -187,6 +189,7 @@ class _EmergencyRequestScreenState
           _currentPosition!.longitude,
         ),
         patientAddress: _locationAddress,
+        price: double.parse(_priceController.text.trim()),
         notes: _notesController.text.trim().isNotEmpty
             ? _notesController.text.trim()
             : null,
@@ -284,6 +287,9 @@ class _EmergencyRequestScreenState
 
               const SizedBox(height: 20),
 
+              // Price input
+              _buildPriceCard(),
+
               // Nearby Doctors
               if (_isLoading)
                 _buildLoadingDoctorsCard()
@@ -305,6 +311,71 @@ class _EmergencyRequestScreenState
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPriceCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.attach_money,
+                  color: Colors.green,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Text(
+                  'تحديد السعر (يحدده المريض)',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _priceController,
+            decoration: const InputDecoration(
+              hintText: 'أدخل السعر المقترح للخدمة',
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.all(16),
+              suffixText: 'SAR',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'يرجى إدخال السعر';
+              }
+              final v = double.tryParse(value.trim());
+              if (v == null || v <= 0) {
+                return 'يرجى إدخال قيمة صحيحة أكبر من صفر';
+              }
+              return null;
+            },
+          ),
+        ],
       ),
     );
   }

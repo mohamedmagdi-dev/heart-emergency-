@@ -6,6 +6,7 @@ import '../services/firebase_auth_service.dart';
 import '../services/local_storage_service.dart';
 import '../services/fcm_service.dart';
 import '../data/models/user_model.dart';
+import '../core/utils/shared_preferences_helper.dart'; // 🟢 Added: For user data storage
 import 'dart:io';
 
 // Auth service provider
@@ -60,6 +61,68 @@ class AuthController {
   final FCMService _fcmService;
 
   AuthController(this._authService, this._localStorageService, this._fcmService);
+
+  // 🟢 Added: Phone-only signup for patients
+  Future<UserModel?> signUpWithPhoneOnly({
+    required String phone,
+    required String password,
+    required String name,
+  }) async {
+    try {
+      final fcmToken = await _fcmService.getToken();
+      final userData = await _authService.signUpWithPhoneOnly(
+        phone: phone,
+        password: password,
+        name: name,
+        fcmToken: fcmToken,
+      );
+
+      if (userData != null) {
+        // Save user data locally using SharedPreferences
+        await SharedPreferencesHelper.setString('user_id', userData.uid);
+        await SharedPreferencesHelper.setString('user_role', userData.role);
+        await SharedPreferencesHelper.setString('user_name', userData.name);
+        await SharedPreferencesHelper.setString('user_email', userData.email);
+        await SharedPreferencesHelper.setString('user_phone', userData.phone);
+      }
+
+      return userData;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // 🟢 Added: Phone-only signin for patients
+  Future<UserModel?> signInWithPhoneOnly({
+    required String phone,
+    required String password,
+  }) async {
+    try {
+      final userData = await _authService.signInWithPhoneOnly(
+        phone: phone,
+        password: password,
+      );
+
+      if (userData != null) {
+        // Update FCM token
+        final fcmToken = await _fcmService.getToken();
+        if (fcmToken != null) {
+          await _authService.updateUserData(userData.uid, {'fcmToken': fcmToken});
+        }
+
+        // Save user data locally using SharedPreferences
+        await SharedPreferencesHelper.setString('user_id', userData.uid);
+        await SharedPreferencesHelper.setString('user_role', userData.role);
+        await SharedPreferencesHelper.setString('user_name', userData.name);
+        await SharedPreferencesHelper.setString('user_email', userData.email);
+        await SharedPreferencesHelper.setString('user_phone', userData.phone);
+      }
+
+      return userData;
+    } catch (e) {
+      rethrow;
+    }
+  }
 
   // Sign up with email and password
   Future<UserModel?> signUpWithEmail({

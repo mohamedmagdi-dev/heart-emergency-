@@ -5,7 +5,6 @@ import '../../auth/screens/firebase_doctor_auth_screen.dart';
 
 class DoctorRegistrationPage extends StatefulWidget {
   const DoctorRegistrationPage({super.key});
-
   @override
   State<DoctorRegistrationPage> createState() => _DoctorRegistrationPageState();
 }

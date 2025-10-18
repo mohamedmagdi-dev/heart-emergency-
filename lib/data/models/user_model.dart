@@ -247,7 +247,7 @@ extension CurrencyExtension on Currency {
 
 class UserModel {
   final String uid;
-  final String role; // 'patient', 'doctor', 'admin'
+  final String role; // 'patient', 'doctor', 'admin', 'supervisor' // 🟢 Added: supervisor role
   final String name;
   final String email;
   final String phone;
@@ -264,6 +264,11 @@ class UserModel {
   final List<String>? certificates; // Array of URLs from Firebase Storage
   final double? rating; // 1-5 rating
   final List<Review>? reviews; // Array of review objects
+
+  // 🟢 Added: Supervisor-specific fields
+  final String? supervisorId; // ID of supervisor (for doctors assigned to supervisors)
+  final List<String>? assignedDoctorIds; // List of doctor IDs assigned to this supervisor
+  final Map<String, bool>? permissions; // Supervisor permissions (add/edit/delete)
 
   // FCM token for notifications
   final String? fcmToken;
@@ -285,6 +290,9 @@ class UserModel {
     this.certificates,
     this.rating,
     this.reviews,
+    this.supervisorId, // 🟢 Added: supervisor fields
+    this.assignedDoctorIds,
+    this.permissions,
     this.fcmToken,
   });
 
@@ -320,6 +328,13 @@ class UserModel {
           : null,
       rating: map['rating']?.toDouble(),
       reviews: parseReviews(),
+      supervisorId: map['supervisorId'], // 🟢 Added: supervisor fields
+      assignedDoctorIds: map['assignedDoctorIds'] != null
+          ? List<String>.from(map['assignedDoctorIds'])
+          : null,
+      permissions: map['permissions'] != null
+          ? Map<String, bool>.from(map['permissions'])
+          : null,
       fcmToken: map['fcmToken'],
     );
   }
@@ -342,6 +357,9 @@ class UserModel {
       if (certificates != null) 'certificates': certificates,
       if (rating != null) 'rating': rating,
       if (reviews != null) 'reviews': reviews!.map((review) => review.toMap()).toList(),
+      if (supervisorId != null) 'supervisorId': supervisorId, // 🟢 Added: supervisor fields
+      if (assignedDoctorIds != null) 'assignedDoctorIds': assignedDoctorIds,
+      if (permissions != null) 'permissions': permissions,
       if (fcmToken != null) 'fcmToken': fcmToken,
     };
   }
@@ -363,6 +381,9 @@ class UserModel {
     List<String>? certificates,
     double? rating,
     List<Review>? reviews,
+    String? supervisorId, // 🟢 Added: supervisor fields
+    List<String>? assignedDoctorIds,
+    Map<String, bool>? permissions,
     String? fcmToken,
   }) {
     return UserModel(
@@ -382,6 +403,9 @@ class UserModel {
       certificates: certificates ?? this.certificates,
       rating: rating ?? this.rating,
       reviews: reviews ?? this.reviews,
+      supervisorId: supervisorId ?? this.supervisorId, // 🟢 Added: supervisor fields
+      assignedDoctorIds: assignedDoctorIds ?? this.assignedDoctorIds,
+      permissions: permissions ?? this.permissions,
       fcmToken: fcmToken ?? this.fcmToken,
     );
   }

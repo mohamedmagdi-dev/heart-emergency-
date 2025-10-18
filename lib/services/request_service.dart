@@ -5,13 +5,12 @@ import '../data/models/request_model.dart';
 import '../data/models/user_model.dart';
 import 'fcm_notification_service.dart';
 import 'notification_sender.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart' show GeoPoint;
+import '../core/utils/haversine.dart';
 class RequestService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
   static const String requestsCollection = 'requests';
-
   // Add a simple request from current patient to a doctor
   Future<void> sendRequestToDoctor(String doctorId) async {
     try {
@@ -19,7 +18,6 @@ class RequestService {
       if (user == null) {
         throw 'يجب تسجيل الدخول أولاً';
       }
-
       // Create minimal pending request
       final docRef = _firestore.collection(requestsCollection).doc();
       await docRef.set({
@@ -30,7 +28,6 @@ class RequestService {
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
-
       // Firestore notification to doctor
       await NotificationSender().sendNotification(
         toUserId: doctorId,
@@ -104,6 +101,7 @@ class RequestService {
     required String urgencyLevel,
     required GeoPoint patientLocation,
     required String patientAddress,
+    required double price, // Patient-set price
     String? notes,
   }) async {
     try {
@@ -132,6 +130,9 @@ class RequestService {
         'urgencyLevel': urgencyLevel,
         'patientLocation': patientLocation,
         'patientAddress': patientAddress,
+        // Pricing & commission (commissionRate stored for transparency)
+        'price': price,
+        'commissionRate': 0.12, // 12%
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
         if (notes != null) 'notes': notes,
@@ -215,6 +216,7 @@ class RequestService {
       await _firestore.collection(requestsCollection).doc(requestId).update({
         'status': 'accepted',
         'updatedAt': FieldValue.serverTimestamp(),
+        'acceptedAt': FieldValue.serverTimestamp(),
       });
 
       // Send FCM notification to patient
@@ -262,9 +264,23 @@ class RequestService {
         throw 'يجب تسجيل الدخول أولاً';
       }
 
-      // Update the request status
-      await _firestore.collection(requestsCollection).doc(requestId).update({
+      final docRef = _firestore.collection(requestsCollection).doc(requestId);
+      final requestSnap = await docRef.get();
+      if (!requestSnap.exists) {
+        throw 'الطلب غير موجود';
+      }
+      final data = requestSnap.data()!;
+      final double price = (data['finalPrice'] as num?)?.toDouble() ?? (data['price'] as num?)?.toDouble() ?? 0.0;
+      final double commissionRate = (data['commissionRate'] as num?)?.toDouble() ?? 0.12;
+      final double commissionAmount = double.parse((price * commissionRate).toStringAsFixed(2));
+
+      // Update the request status + financials
+      await docRef.update({
         'status': 'completed',
+        'finalPrice': price,
+        'commissionRate': commissionRate,
+        'commissionAmount': commissionAmount,
+        'completedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
@@ -400,5 +416,108 @@ class RequestService {
         return RequestModel.fromMap(doc.data(), documentId: doc.id);
       }).toList();
     });
+  }
+
+  // --- Live Tracking & ETA ---
+  // Stream doctor location for a given request (after acceptance)
+  Stream<GeoPoint?> streamDoctorLocation(String doctorId) {
+    return _firestore.collection('users').doc(doctorId).snapshots().map((doc) {
+      final map = doc.data();
+      if (map == null) return null;
+      return map['location'] as GeoPoint?;
+    });
+  }
+
+  // Stream live distance (km) and ETA (minutes) between doctor and patient for a request
+  // Assumes an average speed; can be refined with actual navigation SDK if added later.
+  Stream<Map<String, dynamic>> streamDistanceAndEta({
+    required GeoPoint patientLocation,
+    required String doctorId,
+    double averageSpeedKmPerHour = 40.0,
+  }) {
+    return streamDoctorLocation(doctorId).map((doctorGeo) {
+      if (doctorGeo == null) {
+        return {
+          'distanceKm': null,
+          'etaMinutes': null,
+        };
+      }
+      final distanceKm = haversineDistanceKm(
+        lat1: patientLocation.latitude,
+        lon1: patientLocation.longitude,
+        lat2: doctorGeo.latitude,
+        lon2: doctorGeo.longitude,
+      );
+      final hours = distanceKm / averageSpeedKmPerHour;
+      final etaMinutes = (hours * 60).ceil();
+      return {
+        'distanceKm': double.parse(distanceKm.toStringAsFixed(2)),
+        'etaMinutes': etaMinutes,
+      };
+    });
+  }
+
+  // Update a request document with current distance and ETA (optional helper)
+  Future<void> updateRequestDistanceAndEta({
+    required String requestId,
+    required double distanceKm,
+    required int etaMinutes,
+  }) async {
+    await _firestore.collection(requestsCollection).doc(requestId).update({
+      'distanceKm': distanceKm,
+      'etaMinutes': etaMinutes,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // --- Admin Queries ---
+  // Completed requests per doctor
+  Stream<List<RequestModel>> getCompletedRequestsForDoctor(String doctorId) {
+    return _firestore
+        .collection(requestsCollection)
+        .where('doctorId', isEqualTo: doctorId)
+        .where('status', isEqualTo: 'completed')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => RequestModel.fromMap(doc.data(), documentId: doc.id))
+            .toList());
+  }
+
+  // Completed requests per patient
+  Stream<List<RequestModel>> getCompletedRequestsForPatient(String patientId) {
+    return _firestore
+        .collection(requestsCollection)
+        .where('patientId', isEqualTo: patientId)
+        .where('status', isEqualTo: 'completed')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => RequestModel.fromMap(doc.data(), documentId: doc.id))
+            .toList());
+  }
+
+  // 🟢 Added: Calculate doctor earning (88% after 12% commission)
+  double calculateDoctorEarning(double price) {
+    const double commissionRate = 0.12; // 12% commission
+    return price * (1 - commissionRate); // Doctor gets 88%
+  }
+
+  // 🟢 Added: Get doctor earning for a completed request
+  Future<double?> getDoctorEarning(String requestId) async {
+    try {
+      final doc = await _firestore.collection(requestsCollection).doc(requestId).get();
+      if (!doc.exists) return null;
+      
+      final data = doc.data()!;
+      final double? price = (data['finalPrice'] as num?)?.toDouble() ?? 
+                           (data['price'] as num?)?.toDouble();
+      
+      if (price == null) return null;
+      return calculateDoctorEarning(price);
+    } catch (e) {
+      print('Error getting doctor earning: $e');
+      return null;
+    }
   }
 }

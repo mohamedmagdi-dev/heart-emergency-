@@ -1,4 +1,5 @@
 // Rate Doctor Screen
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
@@ -299,6 +300,16 @@ class _RateDoctorScreenState extends State<RateDoctorScreen> {
         requestId: widget.requestId,
       );
 
+      // Mark the related request as rated to hide rate button later
+      if (widget.requestId != null) {
+        try {
+          await FirebaseFirestore.instance
+              .collection('requests')
+              .doc(widget.requestId)
+              .update({'isRated': true, 'updatedAt': FieldValue.serverTimestamp()});
+        } catch (_) {}
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -306,7 +317,7 @@ class _RateDoctorScreenState extends State<RateDoctorScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {

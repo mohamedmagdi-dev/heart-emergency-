@@ -44,6 +44,17 @@ class RequestModel {
   final String urgencyLevel;
   final DateTime createdAt;
   final DateTime updatedAt;
+  // Pricing & distance/ETA
+  final double? price; // Set by patient at creation
+  final double? finalPrice; // Shown on completion
+  final double? commissionRate; // e.g., 0.12 for 12%
+  final double? commissionAmount; // Calculated at completion
+  final double? distanceKm; // Live-updated
+  final int? etaMinutes; // Live-updated
+  final bool? isRated; // Marked true after patient rates the doctor
+  // Timestamps
+  final DateTime? acceptedAt;
+  final DateTime? completedAt;
 
   RequestModel({
     required this.id,
@@ -56,6 +67,15 @@ class RequestModel {
     required this.urgencyLevel,
     required this.createdAt,
     required this.updatedAt,
+    this.price,
+    this.finalPrice,
+    this.commissionRate,
+    this.commissionAmount,
+    this.distanceKm,
+    this.etaMinutes,
+    this.isRated,
+    this.acceptedAt,
+    this.completedAt,
   });
 
   factory RequestModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
@@ -70,6 +90,15 @@ class RequestModel {
       urgencyLevel: map['urgencyLevel'] ?? 'medium',
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      price: (map['price'] as num?)?.toDouble(),
+      finalPrice: (map['finalPrice'] as num?)?.toDouble(),
+      commissionRate: (map['commissionRate'] as num?)?.toDouble(),
+      commissionAmount: (map['commissionAmount'] as num?)?.toDouble(),
+      distanceKm: (map['distanceKm'] as num?)?.toDouble(),
+      etaMinutes: map['etaMinutes'] as int?,
+      isRated: map['isRated'] as bool?,
+      acceptedAt: (map['acceptedAt'] as Timestamp?)?.toDate(),
+      completedAt: (map['completedAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -85,6 +114,15 @@ class RequestModel {
       'urgencyLevel': urgencyLevel,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      if (price != null) 'price': price,
+      if (finalPrice != null) 'finalPrice': finalPrice,
+      if (commissionRate != null) 'commissionRate': commissionRate,
+      if (commissionAmount != null) 'commissionAmount': commissionAmount,
+      if (distanceKm != null) 'distanceKm': distanceKm,
+      if (etaMinutes != null) 'etaMinutes': etaMinutes,
+      if (isRated != null) 'isRated': isRated,
+      if (acceptedAt != null) 'acceptedAt': Timestamp.fromDate(acceptedAt!),
+      if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt!),
     };
   }
 
@@ -99,6 +137,15 @@ class RequestModel {
     String? urgencyLevel,
     DateTime? createdAt,
     DateTime? updatedAt,
+    double? price,
+    double? finalPrice,
+    double? commissionRate,
+    double? commissionAmount,
+    double? distanceKm,
+    int? etaMinutes,
+    bool? isRated,
+    DateTime? acceptedAt,
+    DateTime? completedAt,
   }) {
     return RequestModel(
       id: id ?? this.id,
@@ -111,6 +158,15 @@ class RequestModel {
       urgencyLevel: urgencyLevel ?? this.urgencyLevel,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      price: price ?? this.price,
+      finalPrice: finalPrice ?? this.finalPrice,
+      commissionRate: commissionRate ?? this.commissionRate,
+      commissionAmount: commissionAmount ?? this.commissionAmount,
+      distanceKm: distanceKm ?? this.distanceKm,
+      etaMinutes: etaMinutes ?? this.etaMinutes,
+      isRated: isRated ?? this.isRated,
+      acceptedAt: acceptedAt ?? this.acceptedAt,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 }

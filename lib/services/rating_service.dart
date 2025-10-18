@@ -274,4 +274,64 @@ class RatingService {
       };
     }
   }
+  // Get ratings by request ID
+  Stream<List<RatingModel>> getRatingsByRequestId(String requestId) {
+    return _firestore
+        .collection(ratingsCollection)
+        .where('requestId', isEqualTo: requestId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => RatingModel.fromMap(doc.data(), documentId: doc.id))
+            .toList());
+  }
+
+  // Check if doctor has rated patient for specific request
+  Future<bool> hasDoctorRatedPatient({required String requestId, required String doctorId}) async {
+    try {
+      final snapshot = await _firestore
+          .collection(ratingsCollection)
+          .where('requestId', isEqualTo: requestId)
+          .where('fromUserId', isEqualTo: doctorId)
+          .limit(1)
+          .get();
+      return snapshot.docs.isNotEmpty;
+    } catch (e) {
+      print('Error checking if doctor rated patient: $e');
+      return false;
+    }
+  }
+
+  // Check if patient has rated doctor for specific request
+  Future<bool> hasPatientRatedDoctor({required String requestId, required String patientId}) async {
+    try {
+      final snapshot = await _firestore
+          .collection(ratingsCollection)
+          .where('requestId', isEqualTo: requestId)
+          .where('fromUserId', isEqualTo: patientId)
+          .limit(1)
+          .get();
+      return snapshot.docs.isNotEmpty;
+    } catch (e) {
+      print('Error checking if patient rated doctor: $e');
+      return false;
+    }
+  }
+  //
+// Get ratings by current user for specific request
+  Stream<List<RatingModel>> getRatingsByCurrentUserForRequest(String requestId) {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) return const Stream.empty();
+
+    return _firestore
+        .collection(ratingsCollection)
+        .where('fromUserId', isEqualTo: currentUser.uid)
+        .where('requestId', isEqualTo: requestId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+        .map((doc) => RatingModel.fromMap(doc.data(), documentId: doc.id))
+        .toList());
+  }
+
 }

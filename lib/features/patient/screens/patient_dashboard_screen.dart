@@ -3,14 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../../data/models/rating_model.dart';
 import '../../../data/models/request_model.dart';
 import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/firestore_service.dart';
+import '../../../services/rating_service.dart';
 import '../../../services/request_service.dart';
 import '../../notifications/notification_request_service.dart';
-
 class PatientDashboardScreen extends ConsumerStatefulWidget {
   const PatientDashboardScreen({super.key});
 
@@ -493,17 +493,47 @@ class _PatientDashboardScreenState
           if (request.status == RequestStatus.completed &&
               request.doctorId != null) ...[
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _rateDoctor(request),
-                icon: const Icon(Icons.star),
-                label: const Text('تقييم الطبيب'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber[600],
-                  foregroundColor: Colors.white,
-                ),
-              ),
+            StreamBuilder<List<RatingModel>>(
+              stream: RatingService().getRatingsByRequestId(request.id),
+              builder: (context, snapshot) {
+                final myId = ref
+                    .read(currentUserDataProvider)
+                    .maybeWhen(data: (u) => u?.uid, orElse: () => null);
+                final hasPatientRated = (snapshot.data ?? []).any(
+                  (r) => r.fromUserId == myId,
+                );
+                if (hasPatientRated || request.isRated == true) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'تم التقييم',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _rateDoctor(request),
+                    icon: const Icon(Icons.star),
+                    label: const Text('تقييم الطبيب'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber[600],
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ],

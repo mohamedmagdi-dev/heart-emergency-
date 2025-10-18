@@ -43,6 +43,8 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
     'نساء وولادة',
     'عظام',
     'أنف وأذن وحنجرة',
+    'ممرض', // 🆕 تخصص جديد
+    'قابلة', // 🆕 تخصص جديد
   ];
 
   final List<String> _experiences = [

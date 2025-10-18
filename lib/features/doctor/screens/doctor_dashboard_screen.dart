@@ -445,16 +445,49 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           child: StreamBuilder<List<RequestModel>>(
             stream: _firestoreService.getDoctorRequests(user.uid),
             builder: (context, snapshot) {
-              final completedRequests =
-                  snapshot.data
-                      ?.where((r) => r.status == RequestStatus.completed)
-                      .length ??
-                  0;
-              return _buildStatCard(
-                title: 'الطلبات المكتملة',
-                value: '$completedRequests',
-                icon: Icons.check_circle,
-                color: Colors.green,
+              final list = snapshot.data ?? [];
+              final completedRequests = list.where((r) => r.status == RequestStatus.completed).length;
+              final totalCompletedPrice = list
+                  .where((r) => r.status == RequestStatus.completed && (r.finalPrice ?? r.price) != null)
+                  .fold<double>(0.0, (sum, r) => sum + ((r.finalPrice ?? r.price) ?? 0));
+              final commission = (totalCompletedPrice * 0.12);
+              return Column(
+                children: [
+                  _buildStatCard(
+                    title: 'الطلبات المكتملة',
+                    value: '$completedRequests',
+                    icon: Icons.check_circle,
+                    color: Colors.green,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.percent, size: 16, color: Colors.red),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'العمولة التقديرية: ${commission.toStringAsFixed(2)} SAR',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12, color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               );
             },
           ),
@@ -632,6 +665,252 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
 
   //
   //
+  // Widget _buildRequestCard(RequestModel request) {
+  //   return Container(
+  //     margin: const EdgeInsets.only(bottom: 12),
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       borderRadius: BorderRadius.circular(12),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.05),
+  //           blurRadius: 10,
+  //           offset: const Offset(0, 2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Row(
+  //           children: [
+  //             Container(
+  //               padding: const EdgeInsets.symmetric(
+  //                 horizontal: 12,
+  //                 vertical: 6,
+  //               ),
+  //               decoration: BoxDecoration(
+  //                 color: Colors.orange.withOpacity(0.1),
+  //                 borderRadius: BorderRadius.circular(20),
+  //               ),
+  //               child: const Row(
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: [
+  //                   Icon(Icons.pending, size: 16, color: Colors.orange),
+  //                   SizedBox(width: 4),
+  //                   Text(
+  //                     'في الانتظار',
+  //                     style: TextStyle(
+  //                       color: Colors.orange,
+  //                       fontWeight: FontWeight.w600,
+  //                       fontSize: 12,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //             const Spacer(),
+  //             Text(
+  //               _formatDateTime(request.createdAt),
+  //               style: const TextStyle(color: Colors.grey, fontSize: 12),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 12),
+  //         // Patient info will be fetched separately
+  //         FutureBuilder<UserModel?>(
+  //           future: _firestoreService.getUser(request.patientId),
+  //           builder: (context, patientSnapshot) {
+  //             final patient = patientSnapshot.data;
+  //             return Row(
+  //               children: [
+  //                 const Icon(Icons.person, size: 16, color: Colors.grey),
+  //                 const SizedBox(width: 4),
+  //                 Text(
+  //                   patient?.name ?? 'مريض',
+  //                   style: const TextStyle(fontWeight: FontWeight.w600),
+  //                 ),
+  //               ],
+  //             );
+  //           },
+  //         ),
+  //         const SizedBox(height: 8),
+  //         Row(
+  //           children: [
+  //             const Icon(Icons.location_on, size: 16, color: Colors.grey),
+  //             const SizedBox(width: 4),
+  //             Expanded(
+  //               child: Text(
+  //                 'خط العرض: ${request.patientLocation.latitude.toStringAsFixed(4)}, خط الطول: ${request.patientLocation.longitude.toStringAsFixed(4)}',
+  //                 style: const TextStyle(color: Colors.grey, fontSize: 14),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 8),
+  //         if (request.price != null)
+  //           Row(
+  //             children: [
+  //               const Icon(Icons.attach_money, size: 16, color: Colors.green),
+  //               const SizedBox(width: 4),
+  //               Text(
+  //                 'السعر: ${request.price!.toStringAsFixed(2)} SAR',
+  //                 style: const TextStyle(fontWeight: FontWeight.w600),
+  //               ),
+  //             ],
+  //           ),
+  //         // 🟢 Added: Show doctor earning calculation
+  //         if (request.status == RequestStatus.completed && request.price != null)
+  //           FutureBuilder<double?>(
+  //             future: _requestService.getDoctorEarning(request.id),
+  //             builder: (context, earningSnapshot) {
+  //               if (earningSnapshot.hasData && earningSnapshot.data != null) {
+  //                 final earning = earningSnapshot.data!;
+  //                 final commission = request.price! - earning;
+  //                 return Column(
+  //                   children: [
+  //                     const SizedBox(height: 4),
+  //                     Row(
+  //                       children: [
+  //                         const Icon(Icons.account_balance_wallet, size: 16, color: Colors.blue),
+  //                         const SizedBox(width: 4),
+  //                         Text(
+  //                           'أرباحك: ${earning.toStringAsFixed(2)} SAR',
+  //                           style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.blue),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                     const SizedBox(height: 2),
+  //                     Row(
+  //                       children: [
+  //                         const Icon(Icons.remove_circle_outline, size: 16, color: Colors.red),
+  //                         const SizedBox(width: 4),
+  //                         Text(
+  //                           'العمولة (12%): ${commission.toStringAsFixed(2)} SAR',
+  //                           style: const TextStyle(fontSize: 12, color: Colors.red),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ],
+  //                 );
+  //               }
+  //               return const SizedBox.shrink();
+  //             },
+  //           ),
+  //         const SizedBox(height: 16),
+  //         if (request.status == RequestStatus.pending) ...[
+  //           Row(
+  //             children: [
+  //               Expanded(
+  //                 child: ElevatedButton.icon(
+  //                   onPressed: () => _acceptRequest(request),
+  //                   icon: const Icon(Icons.check),
+  //                   label: FittedBox(child: const Text('قبول')),
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.green,
+  //                     foregroundColor: Colors.white,
+  //                   ),
+  //                 ),
+  //               ),
+  //               const SizedBox(width: 12),
+  //               Expanded(
+  //                 child: ElevatedButton.icon(
+  //                   onPressed: () => _rejectRequest(request),
+  //                   icon: const Icon(Icons.close),
+  //                   label: FittedBox(child: const Text('رفض')),
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.red,
+  //                     foregroundColor: Colors.white,
+  //                   ),
+  //                 ),
+  //               ),
+  //               const SizedBox(width: 12),
+  //               Expanded(
+  //                 child: ElevatedButton.icon(
+  //                   onPressed: () async {
+  //                     final lat = request.patientLocation.latitude;
+  //                     final lng = request.patientLocation.longitude;
+  //                     final patient = await _firestoreService.getUser(
+  //                       request.patientId,
+  //                     );
+  //                     if (!mounted) return;
+  //                     context.push(
+  //                       '/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent(patient?.name ?? 'مريض')}',
+  //                     );
+  //                   },
+  //                   icon: const Icon(Icons.map),
+  //                   label: FittedBox(child: const Text('الخريطة')),
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.blue,
+  //                     foregroundColor: Colors.white,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ] else if (request.status == RequestStatus.accepted ||
+  //             request.status == RequestStatus.completed) ...[
+  //           Row(
+  //             children: [
+  //               if (request.status == RequestStatus.accepted)
+  //                 Expanded(
+  //                   child: ElevatedButton.icon(
+  //                     onPressed: () => _completeRequest(request),
+  //                     icon: const Icon(Icons.check_circle),
+  //                     label: const Text('إكمال الطلب'),
+  //                     style: ElevatedButton.styleFrom(
+  //                       backgroundColor: Colors.blue,
+  //                       foregroundColor: Colors.white,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               if (request.status == RequestStatus.completed) ...[
+  //                 const SizedBox(width: 12),
+  //                 Expanded(
+  //                   child: ElevatedButton.icon(
+  //                     onPressed: () => _ratePatient(request),
+  //                     icon: const Icon(Icons.star),
+  //                     label: const Text('تقييم المريض'),
+  //                     style: ElevatedButton.styleFrom(
+  //                       backgroundColor: Colors.amber[600],
+  //                       foregroundColor: Colors.white,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ],
+  //           ),
+  //           const SizedBox(height: 8),
+  //           if (request.status == RequestStatus.accepted)
+  //             StreamBuilder<Map<String, dynamic>>(
+  //               stream: _requestService.streamDistanceAndEta(
+  //                 patientLocation: request.patientLocation,
+  //                 doctorId: request.doctorId!,
+  //               ),
+  //               builder: (context, snapshot) {
+  //                 final distanceKm = snapshot.data?['distanceKm'] as double?;
+  //                 final etaMinutes = snapshot.data?['etaMinutes'] as int?;
+  //                 if (distanceKm == null || etaMinutes == null) {
+  //                   return const SizedBox.shrink();
+  //                 }
+  //                 return Row(
+  //                   children: [
+  //                     const Icon(Icons.timeline, size: 16, color: Colors.blue),
+  //                     const SizedBox(width: 6),
+  //                     Text('المسافة: ${distanceKm.toStringAsFixed(2)} كم'),
+  //                     const SizedBox(width: 12),
+  //                     const Icon(Icons.access_time, size: 16, color: Colors.orange),
+  //                     const SizedBox(width: 6),
+  //                     Text('ETA: $etaMinutes د'),
+  //                   ],
+  //                 );
+  //               },
+  //             ),
+  //         ],
+  //       ],
+  //     ),
+  //   );
+  // }
   Widget _buildRequestCard(RequestModel request) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -714,6 +993,56 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          if (request.price != null)
+            Row(
+              children: [
+                const Icon(Icons.attach_money, size: 16, color: Colors.green),
+                const SizedBox(width: 4),
+                Text(
+                  'السعر: ${request.price!.toStringAsFixed(2)} SAR',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          // 🟢 Added: Show doctor earning calculation
+          if (request.status == RequestStatus.completed && request.price != null)
+            FutureBuilder<double?>(
+              future: _requestService.getDoctorEarning(request.id),
+              builder: (context, earningSnapshot) {
+                if (earningSnapshot.hasData && earningSnapshot.data != null) {
+                  final earning = earningSnapshot.data!;
+                  final commission = request.price! - earning;
+                  return Column(
+                    children: [
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.account_balance_wallet, size: 16, color: Colors.blue),
+                          const SizedBox(width: 4),
+                          Text(
+                            'أرباحك: ${earning.toStringAsFixed(2)} SAR',
+                            style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.blue),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.remove_circle_outline, size: 16, color: Colors.red),
+                          const SizedBox(width: 4),
+                          Text(
+                            'العمولة (12%): ${commission.toStringAsFixed(2)} SAR',
+                            style: const TextStyle(fontSize: 12, color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           const SizedBox(height: 16),
           if (request.status == RequestStatus.pending) ...[
             Row(
@@ -783,20 +1112,83 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   ),
                 if (request.status == RequestStatus.completed) ...[
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _ratePatient(request),
-                      icon: const Icon(Icons.star),
-                      label: const Text('تقييم المريض'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber[600],
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
+                  // 🔥 التحقق إذا هذا الطبيب قام بالتقييم لهذا الطلب فقط
+                  StreamBuilder<List<RatingModel>>(
+                    stream: _ratingService.getRatingsByCurrentUserForRequest(request.id),
+                    builder: (context, ratingSnapshot) {
+                      final hasRated = ratingSnapshot.data?.isNotEmpty ?? false;
+
+                      // لو مفيش تقييم، يظهر زر التقييم
+                      if (!hasRated) {
+                        return Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _ratePatient(request),
+                            icon: const Icon(Icons.star),
+                            label: const Text('تقييم المريض'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amber[600],
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        );
+                      } else {
+                        // لو عمل تقييم، ميظهرش الزر ويظهر رسالة
+                        return Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.green[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.green[100]!),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle, size: 16, color: Colors.green[600]),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'تم التقييم',
+                                  style: TextStyle(
+                                    color: Colors.green[600],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ],
               ],
             ),
+            const SizedBox(height: 8),
+            if (request.status == RequestStatus.accepted)
+              StreamBuilder<Map<String, dynamic>>(
+                stream: _requestService.streamDistanceAndEta(
+                  patientLocation: request.patientLocation,
+                  doctorId: request.doctorId!,
+                ),
+                builder: (context, snapshot) {
+                  final distanceKm = snapshot.data?['distanceKm'] as double?;
+                  final etaMinutes = snapshot.data?['etaMinutes'] as int?;
+                  if (distanceKm == null || etaMinutes == null) {
+                    return const SizedBox.shrink();
+                  }
+                  return Row(
+                    children: [
+                      const Icon(Icons.timeline, size: 16, color: Colors.blue),
+                      const SizedBox(width: 6),
+                      Text('المسافة: ${distanceKm.toStringAsFixed(2)} كم'),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.access_time, size: 16, color: Colors.orange),
+                      const SizedBox(width: 6),
+                      Text('ETA: $etaMinutes د'),
+                    ],
+                  );
+                },
+              ),
           ],
         ],
       ),

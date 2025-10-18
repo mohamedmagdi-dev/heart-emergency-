@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../data/models/rating_model.dart';
 import '../../../data/models/request_model.dart';
 import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/firestore_service.dart';
+import '../../../services/rating_service.dart';
 import '../../../services/request_service.dart';
 
 class RequestHistoryScreen extends ConsumerStatefulWidget {
@@ -387,18 +389,36 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
                         label: const Text('التفاصيل'),
                       ),
                     ),
-                    if (request.status == RequestStatus.completed &&
-                        request.doctorId != null) ...[
+                    if (request.status == RequestStatus.completed && request.doctorId != null) ...[
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _rateDoctor(request),
-                          icon: const Icon(Icons.star),
-                          label: const Text('تقييم الطبيب'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.amber[600],
-                            foregroundColor: Colors.white,
-                          ),
+                        child: StreamBuilder<List<RatingModel>>(
+                          stream: RatingService().getRatingsByRequestId(request.id),
+                          builder: (context, snapshot) {
+                            final currentUserId = ref.read(currentUserDataProvider).maybeWhen(data: (u) => u?.uid, orElse: () => null);
+                            final hasPatientRated = (snapshot.data ?? []).any((r) => r.fromUserId == currentUserId);
+                            if (hasPatientRated || request.isRated == true) {
+                              return Container(
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.green[100]!),
+                                ),
+                                child: Text('تم التقييم', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.w600)),
+                              );
+                            }
+                            return ElevatedButton.icon(
+                              onPressed: () => _rateDoctor(request),
+                              icon: const Icon(Icons.star),
+                              label: const Text('تقييم الطبيب'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.amber[600],
+                                foregroundColor: Colors.white,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -448,7 +468,7 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
             child: const Text('إغلاق'),
           ),
           if (request.status == RequestStatus.completed &&
-              request.doctorId != null)
+              request.doctorId != null && request.isRated != true)
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);

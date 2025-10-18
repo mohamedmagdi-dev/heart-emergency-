@@ -19,6 +19,10 @@ service cloud.firestore {
       return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
+    function isSupervisor() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'supervisor';
+    }
+    
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -29,6 +33,10 @@ service cloud.firestore {
     
     // Users collection rules
     match /users/{userId} {
+      
+      // Added to allow phone login verification queries
+      allow list: if true;
+      allow get: if true;
       // Allow read access:
       // - User can read their own profile
       // - Admins can read all profiles
@@ -66,7 +74,10 @@ service cloud.firestore {
       allow read: if isAuthenticated() &&
                   ((isPatient() && resource.data.patientId == request.auth.uid) ||
                    (isDoctor() && resource.data.doctorId == request.auth.uid) ||
-                   isAdmin());
+                   isAdmin() ||
+                   // Supervisors can read requests of assigned doctors
+                   (isSupervisor() && (resource.data.supervisorId == request.auth.uid ||
+                    resource.data.doctorId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.assignedDoctorIds)));
       
       // Allow create: Only patients can create emergency requests
       allow create: if isPatient() 

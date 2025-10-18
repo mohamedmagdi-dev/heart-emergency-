@@ -304,7 +304,7 @@ class _RatePatientScreenState extends State<RatePatientScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {

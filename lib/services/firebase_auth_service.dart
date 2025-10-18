@@ -11,6 +11,87 @@ class FirebaseAuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  // 🟢 Added: Phone-only signup for patients (no email required)
+  Future<UserModel?> signUpWithPhoneOnly({
+    required String phone,
+    required String password,
+    required String name,
+    Currency currency = Currency.egp,
+    String? fcmToken,
+  }) async {
+    try {
+      // Generate a unique email from phone number for Firebase Auth
+      final email = '${phone.replaceAll('+', '').replaceAll(' ', '')}@phone.emergency.app';
+      
+      // Create user in Firebase Auth
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = userCredential.user;
+      if (user == null) return null;
+
+      // Create user document in Firestore
+      final userData = UserModel(
+        uid: user.uid,
+        role: 'patient',
+        name: name,
+        email: email, // Store generated email for Firebase Auth compatibility
+        phone: phone,
+        currency: currency,
+        walletBalance: 0.0,
+        createdAt: DateTime.now(),
+        verified: true, // Phone-only patients are auto-verified
+        fcmToken: fcmToken,
+        available: false,
+      );
+
+      await _firestore.collection('users').doc(user.uid).set(userData.toMap());
+
+      // Update display name
+      await user.updateDisplayName(name);
+
+      return userData;
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'حدث خطأ أثناء إنشاء الحساب: $e';
+    }
+  }
+
+  // 🟢 Added: Phone-only signin for patients
+  Future<UserModel?> signInWithPhoneOnly({
+    required String phone,
+    required String password,
+  }) async {
+    try {
+      // Generate the same email format used during signup
+      final email = '${phone.replaceAll('+', '').replaceAll(' ', '')}@phone.emergency.app';
+      
+      // Sign in with Firebase Auth
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = userCredential.user;
+      if (user == null) return null;
+
+      // Get user data from Firestore
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw 'حساب المستخدم غير موجود في قاعدة البيانات';
+      }
+
+      return UserModel.fromMap(userDoc.data()!);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'حدث خطأ أثناء تسجيل الدخول: $e';
+    }
+  }
+
   // Sign up with email and password
   Future<UserModel?> signUp({
     required String email,

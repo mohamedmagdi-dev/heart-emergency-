@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/models/request_model.dart';
 import '../../../data/models/user_model.dart';
 import '../../../services/firestore_service.dart';
+import '../../../services/request_service.dart';
 
 class RequestTrackingScreen extends ConsumerStatefulWidget {
   final String requestId;
@@ -20,6 +21,7 @@ class RequestTrackingScreen extends ConsumerStatefulWidget {
 
 class _RequestTrackingScreenState extends ConsumerState<RequestTrackingScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final RequestService _requestService = RequestService();
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +84,38 @@ class _RequestTrackingScreenState extends ConsumerState<RequestTrackingScreen> {
               children: [
                 _buildStatusCard(request),
                 const SizedBox(height: 20),
+                if (request.status == RequestStatus.accepted && request.etaMinutes != null)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.access_time, color: Colors.orange),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'الطبيب سيصل خلال ${request.etaMinutes} دقيقة',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (request.status == RequestStatus.accepted && request.etaMinutes != null)
+                  const SizedBox(height: 20),
                 _buildRequestDetailsCard(request),
                 const SizedBox(height: 20),
                 if (request.doctorId != null) _buildDoctorInfoCard(request.doctorId!),
@@ -201,6 +235,15 @@ class _RequestTrackingScreenState extends ConsumerState<RequestTrackingScreen> {
           _buildDetailRow('الأعراض', request.symptoms),
           _buildDetailRow('مستوى الأولوية', request.urgencyLevel),
           _buildDetailRow('وقت الطلب', _formatDateTime(request.createdAt)),
+          if (request.price != null)
+            _buildDetailRow('السعر المحدد', '${request.price!.toStringAsFixed(2)} SAR'),
+          if (request.finalPrice != null)
+            _buildDetailRow('السعر النهائي', '${request.finalPrice!.toStringAsFixed(2)} SAR'),
+          if (request.status == RequestStatus.accepted && request.doctorId != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: _buildLiveDistanceEta(request),
+            ),
         ],
       ),
     );
@@ -327,8 +370,54 @@ class _RequestTrackingScreenState extends ConsumerState<RequestTrackingScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.phone, size: 18, color: Colors.green[700]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      doctor.phone,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLiveDistanceEta(RequestModel request) {
+    return StreamBuilder<Map<String, dynamic>>(
+      stream: _requestService.streamDistanceAndEta(
+        patientLocation: request.patientLocation,
+        doctorId: request.doctorId!,
+      ),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+        final data = snapshot.data!;
+        final double? distanceKm = data['distanceKm'] as double?;
+        final int? etaMinutes = data['etaMinutes'] as int?;
+        if (distanceKm == null || etaMinutes == null) {
+          return const SizedBox.shrink();
+        }
+        return Row(
+          children: [
+            const Icon(Icons.directions_walk, size: 18, color: Colors.blue),
+            const SizedBox(width: 8),
+            Text('المسافة: ${distanceKm.toStringAsFixed(2)} كم',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            const SizedBox(width: 16),
+            const Icon(Icons.access_time, size: 18, color: Colors.orange),
+            const SizedBox(width: 8),
+            Text('الوصول خلال: $etaMinutes دقيقة',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          ],
         );
       },
     );
@@ -437,6 +526,55 @@ class _RequestTrackingScreenState extends ConsumerState<RequestTrackingScreen> {
               ),
             ),
           ),
+        
+        // 🟢 Added: Complete request button for accepted requests
+        if (request.status == RequestStatus.accepted) ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _completeRequest(request),
+              icon: const Icon(Icons.check_circle),
+              label: const Text('تم الانتهاء من الزيارة'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green[600],
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _callDoctor(request),
+              icon: const Icon(Icons.phone),
+              label: const Text('اتصال بالطبيب'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[600],
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+        ],
+        
+        // 🟢 Added: Rate doctor button for completed requests
+        if (request.status == RequestStatus.completed) ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _rateDoctor(request),
+              icon: const Icon(Icons.star),
+              label: const Text('تقييم الطبيب'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber[600],
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+        ],
+        
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
@@ -453,6 +591,92 @@ class _RequestTrackingScreenState extends ConsumerState<RequestTrackingScreen> {
         ),
       ],
     );
+  }
+
+  // 🟢 Added: Complete request from patient side
+  Future<void> _completeRequest(RequestModel request) async {
+    try {
+      await _requestService.completeEmergencyRequest(request.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم إكمال الطلب بنجاح!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ في إكمال الطلب: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // 🟢 Added: Call doctor
+  Future<void> _callDoctor(RequestModel request) async {
+    if (request.doctorId == null) return;
+    
+    try {
+      final doctor = await _firestoreService.getUser(request.doctorId!);
+      if (doctor != null && mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('اتصال بالطبيب'),
+            content: Text('هل تريد الاتصال بالدكتور ${doctor.name}؟\nرقم الهاتف: ${doctor.phone}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('إلغاء'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Here you would implement actual phone calling
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('سيتم فتح تطبيق الهاتف')),
+                  );
+                },
+                child: const Text('اتصال'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في جلب بيانات الطبيب: $e')),
+        );
+      }
+    }
+  }
+
+  // 🟢 Added: Rate doctor method
+  Future<void> _rateDoctor(RequestModel request) async {
+    if (request.doctorId == null) return;
+    
+    try {
+      final doctor = await _firestoreService.getUser(request.doctorId!);
+      if (doctor != null && mounted) {
+        // Navigate to rate doctor screen
+        context.push('/patient/rate-doctor', extra: {
+          'doctor': doctor,
+          'requestId': request.id,
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في جلب بيانات الطبيب: $e')),
+        );
+      }
+    }
   }
 
   void _showCancelDialog(RequestModel request) {

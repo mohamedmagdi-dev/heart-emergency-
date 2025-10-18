@@ -9,6 +9,9 @@ import 'package:go_router/go_router.dart';
 import '../data/models/user_model.dart';
 // Admin
 import '../features/admin/screens/admin_dashboard_screen.dart';
+import '../features/admin/screens/admin_price_screen.dart';
+import '../features/admin/screens/admin_supervisors_screen.dart';
+import '../features/admin/screens/admin_requests_management_screen.dart';
 import '../features/auth/screens/doctor_verification_pending_screen.dart';
 import '../features/auth/screens/firebase_admin_login_screen.dart';
 import '../features/auth/screens/firebase_doctor_auth_screen.dart';
@@ -44,6 +47,7 @@ import '../features/patient/screens/simple_appointment_screen.dart';
 import '../features/patient/screens/simple_payment_screen.dart';
 import '../features/patient/screens/simple_wallet_screen.dart';
 import '../features/splash/splash_screen.dart';
+import '../services/firestore_service.dart';
 
 
 // Auth guard to check user authentication and role
@@ -273,6 +277,22 @@ GoRouter createFirebaseRouter() {
         path: '/admin/login',
         builder: (context, state) => const FirebaseAdminLoginScreen(),
       ),
+      // admin price
+      // في الـ GoRouter configuration
+      // GoRoute(
+      //   path: '/admin/prices',
+      //   name: 'admin_prices',
+      //   builder: (context, state) {
+      //     return PricesScreen(
+      //       firestoreService: FirestoreService(), // أو مرره من الـ provider
+      //     );
+      //   },
+      // ),
+      GoRoute(
+        path: '/admin/prices',
+        name: 'admin_prices',
+        builder: (context, state) => const PricesScreen(),
+      ),
       // forgetPassword routes
       GoRoute(
         path: '/doctor/forgot-password',
@@ -422,6 +442,16 @@ GoRouter createFirebaseRouter() {
         redirect: (context, state) => _authGuard(context, state, 'admin'),
       ),
       GoRoute(
+        path: '/admin/supervisors',
+        builder: (context, state) => const AdminSupervisorsScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'admin'),
+      ),
+      GoRoute(
+        path: '/admin/requests',
+        builder: (context, state) => const AdminRequestsManagementScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'admin'),
+      ),
+      GoRoute(
         path: '/doctor/reviews',
         builder: (context, state) {
           final doctorId = state.extra as String;
@@ -429,30 +459,6 @@ GoRouter createFirebaseRouter() {
         },
       ),
 
-      // GoRoute(
-      //   path: "/doctor/emergency/map",
-      //   builder: (context, state) {
-      //     final extra = state.extra as Map<String, dynamic>?;
-      //
-      //     if (extra == null ||
-      //         extra['request'] == null ||
-      //         extra['patient'] == null) {
-      //       return const Scaffold(
-      //         body: Center(
-      //           child: Text('خطأ: لم يتم تمرير بيانات الحالة أو المريض'),
-      //         ),
-      //       );
-      //     }
-      //
-      //     final request = extra['request'] as RequestModel;
-      //     final patient = extra['patient'] as UserModel;
-      //
-      //     return DoctorEmergencyMapScreen(
-      //       request: request,
-      //       patient: patient,
-      //     );
-      //   },
-      // ),
       GoRoute(
         path: '/doctor/emergency/map',
         builder: (context, state) {
