@@ -459,34 +459,34 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                     icon: Icons.check_circle,
                     color: Colors.green,
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.percent, size: 16, color: Colors.red),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            'العمولة التقديرية: ${commission.toStringAsFixed(2)} SAR',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12, color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // const SizedBox(height: 8),
+                  // Container(
+                  //   padding: const EdgeInsets.all(12),
+                  //   decoration: BoxDecoration(
+                  //     borderRadius: BorderRadius.circular(12),
+                  //     boxShadow: [
+                  //       BoxShadow(
+                  //         color: Colors.black.withOpacity(0.05),
+                  //         blurRadius: 10,
+                  //         offset: const Offset(0, 2),
+                  //       ),
+                  //     ],
+                  //   ),
+                  //   child: Row(
+                  //     mainAxisAlignment: MainAxisAlignment.center,
+                  //     children: [
+                  //       const Icon(Icons.percent, size: 16, color: Colors.red),
+                  //       const SizedBox(width: 6),
+                  //       Flexible(
+                  //         child: Text(
+                  //           'العمولة التقديرية: ${commission.toStringAsFixed(2)} SAR',
+                  //           overflow: TextOverflow.ellipsis,
+                  //           style: const TextStyle(fontSize: 12, color: Colors.red),
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
                 ],
               );
             },

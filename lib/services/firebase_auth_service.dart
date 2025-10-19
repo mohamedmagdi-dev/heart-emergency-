@@ -21,7 +21,7 @@ class FirebaseAuthService {
     try {
       // Generate a unique email from phone number for Firebase Auth
       final email = '${phone.replaceAll('+', '').replaceAll(' ', '')}@phone.emergency.app';
-      
+
       // Create user in Firebase Auth
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -67,7 +67,7 @@ class FirebaseAuthService {
     try {
       // Generate the same email format used during signup
       final email = '${phone.replaceAll('+', '').replaceAll(' ', '')}@phone.emergency.app';
-      
+
       // Sign in with Firebase Auth
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
@@ -161,7 +161,7 @@ class FirebaseAuthService {
 
       // Get user data from Firestore
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      
+
       if (!userDoc.exists) {
         throw 'بيانات المستخدم غير موجودة';
       }
@@ -289,7 +289,7 @@ class FirebaseAuthService {
         verificationId: verificationId,
         smsCode: smsCode,
       );
-      
+
       return await _auth.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
@@ -306,11 +306,11 @@ class FirebaseAuthService {
           .where('phone', isEqualTo: phoneNumber)
           .limit(1)
           .get();
-      
+
       if (querySnapshot.docs.isEmpty) {
         return null;
       }
-      
+
       return UserModel.fromMap(querySnapshot.docs.first.data());
     } catch (e) {
       throw 'فشل البحث عن المستخدم: $e';
@@ -351,4 +351,5 @@ class FirebaseAuthService {
     }
   }
 }
+
 
