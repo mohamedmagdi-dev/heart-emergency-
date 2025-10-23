@@ -12,7 +12,9 @@ import '../../../providers/auth_provider.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/rating_service.dart';
 import '../../../services/request_service.dart';
+import '../../../services/earnings_service.dart';
 import '../../notifications/notification_request_service.dart';
+import '../widgets/doctor_price_setter_widget.dart';
 
 class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({super.key});
@@ -26,10 +28,30 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final RequestService _requestService = RequestService();
   final RatingService _ratingService = RatingService();
+  final EarningsService _earningsService = EarningsService();
   final NotificationRequestService _notificationService =
       NotificationRequestService();
 
   bool _showReviews = true;
+
+  void _initializeDoctorEarnings(String doctorId) {
+    // Initialize earnings in the background
+    _earningsService.initializeDoctorEarnings(doctorId);
+  }
+  @override
+  void initState() {
+    super.initState();
+    // 🔥 تحديث الأرباح أول ما الصفحة تفتح
+    Future.microtask(() {
+      final currentUser = ref.read(currentUserDataProvider).maybeWhen(
+        data: (user) => user,
+        orElse: () => null,
+      );
+      if (currentUser != null) {
+        _initializeDoctorEarnings(currentUser.uid);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,6 +153,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               child: Column(
                 children: [
                   _buildStatusCard(user),
+                  const SizedBox(height: 16),
+                  _buildEarningsCard(user.uid),
                   const SizedBox(height: 16),
                   _buildStatsCards(user),
                   const SizedBox(height: 16),
@@ -911,6 +935,295 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   //     ),
   //   );
   // }
+  //
+  // Widget _buildRequestCard(RequestModel request) {
+  //   return Container(
+  //     margin: const EdgeInsets.only(bottom: 12),
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       borderRadius: BorderRadius.circular(12),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.05),
+  //           blurRadius: 10,
+  //           offset: const Offset(0, 2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Row(
+  //           children: [
+  //             Container(
+  //               padding: const EdgeInsets.symmetric(
+  //                 horizontal: 12,
+  //                 vertical: 6,
+  //               ),
+  //               decoration: BoxDecoration(
+  //                 color: Colors.orange.withOpacity(0.1),
+  //                 borderRadius: BorderRadius.circular(20),
+  //               ),
+  //               child: const Row(
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: [
+  //                   Icon(Icons.pending, size: 16, color: Colors.orange),
+  //                   SizedBox(width: 4),
+  //                   Text(
+  //                     'في الانتظار',
+  //                     style: TextStyle(
+  //                       color: Colors.orange,
+  //                       fontWeight: FontWeight.w600,
+  //                       fontSize: 12,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //             const Spacer(),
+  //             Text(
+  //               _formatDateTime(request.createdAt),
+  //               style: const TextStyle(color: Colors.grey, fontSize: 12),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 12),
+  //         // Patient info will be fetched separately
+  //         FutureBuilder<UserModel?>(
+  //           future: _firestoreService.getUser(request.patientId),
+  //           builder: (context, patientSnapshot) {
+  //             final patient = patientSnapshot.data;
+  //             return Row(
+  //               children: [
+  //                 const Icon(Icons.person, size: 16, color: Colors.grey),
+  //                 const SizedBox(width: 4),
+  //                 Text(
+  //                   patient?.name ?? 'مريض',
+  //                   style: const TextStyle(fontWeight: FontWeight.w600),
+  //                 ),
+  //               ],
+  //             );
+  //           },
+  //         ),
+  //         const SizedBox(height: 8),
+  //         Row(
+  //           children: [
+  //             const Icon(Icons.location_on, size: 16, color: Colors.grey),
+  //             const SizedBox(width: 4),
+  //             Expanded(
+  //               child: Text(
+  //                 'خط العرض: ${request.patientLocation.latitude.toStringAsFixed(4)}, خط الطول: ${request.patientLocation.longitude.toStringAsFixed(4)}',
+  //                 style: const TextStyle(color: Colors.grey, fontSize: 14),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 8),
+  //         if (request.price != null)
+  //           Row(
+  //             children: [
+  //               const Icon(Icons.attach_money, size: 16, color: Colors.green),
+  //               const SizedBox(width: 4),
+  //               Text(
+  //                 'السعر: ${request.price!.toStringAsFixed(2)} SAR',
+  //                 style: const TextStyle(fontWeight: FontWeight.w600),
+  //               ),
+  //             ],
+  //           ),
+  //         // 🟢 Added: Show doctor earning calculation
+  //         if (request.status == RequestStatus.completed && request.price != null)
+  //           FutureBuilder<double?>(
+  //             future: _requestService.getDoctorEarning(request.id),
+  //             builder: (context, earningSnapshot) {
+  //               if (earningSnapshot.hasData && earningSnapshot.data != null) {
+  //                 final earning = earningSnapshot.data!;
+  //                 final commission = request.price! - earning;
+  //                 return Column(
+  //                   children: [
+  //                     const SizedBox(height: 4),
+  //                     Row(
+  //                       children: [
+  //                         const Icon(Icons.account_balance_wallet, size: 16, color: Colors.blue),
+  //                         const SizedBox(width: 4),
+  //                         Text(
+  //                           'أرباحك: ${earning.toStringAsFixed(2)} SAR',
+  //                           style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.blue),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                     const SizedBox(height: 2),
+  //                     Row(
+  //                       children: [
+  //                         const Icon(Icons.remove_circle_outline, size: 16, color: Colors.red),
+  //                         const SizedBox(width: 4),
+  //                         Text(
+  //                           'العمولة (12%): ${commission.toStringAsFixed(2)} SAR',
+  //                           style: const TextStyle(fontSize: 12, color: Colors.red),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ],
+  //                 );
+  //               }
+  //               return const SizedBox.shrink();
+  //             },
+  //           ),
+  //         const SizedBox(height: 16),
+  //         // if (request.status == RequestStatus.pending)
+  //         if (request.status == RequestStatus.pending ||
+  //             (request.status == RequestStatus.accepted && request.price == null))
+  //           ...[
+  //           Row(
+  //             children: [
+  //               Expanded(
+  //                 child: ElevatedButton.icon(
+  //                   onPressed: () => _acceptRequest(request),
+  //                   icon: const Icon(Icons.check),
+  //
+  //                   // label: FittedBox(child: const Text('قبول')),
+  //                   label: FittedBox(child: Text(request.price == null ? 'تحديد السعر' : 'قبول')),
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.green,
+  //                     foregroundColor: Colors.white,
+  //                   ),
+  //                 ),
+  //               ),
+  //               const SizedBox(width: 12),
+  //               Expanded(
+  //                 child: ElevatedButton.icon(
+  //                   onPressed: () => _rejectRequest(request),
+  //                   icon: const Icon(Icons.close),
+  //                   label: FittedBox(child: const Text('رفض')),
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.red,
+  //                     foregroundColor: Colors.white,
+  //                   ),
+  //                 ),
+  //               ),
+  //               const SizedBox(width: 12),
+  //               Expanded(
+  //                 child: ElevatedButton.icon(
+  //                   onPressed: () async {
+  //                     final lat = request.patientLocation.latitude;
+  //                     final lng = request.patientLocation.longitude;
+  //                     final patient = await _firestoreService.getUser(
+  //                       request.patientId,
+  //                     );
+  //                     if (!mounted) return;
+  //                     context.push(
+  //                       '/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent(patient?.name ?? 'مريض')}',
+  //                     );
+  //                   },
+  //                   icon: const Icon(Icons.map),
+  //                   label: FittedBox(child: const Text('الخريطة')),
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.blue,
+  //                     foregroundColor: Colors.white,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ] else if (request.status == RequestStatus.accepted ||
+  //             request.status == RequestStatus.completed) ...[
+  //           Row(
+  //             children: [
+  //               if (request.status == RequestStatus.accepted)
+  //                 Expanded(
+  //                   child: ElevatedButton.icon(
+  //                     onPressed: () => _completeRequest(request),
+  //                     icon: const Icon(Icons.check_circle),
+  //                     label: const Text('إكمال الطلب'),
+  //                     style: ElevatedButton.styleFrom(
+  //                       backgroundColor: Colors.blue,
+  //                       foregroundColor: Colors.white,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               if (request.status == RequestStatus.completed) ...[
+  //                 const SizedBox(width: 12),
+  //                 // 🔥 التحقق إذا هذا الطبيب قام بالتقييم لهذا الطلب فقط
+  //                 StreamBuilder<List<RatingModel>>(
+  //                   stream: _ratingService.getRatingsByCurrentUserForRequest(request.id),
+  //                   builder: (context, ratingSnapshot) {
+  //                     final hasRated = ratingSnapshot.data?.isNotEmpty ?? false;
+  //
+  //                     // لو مفيش تقييم، يظهر زر التقييم
+  //                     if (!hasRated) {
+  //                       return Expanded(
+  //                         child: ElevatedButton.icon(
+  //                           onPressed: () => _ratePatient(request),
+  //                           icon: const Icon(Icons.star),
+  //                           label: const Text('تقييم المريض'),
+  //                           style: ElevatedButton.styleFrom(
+  //                             backgroundColor: Colors.amber[600],
+  //                             foregroundColor: Colors.white,
+  //                           ),
+  //                         ),
+  //                       );
+  //                     } else {
+  //                       // لو عمل تقييم، ميظهرش الزر ويظهر رسالة
+  //                       return Expanded(
+  //                         child: Container(
+  //                           padding: const EdgeInsets.symmetric(vertical: 12),
+  //                           decoration: BoxDecoration(
+  //                             color: Colors.green[50],
+  //                             borderRadius: BorderRadius.circular(8),
+  //                             border: Border.all(color: Colors.green[100]!),
+  //                           ),
+  //                           child: Row(
+  //                             mainAxisAlignment: MainAxisAlignment.center,
+  //                             children: [
+  //                               Icon(Icons.check_circle, size: 16, color: Colors.green[600]),
+  //                               const SizedBox(width: 6),
+  //                               Text(
+  //                                 'تم التقييم',
+  //                                 style: TextStyle(
+  //                                   color: Colors.green[600],
+  //                                   fontWeight: FontWeight.w600,
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ),
+  //                       );
+  //                     }
+  //                   },
+  //                 ),
+  //               ],
+  //             ],
+  //           ),
+  //           const SizedBox(height: 8),
+  //           if (request.status == RequestStatus.accepted)
+  //             StreamBuilder<Map<String, dynamic>>(
+  //               stream: _requestService.streamDistanceAndEta(
+  //                 patientLocation: request.patientLocation,
+  //                 doctorId: request.doctorId!,
+  //               ),
+  //               builder: (context, snapshot) {
+  //                 final distanceKm = snapshot.data?['distanceKm'] as double?;
+  //                 final etaMinutes = snapshot.data?['etaMinutes'] as int?;
+  //                 if (distanceKm == null || etaMinutes == null) {
+  //                   return const SizedBox.shrink();
+  //                 }
+  //                 return Row(
+  //                   children: [
+  //                     const Icon(Icons.timeline, size: 16, color: Colors.blue),
+  //                     const SizedBox(width: 6),
+  //                     Text('المسافة: ${distanceKm.toStringAsFixed(2)} كم'),
+  //                     const SizedBox(width: 12),
+  //                     const Icon(Icons.access_time, size: 16, color: Colors.orange),
+  //                     const SizedBox(width: 6),
+  //                     Text('ETA: $etaMinutes د'),
+  //                   ],
+  //                 );
+  //               },
+  //             ),
+  //         ],
+  //       ],
+  //     ),
+  //   );
+  // }
   Widget _buildRequestCard(RequestModel request) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -930,31 +1243,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.pending, size: 16, color: Colors.orange),
-                    SizedBox(width: 4),
-                    Text(
-                      'في الانتظار',
-                      style: TextStyle(
-                        color: Colors.orange,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // ✅ عدل الشيب علشان يظهر الحالات الجديدة
+              _buildStatusChip(request.status),
               const Spacer(),
               Text(
                 _formatDateTime(request.createdAt),
@@ -963,7 +1253,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          // Patient info will be fetched separately
+
+          // Patient info
           FutureBuilder<UserModel?>(
             future: _firestoreService.getUser(request.patientId),
             builder: (context, patientSnapshot) {
@@ -981,6 +1272,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
             },
           ),
           const SizedBox(height: 8),
+
+          // Location
           Row(
             children: [
               const Icon(Icons.location_on, size: 16, color: Colors.grey),
@@ -993,65 +1286,41 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          if (request.price != null)
+
+          // ✅ أضف عرض السعر لو تم تحديده
+          if (request.price != null) ...[
+            const SizedBox(height: 8),
             Row(
               children: [
                 const Icon(Icons.attach_money, size: 16, color: Colors.green),
                 const SizedBox(width: 4),
                 Text(
-                  'السعر: ${request.price!.toStringAsFixed(2)} SAR',
+                  'السعر: ${request.price!.toStringAsFixed(2)} ${request.currency ?? 'EGP'}',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
-          // 🟢 Added: Show doctor earning calculation
-          if (request.status == RequestStatus.completed && request.price != null)
-            FutureBuilder<double?>(
-              future: _requestService.getDoctorEarning(request.id),
-              builder: (context, earningSnapshot) {
-                if (earningSnapshot.hasData && earningSnapshot.data != null) {
-                  final earning = earningSnapshot.data!;
-                  final commission = request.price! - earning;
-                  return Column(
-                    children: [
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.account_balance_wallet, size: 16, color: Colors.blue),
-                          const SizedBox(width: 4),
-                          Text(
-                            'أرباحك: ${earning.toStringAsFixed(2)} SAR',
-                            style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.blue),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          const Icon(Icons.remove_circle_outline, size: 16, color: Colors.red),
-                          const SizedBox(width: 4),
-                          Text(
-                            'العمولة (12%): ${commission.toStringAsFixed(2)} SAR',
-                            style: const TextStyle(fontSize: 12, color: Colors.red),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
+          ],
+
           const SizedBox(height: 16),
-          if (request.status == RequestStatus.pending) ...[
+
+          // ✅ الأزرار - عدل الشرط علشان يشمل price_set
+          if (request.status == RequestStatus.pending ||
+              request.status == RequestStatus.price_set) ...[
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => _acceptRequest(request),
                     icon: const Icon(Icons.check),
-                    label: FittedBox(child: const Text('قبول')),
+                    // ✅ عدل النص علشان يظهر حسب الحالة
+                    label: FittedBox(
+                      child: Text(
+                          request.status == RequestStatus.pending
+                              ? 'تحديد السعر'
+                              : 'قبول الطلب'
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -1076,9 +1345,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                     onPressed: () async {
                       final lat = request.patientLocation.latitude;
                       final lng = request.patientLocation.longitude;
-                      final patient = await _firestoreService.getUser(
-                        request.patientId,
-                      );
+                      final patient = await _firestoreService.getUser(request.patientId);
                       if (!mounted) return;
                       context.push(
                         '/doctor/emergency/map?lat=$lat&lng=$lng&name=${Uri.encodeComponent(patient?.name ?? 'مريض')}',
@@ -1096,104 +1363,115 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
             ),
           ] else if (request.status == RequestStatus.accepted ||
               request.status == RequestStatus.completed) ...[
-            Row(
-              children: [
-                if (request.status == RequestStatus.accepted)
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _completeRequest(request),
-                      icon: const Icon(Icons.check_circle),
-                      label: const Text('إكمال الطلب'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                if (request.status == RequestStatus.completed) ...[
-                  const SizedBox(width: 12),
-                  // 🔥 التحقق إذا هذا الطبيب قام بالتقييم لهذا الطلب فقط
-                  StreamBuilder<List<RatingModel>>(
-                    stream: _ratingService.getRatingsByCurrentUserForRequest(request.id),
-                    builder: (context, ratingSnapshot) {
-                      final hasRated = ratingSnapshot.data?.isNotEmpty ?? false;
-
-                      // لو مفيش تقييم، يظهر زر التقييم
-                      if (!hasRated) {
-                        return Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _ratePatient(request),
-                            icon: const Icon(Icons.star),
-                            label: const Text('تقييم المريض'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.amber[600],
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        );
-                      } else {
-                        // لو عمل تقييم، ميظهرش الزر ويظهر رسالة
-                        return Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.green[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.green[100]!),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.check_circle, size: 16, color: Colors.green[600]),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'تم التقييم',
-                                  style: TextStyle(
-                                    color: Colors.green[600],
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (request.status == RequestStatus.accepted)
-              StreamBuilder<Map<String, dynamic>>(
-                stream: _requestService.streamDistanceAndEta(
-                  patientLocation: request.patientLocation,
-                  doctorId: request.doctorId!,
-                ),
-                builder: (context, snapshot) {
-                  final distanceKm = snapshot.data?['distanceKm'] as double?;
-                  final etaMinutes = snapshot.data?['etaMinutes'] as int?;
-                  if (distanceKm == null || etaMinutes == null) {
-                    return const SizedBox.shrink();
-                  }
-                  return Row(
-                    children: [
-                      const Icon(Icons.timeline, size: 16, color: Colors.blue),
-                      const SizedBox(width: 6),
-                      Text('المسافة: ${distanceKm.toStringAsFixed(2)} كم'),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.access_time, size: 16, color: Colors.orange),
-                      const SizedBox(width: 6),
-                      Text('ETA: $etaMinutes د'),
-                    ],
-                  );
-                },
-              ),
+            // ... باقي الكود كما هو
           ],
         ],
       ),
     );
   }
+
+// ✅ أضف دالة جديدة لعرض الحالات
+//   Widget _buildStatusChip(RequestStatus status) {
+//     Color color;
+//     String text;
+//
+//     switch (status) {
+//       case RequestStatus.pending:
+//         color = Colors.orange;
+//         text = 'معلق';
+//         break;
+//       case RequestStatus.price_set: // ✅ الحالة الجديدة
+//         color = Colors.purple;
+//         text = 'تم تحديد السعر';
+//         break;
+//       case RequestStatus.accepted:
+//         color = Colors.blue;
+//         text = 'مقبول';
+//         break;
+//       case RequestStatus.rejected:
+//         color = Colors.red;
+//         text = 'مرفوض';
+//         break;
+//       case RequestStatus.completed:
+//         color = Colors.green;
+//         text = 'مكتمل';
+//         break;
+//     }
+//
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+//       decoration: BoxDecoration(
+//         color: color.withOpacity(0.1),
+//         borderRadius: BorderRadius.circular(20),
+//       ),
+//       child: Row(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           Icon(Icons.circle, size: 8, color: color),
+//           const SizedBox(width: 6),
+//           Text(
+//             text,
+//             style: TextStyle(
+//               color: color,
+//               fontWeight: FontWeight.w600,
+//               fontSize: 12,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+  Widget _buildStatusChip(RequestStatus status) {
+    Color color;
+    String text;
+
+    switch (status) {
+      case RequestStatus.pending:
+        color = Colors.orange;
+        text = 'معلق';
+        break;
+      case RequestStatus.price_set: // ✅ الحالة الجديدة
+        color = Colors.purple;
+        text = 'تم تحديد السعر';
+        break;
+      case RequestStatus.accepted:
+        color = Colors.blue;
+        text = 'مقبول';
+        break;
+      case RequestStatus.rejected:
+        color = Colors.red;
+        text = 'مرفوض';
+        break;
+      case RequestStatus.completed:
+        color = Colors.green;
+        text = 'مكتمل';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.circle, size: 8, color: color),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildQuickActions() {
     final actions = [
@@ -1226,6 +1504,12 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         'icon': Icons.analytics,
         'color': Colors.green,
         'route': '/doctor/analytics',
+      },
+      {
+        'title': 'الأرباح',
+        'icon': Icons.attach_money,
+        'color': Colors.amber,
+        'route': '/doctor/earnings',
       },
     ];
 
@@ -1550,10 +1834,259 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     );
   }
 
+  Widget _buildEarningsCard(String doctorId) {
+    return StreamBuilder(
+      stream: _earningsService.streamDoctorEarnings(doctorId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildEarningsLoadingCard();
+        }
+
+        if (snapshot.hasError) {
+          return _buildEarningsErrorCard();
+        }
+
+        final earnings = snapshot.data;
+        if (earnings == null) {
+          // Initialize earnings document if it doesn't exist
+          _earningsService.initializeDoctorEarnings(doctorId);
+          return _buildEarningsEmptyCard();
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.green[400]!, Colors.green[600]!],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.green.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.attach_money,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'الأرباح',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () {
+                      context.push('/doctor/earnings');
+                    },
+                    child: const Text(
+                      'عرض التفاصيل',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'إجمالي الأرباح',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${earnings.totalEarnings.toStringAsFixed(2)} ${earnings.currency}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'الطلبات المكتملة',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          earnings.totalRequests.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'صافي الأرباح',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          '${earnings.netEarnings.toStringAsFixed(2)} ${earnings.currency}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'عمولة المنصة',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          '${earnings.platformCommission.toStringAsFixed(2)} ${earnings.currency}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEarningsLoadingCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  Widget _buildEarningsErrorCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red[200]!),
+      ),
+      child: const Center(
+        child: Text(
+          'خطأ في تحميل الأرباح',
+          style: TextStyle(color: Colors.red),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEarningsEmptyCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.attach_money,
+            size: 32,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'لا توجد أرباح حتى الآن',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'ستظهر أرباحك هنا بعد إكمال الطلبات',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _statusChip(RequestStatus status) {
     Color color;
     String text;
     switch (status) {
+      case RequestStatus.price_set: // ✅ أضف دي
+      // كود الحالة price_set
+        color = Colors.purple;
+        text = 'تم تحديد السعر';
+        break;
       case RequestStatus.pending:
         color = Colors.orange;
         text = 'معلق';
@@ -1589,61 +2122,34 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   }
 
   Future<void> _acceptRequest(RequestModel request) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('قبول الطلب'),
-        content: const Text('هل أنت متأكد من قبول هذا الطلب؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('قبول', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
+    // Get patient's currency first
+    String? patientCurrency;
     try {
-      await _requestService.acceptEmergencyRequest(request.id);
-
-      // 🔔 بعد القبول نرسل إشعار للمريض
-      final currentUser = ref
-          .read(currentUserDataProvider)
-          .maybeWhen(data: (u) => u, orElse: () => null);
-
-      await _notificationService.createRequestNotification(
-        userId: request.patientId,
-        title: 'تم قبول الطلب',
-        body: 'قام الدكتور ${currentUser?.name ?? "غير معروف"} بقبول طلبك.',
-        type: 'accepted',
-        requestId: request.id,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم قبول الطلب بنجاح وإرسال إشعار للمريض'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      final patientDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(request.patientId)
+          .get();
+      if (patientDoc.exists) {
+        patientCurrency = patientDoc.data()?['currency'] as String?;
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطأ في قبول الطلب: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      print('Error getting patient currency: $e');
     }
+
+    // Show price setter dialog instead of simple confirmation
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: DoctorPriceSetterWidget(
+          requestId: request.id,
+          patientCurrency: patientCurrency,
+          onPriceSet: () {
+            // Refresh the dashboard after price is set
+            setState(() {});
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _rejectRequest(RequestModel request) async {

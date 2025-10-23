@@ -69,6 +69,8 @@ class _RequestTile extends StatelessWidget {
         return Colors.red;
       case RequestStatus.completed:
         return Colors.blueGrey;
+        case RequestStatus.price_set:
+        return Colors.purple;
     }
   }
 
@@ -82,6 +84,8 @@ class _RequestTile extends StatelessWidget {
         return 'تم الرفض';
       case RequestStatus.completed:
         return 'مكتمل';
+      case RequestStatus.price_set:
+        return "تم تحديد السعر";
     }
   }
 

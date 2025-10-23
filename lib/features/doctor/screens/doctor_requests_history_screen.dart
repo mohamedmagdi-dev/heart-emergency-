@@ -115,6 +115,9 @@ class DoctorRequestsHistoryScreen extends ConsumerWidget {
     Color color;
     String text;
     switch (status) {
+      case RequestStatus.price_set:
+        color=Colors.blue;
+        text="تم تحديد السعر";
       case RequestStatus.pending:
         color = Colors.orange;
         text = 'معلق';

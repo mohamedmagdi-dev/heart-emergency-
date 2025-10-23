@@ -271,6 +271,13 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
         statusText = 'مكتمل';
         statusIcon = Icons.check_circle_outline;
         break;
+
+
+
+      case RequestStatus.price_set:
+        statusColor = Colors.purple;
+        statusText = 'تم تحديد السعر';
+        statusIcon = Icons.price_check;
     }
 
     return Container(
@@ -512,6 +519,7 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
 
   String _getStatusText(RequestStatus status) {
     switch (status) {
+
       case RequestStatus.pending:
         return 'في الانتظار';
       case RequestStatus.accepted:
@@ -520,6 +528,8 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
         return 'مرفوض';
       case RequestStatus.completed:
         return 'مكتمل';
+      case RequestStatus.price_set:
+        return"تم تحديد السعر";
     }
   }
 

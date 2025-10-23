@@ -251,6 +251,12 @@ class _PatientDashboardScreenState
         'color': Colors.amber,
         'route': '/patient/rated-doctors',
       },
+      {
+        'title': 'الخريطه ',
+        'icon': Icons.map,
+        'color': Colors.blue,
+        'route': '/patient/map',
+      },
     ];
 
     return Column(
@@ -286,7 +292,23 @@ class _PatientDashboardScreenState
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
-                  onTap: () => context.push(action['route'] as String),
+                  // onTap: () => context.push(action['route'] as String),
+
+                  onTap: () {
+                    if (action['route'] == '/patient/map') {
+                      // هنا ضع إحداثيات الطبيب المناسبين
+                      final doctorLat = 24.7136; // مثال: استبدل بالقيمة الفعلية
+                      final doctorLng = 46.6753; // مثال: استبدل بالقيمة الفعلية
+                      context.push(
+                        action['route'] as String,
+                        extra: {'lat': doctorLat, 'lng': doctorLng},
+                      );
+                    } else {
+                      context.push(action['route'] as String);
+                    }
+                  },
+
+
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -404,6 +426,7 @@ class _PatientDashboardScreenState
     IconData statusIcon;
 
     switch (request.status) {
+
       case RequestStatus.pending:
         statusColor = Colors.orange;
         statusText = 'في الانتظار';
@@ -424,7 +447,12 @@ class _PatientDashboardScreenState
         statusText = 'مكتمل';
         statusIcon = Icons.check_circle_outline;
         break;
-    }
+      case RequestStatus.price_set:
+        // TODO: Handle this case.
+        statusColor = Colors.purple;
+        statusText = 'تم تحديد السعر';
+        statusIcon = Icons.price_check;
+      }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

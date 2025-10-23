@@ -345,7 +345,12 @@ class _PricesScreenState extends ConsumerState<PricesScreen> {
   }
 
   Color _getStatusColor(RequestStatus status) {
-    switch (status) {
+    switch (status) { case RequestStatus.price_set: // ✅ أضف دي
+    // كود الحالة price_set
+   return Colors.purple;
+
+      break;
+
       case RequestStatus.pending:
         return Colors.orange;
       case RequestStatus.accepted:
@@ -359,6 +364,10 @@ class _PricesScreenState extends ConsumerState<PricesScreen> {
 
   String _getStatusText(RequestStatus status) {
     switch (status) {
+      case RequestStatus.price_set: // ✅ أضف دي
+      // كود الحالة price_set
+       return"تم تحديد السعر";
+
       case RequestStatus.pending:
         return 'قيد الانتظار';
       case RequestStatus.accepted:

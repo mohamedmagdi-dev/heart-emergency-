@@ -77,15 +77,47 @@ class LocalStorageService {
   }
 
   // Get file from local storage
-  Future<File?> getFile(String localPath) async {
+  // Future<File?> getFile(String localPath) async {
+  //   try {
+  //     final file = File(localPath);
+  //     if (await file.exists()) {
+  //       return file;
+  //     }
+  //     return null;
+  //   } catch (e) {
+  //     print('Error getting local file: $e');
+  //     return null;
+  //   }
+  // }
+  Future<File?> getFile(String filePath) async {
     try {
-      final file = File(localPath);
+      String path = filePath;
+
+      // 1. **الإصلاح:** تنظيف المسار من بروتوكول الملف المحلي
+      if (filePath.startsWith('file:///')) {
+        // حذف أول 7 حروف (file:///) للحصول على المسار النقي للنظام
+        path = filePath.substring(7);
+      }
+
+      final file = File(path);
+
       if (await file.exists()) {
         return file;
       }
+
+      // إذا لم يتم العثور على الملف، يمكننا تجربة المسار الأصلي بدون تنظيف (احتياطاً)
+      final fileOriginal = File(filePath);
+      if (await fileOriginal.exists()) {
+        return fileOriginal;
+      }
+
+      // إذا لم يتم العثور عليه نهائياً
+      print('File not found at path: $filePath or cleaned path: $path');
       return null;
+
     } catch (e) {
-      print('Error getting local file: $e');
+      // قم بطباعة الخطأ للتتبع
+      print('Error getting local file: $e for path: $filePath');
       return null;
     }
   }

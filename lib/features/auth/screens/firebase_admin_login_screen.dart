@@ -149,6 +149,11 @@ class _FirebaseAdminLoginScreenState extends ConsumerState<FirebaseAdminLoginScr
                           ),
                   ),
                   const SizedBox(height: 16),
+                  TextButton(onPressed: (){
+                    context.push('/doctor/forgot-password');
+                  }, child: Text("نسيت كلمة المرور؟")
+
+                  ),
                   
                   // Back button
                   TextButton(

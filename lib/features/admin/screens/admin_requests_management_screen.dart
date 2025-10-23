@@ -89,6 +89,10 @@ class _AdminRequestsManagementScreenState extends State<AdminRequestsManagementS
     String statusText;
     IconData statusIcon;
     switch (r.status) {
+      case RequestStatus.price_set:
+        statusColor =Colors.blue;
+        statusText="تم تحديد السعر";
+        statusIcon=Icons.attach_money;
       case RequestStatus.pending:
         statusColor = Colors.orange;
         statusText = 'في الانتظار';

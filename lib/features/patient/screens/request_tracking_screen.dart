@@ -157,6 +157,13 @@ class _RequestTrackingScreenState extends ConsumerState<RequestTrackingScreen> {
         statusText = 'تم الانتهاء';
         statusIcon = Icons.check_circle;
         break;
+
+      case RequestStatus.price_set:
+
+        statusColor =Colors.purple;
+        statusText="تم تحديد السعر";
+        statusIcon=Icons.price_check;
+        break;
     }
 
     return Container(

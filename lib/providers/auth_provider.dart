@@ -2,7 +2,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // FIXED: Added for real-time user data
+import '../services/cloudinary_service.dart';
 import '../services/firebase_auth_service.dart';
+import '../services/image_upload_service.dart';
 import '../services/local_storage_service.dart';
 import '../services/fcm_service.dart';
 import '../data/models/user_model.dart';
@@ -18,7 +20,10 @@ final authServiceProvider = Provider<FirebaseAuthService>((ref) {
 final localStorageServiceProvider = Provider<LocalStorageService>((ref) {
   return LocalStorageService();
 });
-
+// upload images from firebase
+final imageUploadServiceProvider = Provider<ImageUploadService>((ref) {
+  return ImageUploadService();
+});
 // FCM service provider
 final fcmServiceProvider = Provider<FCMService>((ref) {
   return FCMService();
@@ -59,8 +64,10 @@ class AuthController {
   final FirebaseAuthService _authService;
   final LocalStorageService _localStorageService;
   final FCMService _fcmService;
-
-  AuthController(this._authService, this._localStorageService, this._fcmService);
+  final ImageUploadService _imageUploadService;
+  AuthController(this._authService, this._localStorageService, this._fcmService,
+      this._imageUploadService,
+      );
 
   // 🟢 Added: Phone-only signup for patients
   Future<UserModel?> signUpWithPhoneOnly({
@@ -123,8 +130,80 @@ class AuthController {
       rethrow;
     }
   }
+// sign two steps
+  // 📍 داخل FirebaseAuthService
+
+// 1. الدالة الأولى: لإنشاء حساب Firebase Auth فقط
+
+
+
 
   // Sign up with email and password
+  // Future<UserModel?> signUpWithEmail({
+  //   required String email,
+  //   required String password,
+  //   required String name,
+  //   required String phone,
+  //   required String role,
+  //   Currency currency = Currency.egp,
+  //   String? specialization,
+  //   String? experience,
+  //   List<File>? certificates,
+  //   File? idDocument,
+  //   double? latitude,
+  //   double? longitude,
+  // }) async {
+  //   try {
+  //     // Upload certificates if doctor
+  //     List<String>? certificateUrls;
+  //     String? idDocumentUrl;
+  //
+  //     if (role == 'doctor' && certificates != null && certificates.isNotEmpty) {
+  //       certificateUrls = [];
+  //       for (var cert in certificates) {
+  //         // Validate file exists
+  //         if (await cert.exists()) {
+  //           final localPath = await _localStorageService.saveDoctorCertificate(
+  //             cert,
+  //             DateTime.now().millisecondsSinceEpoch.toString(),
+  //           );
+  //           certificateUrls.add(localPath);
+  //         }
+  //       }
+  //     }
+  //
+  //     if (role == 'doctor' && idDocument != null) {
+  //       // Validate file exists
+  //       if (await idDocument.exists()) {
+  //         idDocumentUrl = await _localStorageService.saveIdDocument(
+  //           idDocument,
+  //           DateTime.now().millisecondsSinceEpoch.toString(),
+  //         );
+  //       }
+  //     }
+  //
+  //     // Get FCM token
+  //     final fcmToken = await _fcmService.getToken();
+  //
+  //     final userData = await _authService.signUp(
+  //       email: email,
+  //       password: password,
+  //       name: name,
+  //       phone: phone,
+  //       role: role,
+  //       currency: currency,
+  //       specialization: specialization,
+  //       certificates: certificateUrls,
+  //       profileImage: idDocumentUrl,
+  //       fcmToken: fcmToken,
+  //     );
+  //
+  //     return userData;
+  //   } catch (e) {
+  //     rethrow;
+  //   }
+  // }
+
   Future<UserModel?> signUpWithEmail({
     required String email,
     required String password,
@@ -144,33 +223,34 @@ class AuthController {
       List<String>? certificateUrls;
       String? idDocumentUrl;
 
+      // نعمل instance من خدمة Cloudinary
+      final cloudinary = CloudinaryService();
+
       if (role == 'doctor' && certificates != null && certificates.isNotEmpty) {
         certificateUrls = [];
         for (var cert in certificates) {
-          // Validate file exists
           if (await cert.exists()) {
-            final localPath = await _localStorageService.saveDoctorCertificate(
-              cert,
-              DateTime.now().millisecondsSinceEpoch.toString(),
-            );
-            certificateUrls.add(localPath);
+            final imageUrl = await cloudinary.uploadFile(cert);
+            if (imageUrl != null) {
+              certificateUrls.add(imageUrl);
+            }
           }
         }
       }
 
       if (role == 'doctor' && idDocument != null) {
-        // Validate file exists
         if (await idDocument.exists()) {
-          idDocumentUrl = await _localStorageService.saveIdDocument(
-            idDocument,
-            DateTime.now().millisecondsSinceEpoch.toString(),
-          );
+          final imageUrl = await cloudinary.uploadFile(idDocument);
+          if (imageUrl != null) {
+            idDocumentUrl = imageUrl;
+          }
         }
       }
 
       // Get FCM token
       final fcmToken = await _fcmService.getToken();
 
+      // تسجيل المستخدم بعد رفع الصور
       final userData = await _authService.signUp(
         email: email,
         password: password,
@@ -186,32 +266,105 @@ class AuthController {
 
       return userData;
     } catch (e) {
+      print("❌ خطأ أثناء التسجيل: $e");
       rethrow;
     }
   }
 
-  // Sign in with email and password
-  // Future<UserModel?> signInWithEmail({
-  //   required String email,
-  //   required String password,
-  // }) async {
-  //   try {
-  //     final userData = await _authService.signIn(
-  //       email: email,
-  //       password: password,
-  //     );
-  //
-  //     // Update FCM token
-  //     final fcmToken = await _fcmService.getToken();
-  //     if (fcmToken != null) {
-  //       await _authService.updateUserData(userData.uid, {'fcmToken': fcmToken});
-  //     }
-  //
-  //     return userData;
-  //   } catch (e) {
-  //     rethrow;
-  //   }
-  // }
+
+
+// 📍 داخل AuthController
+// 📍 داخل AuthController
+
+// 📍 داخل AuthController في دالة signUpWithEmail
+
+// 📍 داخل AuthController
+//
+//   Future<UserModel?> signUpWithEmail({
+//     required String email,
+//     required String password,
+//     required String name,
+//     required String phone,
+//     required String role,
+//     Currency currency = Currency.egp,
+//     String? specialization,
+//     String? experience,
+//     List<File>? certificates,
+//     File? idDocument,
+//     double? latitude,
+//     double? longitude,
+//   }) async {
+//     try {
+//       // 1. 🚨 الخطوة الأولى: إنشاء الحساب في Firebase Auth
+//       // هذا يضمن وجود المستخدم وتوافر الـ Auth Token للرفع.
+//       final userCredential = await _authService.createUserWithEmailAndPassword(
+//           email: email,
+//           password: password
+//       );
+//       final uid = userCredential.user!.uid; // 🟢 الآن الـ UID والـ Token جاهزين للرفع
+//
+//       // 2. رفع الملفات إلى Firebase Storage
+//       List<String>? certificateUrls;
+//       String? idDocumentUrl;
+//
+//       if (role == 'doctor' && certificates != null && certificates.isNotEmpty) {
+//         certificateUrls = [];
+//         for (var cert in certificates) {
+//           if (await cert.exists()) {
+//             final uploadUrl = await _imageUploadService.uploadLocalFileToStorage(
+//               cert.path,
+//               // استخدام الـ UID لترتيب المجلدات في Storage
+//               storageFolder: 'certificates/$uid',
+//             );
+//             certificateUrls.add(uploadUrl);
+//           }
+//         }
+//       }
+//
+//       if (role == 'doctor' && idDocument != null) {
+//         if (await idDocument.exists()) {
+//           idDocumentUrl = await _imageUploadService.uploadLocalFileToStorage(
+//             idDocument.path,
+//             // استخدام الـ UID لترتيب المجلدات في Storage
+//             storageFolder: 'id_documents/$uid',
+//           );
+//         }
+//       }
+//
+//       // 3. الحصول على FCM Token
+//       final fcmToken = await _fcmService.getToken();
+//
+//       // 4. بناء خريطة البيانات لتخزينها في Firestore
+//       final userDataMap = UserModel(
+//         uid: uid,
+//         email: email,
+//         name: name,
+//         phone: phone,
+//         role: role,
+//         currency: currency,
+//         specialization: specialization,
+//         experience: experience,
+//         certificates: certificateUrls, // الآن هي URLs شبكية
+//         profileImage: idDocumentUrl,   // الآن هو URL شبكي
+//         fcmToken: fcmToken,
+//         createdAt: DateTime.now(),
+//         available: role == 'doctor' ? true : null,
+//         verified: role == 'doctor' ? false : null,
+//         walletBalance: 0.0,
+//         rating: role == 'doctor' ? 0.0 : null,
+//         // ... (أي حقول أخرى مطلوبة في الـ Model)
+//       ).toMap();
+//
+//       // 5. 🚨 الخطوة الأخيرة: تخزين البيانات في Firestore
+//       final savedUser = await _authService.saveUserDataToFirestore(uid, userDataMap);
+//
+//       return savedUser;
+//
+//     } catch (e) {
+//       rethrow;
+//     }
+//   }
+  // في auth_controller.dart - الدالة المعدلة
 
   // update
   // AuthController -> signInWithEmail فقط
@@ -383,6 +536,9 @@ final authControllerProvider = Provider<AuthController>((ref) {
   final authService = ref.watch(authServiceProvider);
   final localStorageService = ref.watch(localStorageServiceProvider);
   final fcmService = ref.watch(fcmServiceProvider);
-  return AuthController(authService, localStorageService, fcmService);
+  final imageUploadService = ref.watch(imageUploadServiceProvider);
+  return AuthController(authService, localStorageService, fcmService,
+    imageUploadService,
+  );
 });
 

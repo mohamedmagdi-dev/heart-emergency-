@@ -145,6 +145,35 @@ class FirebaseAuthService {
     }
   }
 
+  /// two steps functions
+  Future<UserCredential> createUserWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      return await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      // ممكن تتعامل مع الأخطاء الخاصة بـ Auth هنا
+      rethrow;
+    }
+  }
+
+// 2. الدالة الثانية: لحفظ بيانات المستخدم في Firestore
+  Future<UserModel> saveUserDataToFirestore(String uid, Map<String, dynamic> data) async {
+    final userDocRef = FirebaseFirestore.instance.collection('users').doc(uid);
+
+    // دمج البيانات (لو بتحب) أو استخدام set للإنشاء
+    await userDocRef.set(data, SetOptions(merge: true));
+
+    final doc = await userDocRef.get();
+    return UserModel.fromMap(doc.data()!);
+  }
+
+
+
   // Sign in with email and password
   Future<UserModel> signIn({
     required String email,

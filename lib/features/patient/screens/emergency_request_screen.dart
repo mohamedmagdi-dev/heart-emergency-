@@ -189,7 +189,6 @@ class _EmergencyRequestScreenState
           _currentPosition!.longitude,
         ),
         patientAddress: _locationAddress,
-        price: double.parse(_priceController.text.trim()),
         notes: _notesController.text.trim().isNotEmpty
             ? _notesController.text.trim()
             : null,
@@ -348,32 +347,16 @@ class _EmergencyRequestScreenState
               const SizedBox(width: 16),
               const Expanded(
                 child: Text(
-                  'تحديد السعر (يحدده المريض)',
+                  'السعر يحدده الطبيب',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _priceController,
-            decoration: const InputDecoration(
-              hintText: 'أدخل السعر المقترح للخدمة',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.all(16),
-              suffixText: 'SAR',
-            ),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'يرجى إدخال السعر';
-              }
-              final v = double.tryParse(value.trim());
-              if (v == null || v <= 0) {
-                return 'يرجى إدخال قيمة صحيحة أكبر من صفر';
-              }
-              return null;
-            },
+          const Text(
+            'سيقوم الطبيب بتحديد السعر وإرساله لك للموافقة أو الرفض.',
+            style: TextStyle(fontSize: 14),
           ),
         ],
       ),
@@ -1125,6 +1108,8 @@ class _EmergencyRequestScreenState
 
   Color _getStatusColor(RequestStatus status) {
     switch (status) {
+      case RequestStatus.price_set:
+        return Colors.purple;
       case RequestStatus.pending:
         return Colors.orange;
       case RequestStatus.accepted:
@@ -1138,6 +1123,9 @@ class _EmergencyRequestScreenState
 
   String _getStatusText(RequestStatus status) {
     switch (status) {
+
+      case RequestStatus.price_set:
+        return 'تم تحديد السعر';
       case RequestStatus.pending:
         return 'معلق';
       case RequestStatus.accepted:

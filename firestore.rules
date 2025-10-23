@@ -79,16 +79,31 @@ service cloud.firestore {
                    (isSupervisor() && (resource.data.supervisorId == request.auth.uid ||
                     resource.data.doctorId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.assignedDoctorIds)));
       
-      // Allow create: Only patients can create emergency requests
+      // Allow create: Only patients can create emergency requests with status "pending"
       allow create: if isPatient() 
                     && request.resource.data.patientId == request.auth.uid
                     && request.resource.data.status == 'pending';
       
-      // Allow update: Patients can cancel, doctors can accept/reject/complete, admins can do anything
-      allow update: if isAuthenticated() &&
-                    ((isPatient() && resource.data.patientId == request.auth.uid) ||
-                     (isDoctor() && resource.data.doctorId == request.auth.uid) ||
-                     isAdmin());
+      // Allow update with specific conditions:
+      allow update: if isAuthenticated() && (
+        // Patients can cancel their own requests
+        (isPatient() && resource.data.patientId == request.auth.uid) ||
+        
+        // Verified doctors can set price and change status from "pending" to "accepted"
+        (isDoctor() && 
+         resource.data.doctorId == request.auth.uid && 
+         isDoctorVerified() &&
+         resource.data.status == 'pending' &&
+         request.resource.data.status == 'accepted') ||
+        
+        // Patients can confirm accepted requests (no price editing)
+        (isPatient() && 
+         resource.data.patientId == request.auth.uid && 
+         resource.data.status == 'accepted') ||
+        
+        // Admins can do anything
+        isAdmin()
+      );
       
       // Allow delete: Only admins can delete requests
       allow delete: if isAdmin();
@@ -157,6 +172,22 @@ service cloud.firestore {
     match /analytics/{docId} {
       // Allow read/write: Only admins
       allow read, write: if isAdmin();
+    }
+    
+    // Doctor earnings collection
+    match /doctor_earnings/{doctorId} {
+      // Allow read: Doctor can read their own earnings, admins can read all
+      allow read: if isAuthenticated() &&
+                  ((isDoctor() && doctorId == request.auth.uid) ||
+                   isAdmin());
+      
+      // Allow create/update: Doctor can update their own earnings, admins can do anything
+      allow create, update: if isAuthenticated() &&
+                            ((isDoctor() && doctorId == request.auth.uid) ||
+                             isAdmin());
+      
+      // Allow delete: Only admins can delete earnings
+      allow delete: if isAdmin();
     }
   }
 }

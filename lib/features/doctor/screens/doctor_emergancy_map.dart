@@ -36,7 +36,8 @@ class _DoctorEmergencyMapScreenState extends State<DoctorEmergencyMapScreen> {
   bool _isLoadingRoute = false;
   String _errorMessage = '';
   StreamSubscription<Position>? _positionStreamSub;
-
+// URL السيرفر البديل (Esri World Street Map)
+   String mapTileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
   @override
   void initState() {
     super.initState();
@@ -224,7 +225,8 @@ class _DoctorEmergencyMapScreenState extends State<DoctorEmergencyMapScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                // urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+             urlTemplate: mapTileUrl,
                 userAgentPackageName:AppStrings.packageName,
                 maxZoom: 19,
               ),

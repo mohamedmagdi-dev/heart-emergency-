@@ -1823,10 +1823,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         : null,
                     child: user.profileImage == null
                         ? Icon(
-                      Icons.admin_panel_settings,
-                      size: isSmallScreen ? 20 : 25,
-                      color: Color(0xFF7C3AED),
-                    )
+                            Icons.admin_panel_settings,
+                            size: isSmallScreen ? 20 : 25,
+                            color: Color(0xFF7C3AED),
+                          )
                         : null,
                   ),
                   SizedBox(width: isSmallScreen ? 12 : 16),
@@ -1847,8 +1847,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         Text(
                           'لوحة تحكم الإدارة',
                           style: TextStyle(
-                              fontSize: isSmallScreen ? 12 : 14,
-                              color: Colors.white70
+                            fontSize: isSmallScreen ? 12 : 14,
+                            color: Colors.white70,
                           ),
                         ),
                       ],
@@ -1917,6 +1917,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       ),
     );
   }
+
   //
   // Widget _buildStatsCards() {
   //   return StreamBuilder<List<UserModel>>(
@@ -2025,8 +2026,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     .fold<double>(0, (sum, t) => sum + t.commission);
 
                 // Count priced requests
-                final pricedRequests = requests.where((r) => r.price != null && r.price! > 0).length;
-                final totalPrices = requests.where((r) => r.price != null && r.price! > 0)
+                final pricedRequests = requests
+                    .where((r) => r.price != null && r.price! > 0)
+                    .length;
+                final totalPrices = requests
+                    .where((r) => r.price != null && r.price! > 0)
                     .fold<double>(0, (sum, r) => sum + (r.price ?? 0));
 
                 return LayoutBuilder(
@@ -2058,7 +2062,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         ),
                         _buildStatCard(
                           title: 'الأطباء النشطون',
-                          value: '${users.where((u) => u.role == 'doctor' && u.available == true).length}',
+                          value:
+                              '${users.where((u) => u.role == 'doctor' && u.available == true).length}',
                           icon: Icons.online_prediction,
                           color: Colors.teal,
                         ),
@@ -2088,10 +2093,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     );
   }
 
-// الكارد الجديدة للأسعار
+  // الكارد الجديدة للأسعار
   Widget _buildPricesCard(int pricedRequests, double totalPrices) {
     return GestureDetector(
-      onTap: () =>_openPricesScreen() , // هيخش على صفحة الأسعار
+      onTap: () => _openPricesScreen(), // هيخش على صفحة الأسعار
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -2104,20 +2109,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.price_change,
-              size: 28,
-              color: Colors.indigo,
-            ),
+            Icon(Icons.price_change, size: 28, color: Colors.indigo),
             SizedBox(height: 8),
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
                 'الأسعار',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
             SizedBox(height: 4),
@@ -2137,10 +2135,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               fit: BoxFit.scaleDown,
               child: Text(
                 '${totalPrices.toStringAsFixed(0)} SAR',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey[700],
-                ),
+                style: TextStyle(fontSize: 10, color: Colors.grey[700]),
               ),
             ),
             SizedBox(height: 4),
@@ -2166,7 +2161,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       ),
     );
   }
-
 
   Widget _buildPricesListSection() {
     return Container(
@@ -2231,8 +2225,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             },
                           ),
                         const SizedBox(width: 12),
-                        Text('${(r.price ?? 0).toStringAsFixed(2)} SAR',
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text(
+                          '${(r.price ?? 0).toStringAsFixed(2)} SAR',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                       ],
                     ),
                   );
@@ -2244,6 +2240,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       ),
     );
   }
+
   Widget _buildStatCard({
     required String title,
     required String value,
@@ -2266,11 +2263,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                  icon,
-                  size: isSmallCard ? 20 : 28,
-                  color: color
-              ),
+              Icon(icon, size: isSmallCard ? 20 : 28, color: color),
               SizedBox(height: isSmallCard ? 4 : 8),
               FittedBox(
                 fit: BoxFit.scaleDown,
@@ -2366,6 +2359,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     IconData statusIcon;
 
     switch (request.status) {
+      case RequestStatus.price_set:
+        statusColor = Colors.cyan;
+        statusIcon = Icons.price_check;
+
       case RequestStatus.pending:
         statusColor = Colors.orange;
         statusIcon = Icons.pending;
@@ -2400,9 +2397,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                    statusIcon,
-                    color: statusColor,
-                    size: isSmallScreen ? 14 : 16
+                  statusIcon,
+                  color: statusColor,
+                  size: isSmallScreen ? 14 : 16,
                 ),
               ),
               SizedBox(width: isSmallScreen ? 8 : 12),
@@ -2420,8 +2417,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     Text(
                       _formatDateTime(request.createdAt),
                       style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: isSmallScreen ? 10 : 12
+                        color: Colors.grey,
+                        fontSize: isSmallScreen ? 10 : 12,
                       ),
                     ),
                   ],
@@ -2613,8 +2610,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     Text(
                       user.email,
                       style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: isSmallScreen ? 12 : 14
+                        color: Colors.grey,
+                        fontSize: isSmallScreen ? 12 : 14,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -2746,16 +2743,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         if (doctor.rating != null) ...[
                           SizedBox(width: isSmallScreen ? 6 : 8),
                           Icon(
-                              Icons.star,
-                              size: isSmallScreen ? 14 : 16,
-                              color: Colors.amber[600]
+                            Icons.star,
+                            size: isSmallScreen ? 14 : 16,
+                            color: Colors.amber[600],
                           ),
                           SizedBox(width: isSmallScreen ? 2 : 4),
                           Text(
                             doctor.rating!.toStringAsFixed(1),
-                            style: TextStyle(
-                                fontSize: isSmallScreen ? 10 : 12
-                            ),
+                            style: TextStyle(fontSize: isSmallScreen ? 10 : 12),
                           ),
                         ],
                       ],
@@ -2869,8 +2864,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                    'الملف الشخصي',
-                    style: Theme.of(context).textTheme.titleLarge
+                  'الملف الشخصي',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -2883,10 +2878,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           : null,
                       child: user.profileImage == null
                           ? Icon(
-                          Icons.person,
-                          size: isSmallScreen ? 30 : 40,
-                          color: Color(0xFF7C3AED)
-                      )
+                              Icons.person,
+                              size: isSmallScreen ? 30 : 40,
+                              color: Color(0xFF7C3AED),
+                            )
                           : null,
                     ),
                     SizedBox(width: isSmallScreen ? 12 : 16),
@@ -2896,20 +2891,20 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         children: [
                           Text(
                             'د. ${user.name}',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             user.email,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.7),
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -2919,10 +2914,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               user.specialization!,
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
-                              ),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                  ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -2997,7 +2992,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       case 'view':
         _showUserDetails(user);
         break;
-    // verfiy notfication
+      // verfiy notfication
       case 'verify':
         final newStatus = !(user.verified ?? false);
         await _firestoreService.updateDoctorVerification(user.uid, newStatus);
@@ -3251,8 +3246,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           builder: (context, constraints) {
             final isSmallScreen = constraints.maxWidth < 400;
             return Container(
-              width: MediaQuery.of(context).size.width * (isSmallScreen ? 0.95 : 0.9),
-              height: MediaQuery.of(context).size.height * (isSmallScreen ? 0.9 : 0.8),
+              width:
+                  MediaQuery.of(context).size.width *
+                  (isSmallScreen ? 0.95 : 0.9),
+              height:
+                  MediaQuery.of(context).size.height *
+                  (isSmallScreen ? 0.9 : 0.8),
               padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3279,10 +3278,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: Icon(
-                            Icons.close,
-                            size: isSmallScreen ? 18 : 24
-                        ),
+                        icon: Icon(Icons.close, size: isSmallScreen ? 18 : 24),
                       ),
                     ],
                   ),
@@ -3346,50 +3342,90 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   ),
                   SizedBox(height: isSmallScreen ? 8 : 12),
 
+                  // Expanded(
+                  //   child: doctor.certificates != null && doctor.certificates!.isNotEmpty
+                  //       ? LocalFilesList(
+                  //     filePaths: doctor.certificates!,
+                  //     onFileSelected: (filePath) {
+                  //       _showFullScreenImage(filePath);
+                  //     },
+                  //   )
                   Expanded(
-                    child: doctor.certificates != null && doctor.certificates!.isNotEmpty
-                        ? LocalFilesList(
-                      filePaths: doctor.certificates!,
-                      onFileSelected: (filePath) {
-                        _showFullScreenImage(filePath);
-                      },
-                    )
+                    child:
+                        doctor.certificates != null &&
+                            doctor.certificates!.isNotEmpty
+                        ? ListView.builder(
+                            itemCount: doctor.certificates!.length,
+                            itemBuilder: (context, index) {
+                              final fileUrl = doctor.certificates![index];
+                              final fileName = fileUrl.split('/').last;
+
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 6),
+                                child: ListTile(
+                                  leading: Image.network(
+                                    fileUrl,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Icon(
+                                              Icons.broken_image,
+                                              color: Colors.red,
+                                            ),
+                                  ),
+                                  title: Text(
+                                    fileName,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.visibility),
+                                    onPressed: () =>
+                                        _showFullScreenImage(fileUrl),
+                                  ),
+                                ),
+                              );
+                            },
+                          )
                         : Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.folder_open,
-                              size: isSmallScreen ? 36 : 48,
-                              color: Colors.grey,
+                            width: double.infinity,
+                            padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            SizedBox(height: isSmallScreen ? 6 : 8),
-                            Text(
-                              'لم يتم رفع أي شهادات بعد',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: isSmallScreen ? 12 : 14,
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.folder_open,
+                                    size: isSmallScreen ? 36 : 48,
+                                    color: Colors.grey,
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 6 : 8),
+                                  Text(
+                                    'لم يتم رفع أي شهادات بعد',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: isSmallScreen ? 12 : 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
-                              textAlign: TextAlign.center,
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
+                          ),
                   ),
+
                   SizedBox(height: isSmallScreen ? 12 : 16),
 
                   // Action Buttons - Made responsive for small screens
                   LayoutBuilder(
                     builder: (context, buttonConstraints) {
-                      final isVerySmallScreen = buttonConstraints.maxWidth < 300;
+                      final isVerySmallScreen =
+                          buttonConstraints.maxWidth < 300;
 
                       if (isVerySmallScreen) {
                         // Vertical layout for very small screens
@@ -3403,10 +3439,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                     Navigator.pop(context);
                                     _verifyDoctor(doctor, true);
                                   },
-                                  icon: Icon(Icons.check, size: isSmallScreen ? 16 : 18),
+                                  icon: Icon(
+                                    Icons.check,
+                                    size: isSmallScreen ? 16 : 18,
+                                  ),
                                   label: Text(
                                     'موافقة وتحقق',
-                                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                                    style: TextStyle(
+                                      fontSize: isSmallScreen ? 12 : 14,
+                                    ),
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
@@ -3414,7 +3455,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   ),
                                 ),
                               ),
-                            if (doctor.verified != true) SizedBox(height: isSmallScreen ? 6 : 8),
+                            if (doctor.verified != true)
+                              SizedBox(height: isSmallScreen ? 6 : 8),
                             if (doctor.verified == true)
                               SizedBox(
                                 width: double.infinity,
@@ -3423,10 +3465,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                     Navigator.pop(context);
                                     _verifyDoctor(doctor, false);
                                   },
-                                  icon: Icon(Icons.cancel, size: isSmallScreen ? 16 : 18),
+                                  icon: Icon(
+                                    Icons.cancel,
+                                    size: isSmallScreen ? 16 : 18,
+                                  ),
                                   label: Text(
                                     'إلغاء التحقق',
-                                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                                    style: TextStyle(
+                                      fontSize: isSmallScreen ? 12 : 14,
+                                    ),
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.red,
@@ -3434,15 +3481,21 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   ),
                                 ),
                               ),
-                            if (doctor.verified == true) SizedBox(height: isSmallScreen ? 6 : 8),
+                            if (doctor.verified == true)
+                              SizedBox(height: isSmallScreen ? 6 : 8),
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 onPressed: () => Navigator.pop(context),
-                                icon: Icon(Icons.close, size: isSmallScreen ? 16 : 18),
+                                icon: Icon(
+                                  Icons.close,
+                                  size: isSmallScreen ? 16 : 18,
+                                ),
                                 label: Text(
                                   'إغلاق',
-                                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 12 : 14,
+                                  ),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.grey[600],
@@ -3463,10 +3516,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                     Navigator.pop(context);
                                     _verifyDoctor(doctor, true);
                                   },
-                                  icon: Icon(Icons.check, size: isSmallScreen ? 16 : 18),
+                                  icon: Icon(
+                                    Icons.check,
+                                    size: isSmallScreen ? 16 : 18,
+                                  ),
                                   label: Text(
                                     'موافقة وتحقق',
-                                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                                    style: TextStyle(
+                                      fontSize: isSmallScreen ? 12 : 14,
+                                    ),
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
@@ -3474,7 +3532,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   ),
                                 ),
                               ),
-                            if (doctor.verified != true) SizedBox(width: isSmallScreen ? 6 : 8),
+                            if (doctor.verified != true)
+                              SizedBox(width: isSmallScreen ? 6 : 8),
                             if (doctor.verified == true)
                               Expanded(
                                 child: ElevatedButton.icon(
@@ -3482,10 +3541,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                     Navigator.pop(context);
                                     _verifyDoctor(doctor, false);
                                   },
-                                  icon: Icon(Icons.cancel, size: isSmallScreen ? 16 : 18),
+                                  icon: Icon(
+                                    Icons.cancel,
+                                    size: isSmallScreen ? 16 : 18,
+                                  ),
                                   label: Text(
                                     'إلغاء التحقق',
-                                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                                    style: TextStyle(
+                                      fontSize: isSmallScreen ? 12 : 14,
+                                    ),
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.red,
@@ -3493,14 +3557,20 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   ),
                                 ),
                               ),
-                            if (doctor.verified == true) SizedBox(width: isSmallScreen ? 6 : 8),
+                            if (doctor.verified == true)
+                              SizedBox(width: isSmallScreen ? 6 : 8),
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: () => Navigator.pop(context),
-                                icon: Icon(Icons.close, size: isSmallScreen ? 16 : 18),
+                                icon: Icon(
+                                  Icons.close,
+                                  size: isSmallScreen ? 16 : 18,
+                                ),
                                 label: Text(
                                   'إغلاق',
-                                  style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 12 : 14,
+                                  ),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.grey[600],
@@ -3523,7 +3593,30 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   }
 
   // FIXED: Show full screen image viewer
-  void _showFullScreenImage(String filePath) {
+  // void _showFullScreenImage(String filePath) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => Dialog(
+  //       backgroundColor: Colors.black,
+  //       child: Stack(
+  //         children: [
+  //           Center(
+  //             child: LocalFileViewer(filePath: filePath, fit: BoxFit.contain),
+  //           ),
+  //           Positioned(
+  //             top: 40,
+  //             right: 20,
+  //             child: IconButton(
+  //               onPressed: () => Navigator.pop(context),
+  //               icon: const Icon(Icons.close, color: Colors.white, size: 30),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+  void _showFullScreenImage(String imageUrl) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -3531,7 +3624,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         child: Stack(
           children: [
             Center(
-              child: LocalFileViewer(filePath: filePath, fit: BoxFit.contain),
+              child: InteractiveViewer(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.broken_image, color: Colors.white, size: 60),
+                ),
+              ),
             ),
             Positioned(
               top: 40,
@@ -3546,6 +3646,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       ),
     );
   }
+
 
   Widget _buildRatingsTab() {
     return SingleChildScrollView(
@@ -3572,12 +3673,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
 
         final stats =
             snapshot.data ??
-                {
-                  'totalRatings': 0,
-                  'averageRating': 0.0,
-                  'ratingDistribution': <String, int>{},
-                  'recentRatings': 0,
-                };
+            {
+              'totalRatings': 0,
+              'averageRating': 0.0,
+              'ratingDistribution': <String, int>{},
+              'recentRatings': 0,
+            };
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -3614,13 +3715,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   }
 
   Widget _buildRatingStatCard(
-      String value,
-      String label,
-      IconData icon,
-      Color color,
-      Color backgroundColor, {
-        bool isSmallScreen = false,
-      }) {
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+    Color backgroundColor, {
+    bool isSmallScreen = false,
+  }) {
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
       decoration: BoxDecoration(
@@ -3630,11 +3731,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       ),
       child: Column(
         children: [
-          Icon(
-              icon,
-              size: isSmallScreen ? 24 : 32,
-              color: color
-          ),
+          Icon(icon, size: isSmallScreen ? 24 : 32, color: color),
           SizedBox(height: isSmallScreen ? 6 : 8),
           Text(
             value,
@@ -3648,8 +3745,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           Text(
             label,
             style: TextStyle(
-                fontSize: isSmallScreen ? 10 : 12,
-                color: color.withOpacity(0.8)
+              fontSize: isSmallScreen ? 10 : 12,
+              color: color.withOpacity(0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -3745,8 +3842,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   Flexible(
                     child: Container(
                       padding: EdgeInsets.symmetric(
-                          horizontal: isSmallScreen ? 6 : 8,
-                          vertical: isSmallScreen ? 3 : 4
+                        horizontal: isSmallScreen ? 6 : 8,
+                        vertical: isSmallScreen ? 3 : 4,
                       ),
                       decoration: BoxDecoration(
                         color: rating.role == 'doctor'
@@ -3814,8 +3911,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           Text(
                             'إلى: ${toUser?.name ?? 'مستخدم غير معروف'}',
                             style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: isSmallScreen ? 11 : 14
+                              color: Colors.grey[600],
+                              fontSize: isSmallScreen ? 11 : 14,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -3837,8 +3934,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   child: Text(
                     rating.comment!,
                     style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: isSmallScreen ? 12 : 14
+                      color: Colors.grey[700],
+                      fontSize: isSmallScreen ? 12 : 14,
                     ),
                   ),
                 ),
@@ -3847,8 +3944,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
               Text(
                 _formatDateTime(rating.createdAt),
                 style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: isSmallScreen ? 10 : 12
+                  color: Colors.grey[500],
+                  fontSize: isSmallScreen ? 10 : 12,
                 ),
               ),
             ],
@@ -3872,6 +3969,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       return 'الآن';
     }
   }
+
   void _openPricesScreen() {
     context.push('/admin/prices');
   }

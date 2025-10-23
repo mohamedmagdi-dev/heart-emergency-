@@ -5,11 +5,15 @@ import '../data/models/request_model.dart';
 import '../data/models/user_model.dart';
 import 'fcm_notification_service.dart';
 import 'notification_sender.dart';
+import 'earnings_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' show GeoPoint;
 import '../core/utils/haversine.dart';
+import 'image_upload_service.dart';
 class RequestService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final EarningsService _earningsService = EarningsService();
+  final ImageUploadService _imageUploadService = ImageUploadService();
   static const String requestsCollection = 'requests';
   // Add a simple request from current patient to a doctor
   Future<void> sendRequestToDoctor(String doctorId) async {
@@ -101,7 +105,6 @@ class RequestService {
     required String urgencyLevel,
     required GeoPoint patientLocation,
     required String patientAddress,
-    required double price, // Patient-set price
     String? notes,
   }) async {
     try {
@@ -122,7 +125,7 @@ class RequestService {
       }
 
       // Create the request
-      final requestData = {
+      Map<String, dynamic> requestData = {
         'patientId': currentUser.uid,
         'doctorId': doctorId,
         'status': 'pending',
@@ -131,12 +134,18 @@ class RequestService {
         'patientLocation': patientLocation,
         'patientAddress': patientAddress,
         // Pricing & commission (commissionRate stored for transparency)
-        'price': price,
+        // price will be set by the doctor later
         'commissionRate': 0.12, // 12%
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
         if (notes != null) 'notes': notes,
       };
+      
+      // Process any local image paths in the request data
+      requestData = await _imageUploadService.processImagePathsInMap(
+        requestData,
+        userId: currentUser.uid,
+      );
 
       final docRef = await _firestore.collection(requestsCollection).add(requestData);
       
@@ -146,6 +155,178 @@ class RequestService {
       return docRef.id;
     } catch (e) {
       throw 'فشل في إنشاء طلب الطوارئ: $e';
+    }
+  }
+
+  // Doctor sets price for an emergency request and notifies the patient
+  // Future<void> setPriceByDoctor({
+  //   required String requestId,
+  //   required double price,
+  // }) async {
+  //   try {
+  //     final currentUser = _auth.currentUser;
+  //     if (currentUser == null) {
+  //       throw 'يجب تسجيل الدخول أولاً';
+  //     }
+  //
+  //     final docRef = _firestore.collection(requestsCollection).doc(requestId);
+  //     final snap = await docRef.get();
+  //     if (!snap.exists) throw 'الطلب غير موجود';
+  //     final data = snap.data()!;
+  //
+  //     // Ensure the requester is the assigned doctor
+  //     final doctorId = data['doctorId'] as String?;
+  //     final patientId = data['patientId'] as String?;
+  //     if (doctorId == null || patientId == null) {
+  //       throw 'بيانات الطلب غير مكتملة';
+  //     }
+  //     if (doctorId != currentUser.uid) {
+  //       throw 'ليس لديك صلاحية لتحديد سعر هذا الطلب';
+  //     }
+  //
+  //     // Get patient's currency from their user document
+  //     final patientDoc = await _firestore.collection('users').doc(patientId).get();
+  //     if (!patientDoc.exists) {
+  //       throw 'بيانات المريض غير موجودة';
+  //     }
+  //     final patientData = patientDoc.data()!;
+  //     final patientCurrency = patientData['currency'] as String? ?? 'EGP';
+  //
+  //     await docRef.update({
+  //       'price': price,
+  //       'currency': patientCurrency, // Save patient's currency
+  //       'status': 'price_set',
+  //       'priceSetAt': FieldValue.serverTimestamp(),
+  //       'updatedAt': FieldValue.serverTimestamp(),
+  //     });
+  //
+  //     // Notify patient with proposed price using their currency
+  //     await NotificationSender().sendNotification(
+  //       toUserId: patientId,
+  //       title: 'تم تحديد السعر',
+  //       body: 'قام الطبيب بتحديد سعر الخدمة: ${price.toStringAsFixed(2)} $patientCurrency',
+  //       type: 'price_set',
+  //       payload: {
+  //         'requestId': requestId,
+  //         'price': price,
+  //         'currency': patientCurrency,
+  //       },
+  //     );
+  //   } on FirebaseException catch (e) {
+  //     throw _friendlyFirestoreError(e, fallback: 'تعذر تحديد السعر.');
+  //   } catch (e) {
+  //     throw 'تعذر تحديد السعر: $e';
+  //   }
+  // }
+  Future<void> setPriceByDoctor({
+    required String requestId,
+    required double price,
+  }) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw 'يجب تسجيل الدخول أولاً';
+      }
+
+      final docRef = _firestore.collection(requestsCollection).doc(requestId);
+      final snap = await docRef.get();
+      if (!snap.exists) throw 'الطلب غير موجود';
+      final data = snap.data()!;
+
+      // Ensure the requester is the assigned doctor
+      final doctorId = data['doctorId'] as String?;
+      final patientId = data['patientId'] as String?;
+      if (doctorId == null || patientId == null) {
+        throw 'بيانات الطلب غير مكتملة';
+      }
+      if (doctorId != currentUser.uid) {
+        throw 'ليس لديك صلاحية لتحديد سعر هذا الطلب';
+      }
+
+      // Get patient's currency from their user document
+      final patientDoc = await _firestore.collection('users').doc(patientId).get();
+      if (!patientDoc.exists) {
+        throw 'بيانات المريض غير موجودة';
+      }
+      final patientData = patientDoc.data()!;
+      final patientCurrency = patientData['currency'] as String? ?? 'EGP';
+
+      // ✅ التعديل المهم: استخدم 'price_set' بدل 'accepted'
+      await docRef.update({
+        'price': price,
+        'currency': patientCurrency,
+        'status': 'price_set', // ⬅️ دا التعديل الأساسي
+        'priceSetAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Notify patient with proposed price using their currency
+      await NotificationSender().sendNotification(
+        toUserId: patientId,
+        title: 'تم تحديد السعر',
+        body: 'قام الطبيب بتحديد سعر الخدمة: ${price.toStringAsFixed(2)} $patientCurrency',
+        type: 'price_set',
+        payload: {
+          'requestId': requestId,
+          'price': price,
+          'currency': patientCurrency,
+        },
+      );
+    } on FirebaseException catch (e) {
+      throw _friendlyFirestoreError(e, fallback: 'تعذر تحديد السعر.');
+    } catch (e) {
+      throw 'تعذر تحديد السعر: $e';
+    }
+  }
+
+  // Patient accepts or rejects the doctor's price and notifies the doctor
+  Future<void> respondToDoctorPrice({
+    required String requestId,
+    required bool accepted,
+  }) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw 'يجب تسجيل الدخول أولاً';
+      }
+
+      final docRef = _firestore.collection(requestsCollection).doc(requestId);
+      final snap = await docRef.get();
+      if (!snap.exists) throw 'الطلب غير موجود';
+      final data = snap.data()!;
+
+      final doctorId = data['doctorId'] as String?;
+      final patientId = data['patientId'] as String?;
+      if (doctorId == null || patientId == null) {
+        throw 'بيانات الطلب غير مكتملة';
+      }
+      if (patientId != currentUser.uid) {
+        throw 'ليس لديك صلاحية للرد على هذا الطلب';
+      }
+
+      await docRef.update({
+        'status': accepted ? 'accepted' : 'rejected',
+        'updatedAt': FieldValue.serverTimestamp(),
+        if (accepted) 'acceptedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Notify doctor
+      await NotificationSender().sendNotification(
+        toUserId: doctorId,
+        title: accepted ? 'تم قبول السعر' : 'تم رفض السعر',
+        body: accepted
+            ? 'وافق المريض على السعر المحدد'
+            : 'رفض المريض السعر المحدد',
+        type: accepted ? 'price_accepted' : 'price_rejected',
+        payload: {
+          'requestId': requestId,
+          'accepted': accepted,
+        },
+      );
+    } on FirebaseException catch (e) {
+      throw _friendlyFirestoreError(e, fallback: 'تعذر تحديث حالة الطلب.');
+    } catch (e) {
+      throw 'تعذر تحديث حالة الطلب: $e';
     }
   }
 
@@ -273,6 +454,7 @@ class RequestService {
       final double price = (data['finalPrice'] as num?)?.toDouble() ?? (data['price'] as num?)?.toDouble() ?? 0.0;
       final double commissionRate = (data['commissionRate'] as num?)?.toDouble() ?? 0.12;
       final double commissionAmount = double.parse((price * commissionRate).toStringAsFixed(2));
+      final String doctorId = data['doctorId'] as String? ?? '';
 
       // Update the request status + financials
       await docRef.update({
@@ -283,6 +465,11 @@ class RequestService {
         'completedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      // Update doctor earnings
+      if (doctorId.isNotEmpty) {
+        await _earningsService.onRequestCompleted(doctorId);
+      }
     } catch (e) {
       throw 'فشل في إكمال الطلب: $e';
     }
