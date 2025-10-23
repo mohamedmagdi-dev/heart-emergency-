@@ -6,6 +6,7 @@ import '../data/models/user_model.dart';
 import 'fcm_notification_service.dart';
 import 'notification_sender.dart';
 import 'earnings_service.dart';
+import 'local_notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' show GeoPoint;
 import '../core/utils/haversine.dart';
 import 'image_upload_service.dart';
@@ -14,6 +15,7 @@ class RequestService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final EarningsService _earningsService = EarningsService();
   final ImageUploadService _imageUploadService = ImageUploadService();
+  final LocalNotificationService _localNotificationService = LocalNotificationService();
   static const String requestsCollection = 'requests';
   // Add a simple request from current patient to a doctor
   Future<void> sendRequestToDoctor(String doctorId) async {
@@ -272,6 +274,13 @@ class RequestService {
           'currency': patientCurrency,
         },
       );
+
+      // Show local notification to patient
+      await _localNotificationService.showPriceSetNotification(
+        amount: price,
+        currency: patientCurrency,
+        requestId: requestId,
+      );
     } on FirebaseException catch (e) {
       throw _friendlyFirestoreError(e, fallback: 'تعذر تحديد السعر.');
     } catch (e) {
@@ -323,6 +332,17 @@ class RequestService {
           'accepted': accepted,
         },
       );
+
+      // Show local notification to doctor
+      if (accepted) {
+        await _localNotificationService.showPriceAcceptedNotification(
+          requestId: requestId,
+        );
+      } else {
+        await _localNotificationService.showPriceDeclinedNotification(
+          requestId: requestId,
+        );
+      }
     } on FirebaseException catch (e) {
       throw _friendlyFirestoreError(e, fallback: 'تعذر تحديث حالة الطلب.');
     } catch (e) {
@@ -706,5 +726,22 @@ class RequestService {
       print('Error getting doctor earning: $e');
       return null;
     }
+  }
+
+  // Stream recent completed requests for real-time updates
+  Stream<List<RequestModel>> streamRecentCompletedRequests({
+    required String doctorId,
+    int limit = 10,
+  }) {
+    return _firestore
+        .collection(requestsCollection)
+        .where('doctorId', isEqualTo: doctorId)
+        .where('status', isEqualTo: 'completed')
+        .orderBy('completedAt', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => RequestModel.fromMap(doc.data(), documentId: doc.id))
+            .toList());
   }
 }

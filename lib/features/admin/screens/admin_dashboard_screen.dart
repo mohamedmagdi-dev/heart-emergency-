@@ -2816,6 +2816,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 subtitle: 'عرض الطلبات حسب الحالة',
                 onTap: () => context.push('/admin/requests'),
               ),
+              _buildSettingItem(
+                icon: Icons.account_balance,
+                title: 'عمولات الإدارة',
+                subtitle: 'عرض إجمالي عمولات الإدارة من جميع الأطباء',
+                onTap: () => context.push('/admin/commissions'),
+              ),
             ],
           ),
         ],

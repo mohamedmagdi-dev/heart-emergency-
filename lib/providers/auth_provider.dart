@@ -215,6 +215,7 @@ class AuthController {
     String? experience,
     List<File>? certificates,
     File? idDocument,
+    File? medicalLicense,
     double? latitude,
     double? longitude,
   }) async {
@@ -247,6 +248,17 @@ class AuthController {
         }
       }
 
+      // رفع رخصة مزاولة المهنة وتخزين الرابط في حقل منفصل
+      String? medicalLicenseUrl;
+      if (role == 'doctor' && medicalLicense != null) {
+        if (await medicalLicense.exists()) {
+          final imageUrl = await cloudinary.uploadFile(medicalLicense);
+          if (imageUrl != null) {
+            medicalLicenseUrl = imageUrl;
+          }
+        }
+      }
+
       // Get FCM token
       final fcmToken = await _fcmService.getToken();
 
@@ -263,6 +275,13 @@ class AuthController {
         profileImage: idDocumentUrl,
         fcmToken: fcmToken,
       );
+
+      // حفظ رابط رخصة مزاولة المهنة في وثيقة المستخدم (إن وجد)
+      if (userData != null && medicalLicenseUrl != null) {
+        await _authService.updateUserData(userData.uid, {
+          'medicalLicenseUrl': medicalLicenseUrl,
+        });
+      }
 
       return userData;
     } catch (e) {

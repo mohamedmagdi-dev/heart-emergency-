@@ -12,26 +12,29 @@ class FirebaseDoctorAuthScreen extends ConsumerStatefulWidget {
   const FirebaseDoctorAuthScreen({super.key});
 
   @override
-  ConsumerState<FirebaseDoctorAuthScreen> createState() => _FirebaseDoctorAuthScreenState();
+  ConsumerState<FirebaseDoctorAuthScreen> createState() =>
+      _FirebaseDoctorAuthScreenState();
 }
 
-class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScreen> {
+class _FirebaseDoctorAuthScreenState
+    extends ConsumerState<FirebaseDoctorAuthScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isLogin = true;
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  
+
   String? _selectedSpecialization;
   String? _selectedExperience;
   List<File> _certificates = [];
   File? _idDocument;
+  File? _medicalLicenseFile; // رخصة مزاولة المهنة (مطلوبة)
   Position? _currentPosition;
 
   final List<String> _specializations = [
@@ -78,7 +81,7 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
       if (permission == LocationPermission.denied) {
         await Geolocator.requestPermission();
       }
-      
+
       _currentPosition = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
@@ -86,9 +89,9 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل الحصول على الموقع: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('فشل الحصول على الموقع: $e')));
       }
     }
   }
@@ -111,9 +114,9 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل اختيار الملفات: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('فشل اختيار الملفات: $e')));
       }
     }
   }
@@ -132,9 +135,9 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل اختيار الملف: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('فشل اختيار الملف: $e')));
       }
     }
   }
@@ -144,9 +147,9 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
 
     if (!_isLogin) {
       if (_selectedSpecialization == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('يرجى اختيار التخصص')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('يرجى اختيار التخصص')));
         return;
       }
       if (_selectedExperience == null) {
@@ -161,7 +164,9 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('تنبيه'),
-            content: const Text('لم يتم رفع أي مستندات. يمكنك إضافتها لاحقاً من الملف الشخصي. هل تريد المتابعة؟'),
+            content: const Text(
+              'لم يتم رفع أي مستندات. يمكنك إضافتها لاحقاً من الملف الشخصي. هل تريد المتابعة؟',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -210,6 +215,18 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
           await _getCurrentLocation();
         }
 
+        // التحقق من رفع رخصة مزاولة المهنة
+        if (_medicalLicenseFile == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('يرجى رفع رخصة مزاولة المهنة (مطلوبة)'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() => _isLoading = false);
+          return;
+        }
+
         final user = await authController.signUpWithEmail(
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -220,6 +237,7 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
           experience: _selectedExperience,
           certificates: _certificates,
           idDocument: _idDocument,
+          medicalLicense: _medicalLicenseFile, // رخصة مزاولة المهنة
           latitude: _currentPosition?.latitude,
           longitude: _currentPosition?.longitude,
         );
@@ -227,7 +245,9 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
         if (user != null && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('تم إنشاء الحساب بنجاح! سيتم مراجعة بياناتك من قبل الإدارة'),
+              content: Text(
+                'تم إنشاء الحساب بنجاح! سيتم مراجعة بياناتك من قبل الإدارة',
+              ),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 4),
             ),
@@ -239,7 +259,7 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
       if (mounted) {
         // FIXED: Enhanced error handling with dialog for critical errors
         final errorMessage = e.toString();
-        if (errorMessage.contains('البريد الإلكتروني مستخدم بالفعل') || 
+        if (errorMessage.contains('البريد الإلكتروني مستخدم بالفعل') ||
             errorMessage.contains('كلمة المرور غير صحيحة') ||
             errorMessage.contains('المستخدم غير موجود')) {
           _showErrorDialog('خطأ في المصادقة', errorMessage);
@@ -302,7 +322,7 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                
+
                 // Logo
                 Icon(
                   Icons.local_hospital,
@@ -310,7 +330,7 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                   color: Theme.of(context).primaryColor,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Title
                 Text(
                   _isLogin ? 'تسجيل دخول الطبيب' : 'إنشاء حساب طبيب',
@@ -364,7 +384,8 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                     items: _specializations.map((spec) {
                       return DropdownMenuItem(value: spec, child: Text(spec));
                     }).toList(),
-                    onChanged: (value) => setState(() => _selectedSpecialization = value),
+                    onChanged: (value) =>
+                        setState(() => _selectedSpecialization = value),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -381,7 +402,8 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                     items: _experiences.map((exp) {
                       return DropdownMenuItem(value: exp, child: Text(exp));
                     }).toList(),
-                    onChanged: (value) => setState(() => _selectedExperience = value),
+                    onChanged: (value) =>
+                        setState(() => _selectedExperience = value),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -407,8 +429,13 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                     prefixIcon: const Icon(Icons.lock),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   obscureText: _obscurePassword,
@@ -425,8 +452,15 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                       prefixIcon: const Icon(Icons.lock_outline),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        ),
                       ),
                     ),
                     obscureText: _obscureConfirmPassword,
@@ -445,9 +479,11 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                   OutlinedButton.icon(
                     onPressed: _pickCertificates,
                     icon: const Icon(Icons.upload_file),
-                    label: Text(_certificates.isEmpty
-                        ? 'رفع الشهادات'
-                        : 'تم رفع ${_certificates.length} شهادة'),
+                    label: Text(
+                      _certificates.isEmpty
+                          ? 'رفع الشهادات'
+                          : 'تم رفع ${_certificates.length} شهادة',
+                    ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
@@ -455,14 +491,61 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                   const SizedBox(height: 16),
                 ],
 
+                //
+                if (!_isLogin) ...[
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'رخصة مزاولة المهنة (مطلوبة)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final result = await FilePicker.platform.pickFiles(
+                              type: FileType.custom,
+                              allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                            );
+                            if (result != null &&
+                                result.files.single.path != null) {
+                              setState(() {
+                                _medicalLicenseFile = File(
+                                  result.files.single.path!,
+                                );
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.upload_file),
+                          label: Text(
+                            _medicalLicenseFile == null
+                                ? 'رفع الرخصة'
+                                : 'تم اختيار الملف: ${_medicalLicenseFile!.path.split('/').last}',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
                 // Upload ID document (signup only)
                 if (!_isLogin) ...[
                   OutlinedButton.icon(
                     onPressed: _pickIdDocument,
                     icon: const Icon(Icons.badge),
-                    label: Text(_idDocument == null
-                        ? 'رفع وثيقة الهوية'
-                        : 'تم رفع وثيقة الهوية'),
+                    label: Text(
+                      _idDocument == null
+                          ? 'رفع وثيقة الهوية'
+                          : 'تم رفع وثيقة الهوية',
+                    ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
@@ -485,7 +568,10 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
                           _isLogin ? 'تسجيل الدخول' : 'إنشاء الحساب',
-                          style: const TextStyle(fontSize: 18, fontFamily: 'Janna'),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontFamily: 'Janna',
+                          ),
                         ),
                 ),
                 const SizedBox(height: 16),
@@ -508,12 +594,13 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
                     ),
                   ],
                 ),
-                TextButton(onPressed: (){
-                  context.push('/doctor/forgot-password');
-                }, child: Text("نسيت كلمة المرور؟")
-
+                TextButton(
+                  onPressed: () {
+                    context.push('/doctor/forgot-password');
+                  },
+                  child: Text("نسيت كلمة المرور؟"),
                 ),
-                
+
                 // Back button
                 TextButton(
                   onPressed: () => context.go('/'),
@@ -527,4 +614,3 @@ class _FirebaseDoctorAuthScreenState extends ConsumerState<FirebaseDoctorAuthScr
     );
   }
 }
-

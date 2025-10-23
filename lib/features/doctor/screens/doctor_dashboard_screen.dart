@@ -1300,6 +1300,26 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                 ),
               ],
             ),
+            if (request.status == RequestStatus.completed) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.remove_circle_outline, size: 16, color: Colors.red),
+                  const SizedBox(width: 4),
+                  Text(
+                    'العمولة (12%): ${((request.price ?? 0) * 0.12).toStringAsFixed(2)} ${request.currency ?? 'EGP'}',
+                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                  ),
+                  const SizedBox(width: 12),
+                  const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
+                  const SizedBox(width: 4),
+                  Text(
+                    'صافي الطبيب: ${((request.price ?? 0) * 0.88).toStringAsFixed(2)} ${request.currency ?? 'EGP'}',
+                    style: const TextStyle(fontSize: 12, color: Colors.green),
+                  ),
+                ],
+              ),
+            ],
           ],
 
           const SizedBox(height: 16),

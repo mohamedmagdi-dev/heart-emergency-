@@ -292,9 +292,7 @@ class _PatientDashboardScreenState
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
-                  // onTap: () => context.push(action['route'] as String),
-
-                  onTap: () {
+          onTap: () {
                     if (action['route'] == '/patient/map') {
                       // هنا ضع إحداثيات الطبيب المناسبين
                       final doctorLat = 24.7136; // مثال: استبدل بالقيمة الفعلية

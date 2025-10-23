@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../data/models/user_model.dart';
 // Admin
 import '../features/admin/screens/admin_dashboard_screen.dart';
+import '../features/admin/screens/admin_commissions_screen.dart';
 import '../features/admin/screens/admin_price_screen.dart';
 import '../features/admin/screens/admin_supervisors_screen.dart';
 import '../features/admin/screens/admin_requests_management_screen.dart';
@@ -20,6 +21,7 @@ import '../features/auth/screens/firebase_patient_auth_screen.dart';
 import '../features/common/screens/firebase_welcome_screen.dart';
 // Doctor
 import '../features/doctor/screens/doctor_dashboard_screen.dart';
+import '../features/doctor/screens/doctor_earnings_screen.dart';
 import '../features/doctor/screens/doctor_emergancy_map.dart';
 import '../features/doctor/screens/doctor_notification_screen.dart';
 import '../features/doctor/screens/doctor_profile_screen.dart';
@@ -425,6 +427,11 @@ GoRouter createFirebaseRouter() {
         redirect: (context, state) => _authGuard(context, state, 'doctor'),
       ),
       GoRoute(
+        path: '/doctor/earnings',
+        builder: (context, state) => const DoctorEarningsScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'doctor'),
+      ),
+      GoRoute(
         path: '/doctor/rate-patient',
         builder: (context, state) {
           final patient = state.extra as UserModel?;
@@ -461,6 +468,11 @@ GoRouter createFirebaseRouter() {
       GoRoute(
         path: '/admin/requests',
         builder: (context, state) => const AdminRequestsManagementScreen(),
+        redirect: (context, state) => _authGuard(context, state, 'admin'),
+      ),
+      GoRoute(
+        path: '/admin/commissions',
+        builder: (context, state) => const AdminCommissionsScreen(),
         redirect: (context, state) => _authGuard(context, state, 'admin'),
       ),
       GoRoute(
