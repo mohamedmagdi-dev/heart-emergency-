@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/models/rating_model.dart';
@@ -34,6 +35,15 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
 
   bool _showReviews = true;
 
+  // ✅ الحصول على معرف الطبيب الحالي
+  String _getCurrentDoctorId() {
+    final currentUser = ref.read(currentUserDataProvider).maybeWhen(
+      data: (user) => user,
+      orElse: () => null,
+    );
+    return currentUser?.uid ?? '';
+  }
+
   void _initializeDoctorEarnings(String doctorId) {
     // Initialize earnings in the background
     _earningsService.initializeDoctorEarnings(doctorId);
@@ -52,6 +62,69 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       }
     });
   }
+
+  // ✅ تحويل الإحداثيات إلى عنوان عربي قابل للقراءة
+  Future<String> _getAddressFromLatLng(double lat, double lng) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+
+        // ✅ بناء العنوان باللغة العربية
+        String address = '';
+
+        if (place.street != null && place.street!.isNotEmpty) {
+          address += place.street!;
+        }
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) {
+          if (address.isNotEmpty) address += '، ';
+          address += place.subLocality!;
+        }
+        if (place.locality != null && place.locality!.isNotEmpty) {
+          if (address.isNotEmpty) address += '، ';
+          address += place.locality!;
+        }
+        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) {
+          if (address.isNotEmpty) address += '، ';
+          address += place.administrativeArea!;
+        }
+
+        return address.isNotEmpty ? address : 'العنوان غير متاح';
+      }
+      return 'العنوان غير متاح';
+    } catch (e) {
+      print('خطأ في جلب العنوان: $e');
+      return 'العنوان غير متاح';
+    }
+  }
+
+  // دالة علشان تخزن العنوان في الفايرستور علشان متجيبش العنوان كل مرة
+  Future<void> _cachePatientAddress(RequestModel request) async {
+    try {
+      // لو العنوان موجود خلاص، متعملش حاجة
+      if (request.patientAddress != null && request.patientAddress!.isNotEmpty) {
+        return;
+      }
+
+      // جيب العنوان من الإحداثيات
+      String address = await _getAddressFromLatLng(
+        request.patientLocation.latitude,
+        request.patientLocation.longitude,
+      );
+
+      // خزّن العنوان في الفايرستور
+      await FirebaseFirestore.instance
+          .collection('requests')
+          .doc(request.id)
+          .update({
+        'patientAddress': address,
+      });
+    } catch (e) {
+      print('خطأ في تخزين العنوان: $e');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -1273,15 +1346,34 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Location
+          // ✅ عرض العنوان العربي بدلاً من الإحداثيات
           Row(
             children: [
               const Icon(Icons.location_on, size: 16, color: Colors.grey),
               const SizedBox(width: 4),
               Expanded(
-                child: Text(
-                  'خط العرض: ${request.patientLocation.latitude.toStringAsFixed(4)}, خط الطول: ${request.patientLocation.longitude.toStringAsFixed(4)}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 14),
+                child: FutureBuilder<String>(
+                  future: _getAddressFromLatLng(
+                    request.patientLocation.latitude,
+                    request.patientLocation.longitude,
+                  ),
+                  builder: (context, snapshot) {
+                    final address = snapshot.data ?? 'جاري جلب العنوان...';
+                    
+                    // ✅ حفظ العنوان في الخلفية
+                    if (snapshot.hasData && address != 'جاري جلب العنوان...') {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _cachePatientAddress(request);
+                      });
+                    }
+                    
+                    return Text(
+                      address,
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  },
                 ),
               ),
             ],
@@ -1325,24 +1417,16 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           const SizedBox(height: 16),
 
           // ✅ الأزرار - عدل الشرط علشان يشمل price_set
-          if (request.status == RequestStatus.pending ||
-              request.status == RequestStatus.price_set) ...[
+          if (request.status == RequestStatus.pending) ...[
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => _acceptRequest(request),
-                    icon: const Icon(Icons.check),
-                    // ✅ عدل النص علشان يظهر حسب الحالة
-                    label: FittedBox(
-                      child: Text(
-                          request.status == RequestStatus.pending
-                              ? 'تحديد السعر'
-                              : 'قبول الطلب'
-                      ),
-                    ),
+                    onPressed: () => _setPriceForRequest(request),
+                    icon: const Icon(Icons.attach_money),
+                    label: const Text('تحديد السعر'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
                     ),
                   ),
@@ -1352,7 +1436,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _rejectRequest(request),
                     icon: const Icon(Icons.close),
-                    label: FittedBox(child: const Text('رفض')),
+                    label: const Text('رفض'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
@@ -1372,7 +1456,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                       );
                     },
                     icon: const Icon(Icons.map),
-                    label: FittedBox(child: const Text('الخريطة')),
+                    label: const Text('الخريطة'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -1381,9 +1465,90 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                 ),
               ],
             ),
-          ] else if (request.status == RequestStatus.accepted ||
-              request.status == RequestStatus.completed) ...[
-            // ... باقي الكود كما هو
+          ] else if (request.status == RequestStatus.price_set) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _acceptRequest(request),
+                    icon: const Icon(Icons.check, color: Colors.white),
+                    label: const Text('قبول الطلب', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _rejectRequest(request),
+                    icon: const Icon(Icons.cancel, color: Colors.white),
+                    label: const Text('رفض الطلب', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else if (request.status == RequestStatus.completed) ...[
+            // ✅ إضافة زر تقييم المريض للطلبات المكتملة
+            FutureBuilder<bool>(
+              future: _ratingService.hasDoctorRatedPatient(
+                requestId: request.id, 
+                doctorId: _getCurrentDoctorId(),
+              ),
+              builder: (context, snapshot) {
+                final hasRated = snapshot.data ?? false;
+                
+                if (hasRated) {
+                  // ✅ عرض حالة "تم التقييم" إذا تم التقييم
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'تم تقييم المريض',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  // ✅ عرض زر التقييم إذا لم يتم التقييم بعد
+                  return ElevatedButton.icon(
+                    onPressed: () => _ratePatient(request),
+                    icon: const Icon(Icons.star, color: Colors.white),
+                    label: const Text('تقييم المريض', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber[600],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
           ],
         ],
       ),
@@ -1825,9 +1990,34 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                             color: Colors.grey,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            '(${r.patientLocation.latitude.toStringAsFixed(4)}, ${r.patientLocation.longitude.toStringAsFixed(4)})',
-                            style: const TextStyle(color: Colors.grey),
+                          // Text(
+                          //   '(${r.patientLocation.latitude.toStringAsFixed(4)}, ${r.patientLocation.longitude.toStringAsFixed(4)})',
+                          //   style: const TextStyle(color: Colors.grey),
+                          // ),
+                          FutureBuilder<String>(
+                            future: _getAddressFromLatLng(
+                              r.patientLocation.latitude,
+                              r.patientLocation.longitude,
+                            ),
+                            builder: (context, snapshot) {
+                              final address = snapshot.data ?? 'جاري جلب العنوان...';
+
+                              // خزّن العنوان في الخلفية
+                              if (snapshot.hasData && address != 'جاري جلب العنوان...') {
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  _cachePatientAddress(r);
+                                });
+                              }
+
+                              return Expanded(
+                                child: Text(
+                                  address,
+                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            },
                           ),
                           const Spacer(),
                           TextButton.icon(
@@ -2119,6 +2309,10 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         color = Colors.red;
         text = 'مرفوض';
         break;
+      // case RequestStatus.rejected_by_doctor:
+      //   color = Colors.red;
+      //   text = 'مرفوض من الطبيب';
+      //   break;
       case RequestStatus.completed:
         color = Colors.green;
         text = 'مكتمل';
@@ -2141,7 +2335,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     );
   }
 
-  Future<void> _acceptRequest(RequestModel request) async {
+  Future<void> _setPriceForRequest(RequestModel request) async {
     // Get patient's currency first
     String? patientCurrency;
     try {
@@ -2156,7 +2350,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       print('Error getting patient currency: $e');
     }
 
-    // Show price setter dialog instead of simple confirmation
+    // Show price setter dialog
     await showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -2170,6 +2364,51 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _acceptRequest(RequestModel request) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: FittedBox(child: const Text('قبول الطلب')),
+        content: const Text('هل أنت متأكد من قبول هذا الطلب؟ سيتم إكماله تلقائياً وتحديث أرباحك.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: const Text('قبول', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await _requestService.acceptRequestByDoctor(requestId: request.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم قبول الطلب وإكماله بنجاح'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ في قبول الطلب: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _rejectRequest(RequestModel request) async {
@@ -2195,20 +2434,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     if (confirmed != true) return;
 
     try {
-      await _requestService.rejectEmergencyRequest(request.id);
-
-      // 🔔 بعد الرفض نرسل إشعار للمريض
-      final currentUser = ref
-          .read(currentUserDataProvider)
-          .maybeWhen(data: (u) => u, orElse: () => null);
-
-      await _notificationService.createRequestNotification(
-        userId: request.patientId,
-        title: 'تم رفض الطلب',
-        body: 'قام الدكتور ${currentUser?.name ?? "غير معروف"} برفض طلبك.',
-        type: 'rejected',
-        requestId: request.id,
-      );
+      // Use the new reject method that goes to rejected_by_doctor status
+      await _requestService.rejectRequestByDoctor(requestId: request.id);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2230,30 +2457,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     }
   }
 
-  Future<void> _completeRequest(RequestModel request) async {
-    try {
-      await _requestService.completeEmergencyRequest(request.id);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم إكمال الطلب بنجاح'),
-            backgroundColor: Colors.blue,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطأ في إكمال الطلب: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
+  // ✅ تقييم المريض مع حفظ التقييم في Firestore
   Future<void> _ratePatient(RequestModel request) async {
     try {
       final patient = await _requestService.getUserDetails(request.patientId);
@@ -2267,25 +2471,100 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         return;
       }
 
-      // context.push(
-      //   '/doctor/rate-patient',
-      //   extra: patient,
-      //   queryParameters: {'requestId': request.id},
-      // );
-      context.push(
-        '/doctor/rate-patient?requestId=${request.id}',
-        extra: patient,
+      // ✅ عرض نافذة التقييم
+      final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (context) => _buildRatingDialog(patient.name),
       );
+
+      if (result != null && result['rating'] != null) {
+        // ✅ حفظ التقييم في Firestore
+        await _ratingService.createRating(
+          toUserId: request.patientId,
+          role: 'patient', // ✅ تقييم المريض
+          rating: result['rating'],
+          comment: result['comment'],
+          requestId: request.id,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم تقييم المريض بنجاح'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ في فتح صفحة التقييم: $e'),
+            content: Text('خطأ في تقييم المريض: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
+  }
+
+  // ✅ نافذة التقييم
+  Widget _buildRatingDialog(String patientName) {
+    double rating = 3.0;
+    String comment = '';
+
+    return AlertDialog(
+      title: Text('تقييم المريض: $patientName'),
+      content: StatefulBuilder(
+        builder: (context, setState) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  return IconButton(
+                    onPressed: () {
+                      setState(() {
+                        rating = (index + 1).toDouble();
+                      });
+                    },
+                    icon: Icon(
+                      index < rating ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
+                      size: 32,
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'تعليق (اختياري)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                onChanged: (value) => comment = value,
+              ),
+            ],
+          );
+        },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إلغاء'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, {
+            'rating': rating,
+            'comment': comment,
+          }),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.amber[600]),
+          child: const Text('تقييم', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    );
   }
 
   String _formatDateTime(DateTime dateTime) {

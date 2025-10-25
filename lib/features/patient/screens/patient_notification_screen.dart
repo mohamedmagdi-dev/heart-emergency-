@@ -122,6 +122,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../notifications/notification_request_service.dart';
+import '../../../services/request_service.dart';
+import '../../../data/models/request_model.dart';
 
 
 class PatientNotificationsScreen extends ConsumerStatefulWidget {
@@ -138,7 +140,8 @@ class _PatientNotificationsScreenState
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final NotificationRequestService _notificationService =
-  NotificationRequestService();
+      NotificationRequestService();
+  final RequestService _requestService = RequestService();
 
   @override
   void initState() {
@@ -313,11 +316,27 @@ class _PatientNotificationsScreenState
                     notificationDoc.reference.update({'read': true});
                   }
                 },
+                trailing: _buildNotificationTrailing(data, notificationDoc),
               ),
             );
           },
         );
       },
     );
+  }
+
+  Widget? _buildNotificationTrailing(Map<String, dynamic> data, QueryDocumentSnapshot notificationDoc) {
+    final String? type = data['type'] as String?;
+    
+    // Show info icon for price_set notifications (no actions for patients)
+    if (type == 'price_set') {
+      return const Icon(
+        Icons.info_outline,
+        color: Colors.blue,
+        size: 20,
+      );
+    }
+    
+    return null;
   }
 }

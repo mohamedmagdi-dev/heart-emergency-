@@ -1,4 +1,5 @@
 // Rate Patient Screen
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
@@ -272,7 +273,7 @@ class _RatePatientScreenState extends State<RatePatientScreen> {
       ),
     );
   }
-
+  //
   Future<void> _submitRating() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -1,6 +1,7 @@
 // Enhanced request service for emergency requests
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import '../data/models/request_model.dart';
 import '../data/models/user_model.dart';
 import 'fcm_notification_service.dart';
@@ -10,6 +11,10 @@ import 'local_notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' show GeoPoint;
 import '../core/utils/haversine.dart';
 import 'image_upload_service.dart';
+// ✅ إضافة المكتبات المطلوبة للعناوين والمسافة
+import 'package:geocoding/geocoding.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 class RequestService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -151,6 +156,23 @@ class RequestService {
 
       final docRef = await _firestore.collection(requestsCollection).add(requestData);
       
+      // ✅ إضافة حساب العناوين والمسافة بعد إنشاء الطلب
+      // جلب موقع الطبيب لحساب المسافة
+      // final doctorDoc = await _firestore.collection('users').doc(doctorId).get();
+      if (doctorDoc.exists) {
+        final doctorData = doctorDoc.data()!;
+        final doctorLocation = doctorData['location'] as GeoPoint?;
+        
+        if (doctorLocation != null) {
+          // تحديث الطلب بالعناوين والمسافة (في الخلفية)
+          updateRequestWithLocationData(
+            requestId: docRef.id,
+            patientLocation: patientLocation,
+            doctorLocation: doctorLocation,
+          );
+        }
+      }
+      
       // Send FCM notification to doctor
       await _sendEmergencyRequestNotification(doctorId, currentUser.uid);
       
@@ -245,6 +267,12 @@ class RequestService {
         throw 'ليس لديك صلاحية لتحديد سعر هذا الطلب';
       }
 
+      // Check if price has already been set
+      final currentStatus = data['status'] as String?;
+      if (currentStatus == 'price_set' || data['price'] != null) {
+        throw 'تم تحديد السعر مسبقاً ولا يمكن تغييره';
+      }
+
       // Get patient's currency from their user document
       final patientDoc = await _firestore.collection('users').doc(patientId).get();
       if (!patientDoc.exists) {
@@ -262,7 +290,7 @@ class RequestService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      // Notify patient with proposed price using their currency
+      // ✅ إشعار المريض بتحديد السعر
       await NotificationSender().sendNotification(
         toUserId: patientId,
         title: 'تم تحديد السعر',
@@ -275,7 +303,20 @@ class RequestService {
         },
       );
 
-      // Show local notification to patient
+      // ✅ إشعار الطبيب بتحديد السعر
+      await NotificationSender().sendNotification(
+        toUserId: doctorId,
+        title: 'تم تحديد السعر بنجاح',
+        body: 'تم تحديد سعر الخدمة: ${price.toStringAsFixed(2)} $patientCurrency',
+        type: 'price_set_doctor',
+        payload: {
+          'requestId': requestId,
+          'price': price,
+          'currency': patientCurrency,
+        },
+      );
+
+      // ✅ إشعار محلي للمريض
       await _localNotificationService.showPriceSetNotification(
         amount: price,
         currency: patientCurrency,
@@ -285,6 +326,135 @@ class RequestService {
       throw _friendlyFirestoreError(e, fallback: 'تعذر تحديد السعر.');
     } catch (e) {
       throw 'تعذر تحديد السعر: $e';
+    }
+  }
+
+  // Doctor accepts the request (after price is set) - goes directly to completed
+  Future<void> acceptRequestByDoctor({
+    required String requestId,
+  }) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw 'يجب تسجيل الدخول أولاً';
+      }
+
+      final docRef = _firestore.collection(requestsCollection).doc(requestId);
+      final snap = await docRef.get();
+      if (!snap.exists) throw 'الطلب غير موجود';
+      final data = snap.data()!;
+
+      final doctorId = data['doctorId'] as String?;
+      final patientId = data['patientId'] as String?;
+      if (doctorId == null || patientId == null) {
+        throw 'بيانات الطلب غير مكتملة';
+      }
+      if (doctorId != currentUser.uid) {
+        throw 'ليس لديك صلاحية لقبول هذا الطلب';
+      }
+
+      // Check if price has been set
+      if (data['price'] == null) {
+        throw 'يجب تحديد السعر أولاً قبل قبول الطلب';
+      }
+
+      final price = (data['price'] as num?)?.toDouble() ?? 0.0;
+      final commissionRate = (data['commissionRate'] as num?)?.toDouble() ?? 0.12;
+      final commissionAmount = price * commissionRate;
+
+      // Update request to completed status
+      await docRef.update({
+        'status': 'completed',
+        'finalPrice': price,
+        'commissionRate': commissionRate,
+        'commissionAmount': commissionAmount,
+        'completedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Update doctor earnings
+      await _earningsService.onRequestCompleted(doctorId);
+
+      // Notify patient
+      await NotificationSender().sendNotification(
+        toUserId: patientId,
+        title: 'تم قبول الطلب',
+        body: 'قبل الطبيب طلبك وسيتم التواصل معك قريباً',
+        type: 'request_accepted',
+        payload: {
+          'requestId': requestId,
+          'fromUserId': doctorId,
+          'accepted': true,
+        },
+      );
+
+      // Show local notification to patient
+      await _localNotificationService.showRequestAcceptedNotification(
+        doctorName: 'الطبيب',
+        requestId: requestId,
+      );
+
+    } on FirebaseException catch (e) {
+      throw _friendlyFirestoreError(e, fallback: 'تعذر قبول الطلب.');
+    } catch (e) {
+      throw 'تعذر قبول الطلب: $e';
+    }
+  }
+
+  // Doctor rejects the request (after price is set) - goes to rejected_by_doctor
+  Future<void> rejectRequestByDoctor({
+    required String requestId,
+  }) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw 'يجب تسجيل الدخول أولاً';
+      }
+
+      final docRef = _firestore.collection(requestsCollection).doc(requestId);
+      final snap = await docRef.get();
+      if (!snap.exists) throw 'الطلب غير موجود';
+      final data = snap.data()!;
+
+      final doctorId = data['doctorId'] as String?;
+      final patientId = data['patientId'] as String?;
+      if (doctorId == null || patientId == null) {
+        throw 'بيانات الطلب غير مكتملة';
+      }
+      if (doctorId != currentUser.uid) {
+        throw 'ليس لديك صلاحية لرفض هذا الطلب';
+      }
+
+      // Update request to rejected_by_doctor status
+      await docRef.update({
+        'status': 'rejected_by_doctor',
+        'updatedAt': FieldValue.serverTimestamp(),
+        'rejectedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Notify patient
+      await NotificationSender().sendNotification(
+        toUserId: patientId,
+        title: 'تم رفض الطلب',
+        body: 'رفض الطبيب طلبك حالياً',
+        type: 'request_rejected',
+        payload: {
+          'requestId': requestId,
+          'fromUserId': doctorId,
+          'accepted': false,
+        },
+      );
+
+      // Show local notification to patient
+      await _localNotificationService.showRequestRejectedNotification(
+        doctorName: 'الطبيب',
+        requestId: requestId,
+      );
+
+    } on FirebaseException catch (e) {
+      throw _friendlyFirestoreError(e, fallback: 'تعذر رفض الطلب.');
+    } catch (e) {
+      throw 'تعذر رفض الطلب: $e';
     }
   }
 
@@ -556,7 +726,7 @@ class RequestService {
         },
       );
 
-      // Log the notification
+
       await FCMNotificationService.logNotification(
         userId: patientId,
         title: 'تم قبول طلب الطوارئ',
@@ -743,5 +913,268 @@ class RequestService {
         .map((snapshot) => snapshot.docs
             .map((doc) => RequestModel.fromMap(doc.data(), documentId: doc.id))
             .toList());
+  }
+
+  // ✅ تحويل الإحداثيات إلى عنوان عربي قابل للقراءة
+  Future<String> _getArabicAddressFromCoordinates(double latitude, double longitude) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks.first;
+        // بناء العنوان باللغة العربية
+        final addressParts = <String>[];
+        
+        if (placemark.street != null && placemark.street!.isNotEmpty) {
+          addressParts.add(placemark.street!);
+        }
+        if (placemark.subLocality != null && placemark.subLocality!.isNotEmpty) {
+          addressParts.add(placemark.subLocality!);
+        }
+        if (placemark.locality != null && placemark.locality!.isNotEmpty) {
+          addressParts.add(placemark.locality!);
+        }
+        if (placemark.administrativeArea != null && placemark.administrativeArea!.isNotEmpty) {
+          addressParts.add(placemark.administrativeArea!);
+        }
+        if (placemark.country != null && placemark.country!.isNotEmpty) {
+          addressParts.add(placemark.country!);
+        }
+        
+        return addressParts.isNotEmpty ? addressParts.join(', ') : "العنوان غير متاح";
+      }
+      return "العنوان غير متاح";
+    } catch (e) {
+      print('خطأ في تحويل الإحداثيات إلى عنوان: $e');
+      return "العنوان غير متاح";
+    }
+  }
+
+  // ✅ حساب المسافة والوقت المقدر باستخدام Google Distance Matrix API
+  Future<Map<String, dynamic>> _calculateDistanceAndDuration({
+    required double originLat,
+    required double originLng,
+    required double destLat,
+    required double destLng,
+  }) async {
+    try {
+      // TODO: يجب إضافة Google Maps API Key هنا
+      const String apiKey = 'YOUR_GOOGLE_MAPS_API_KEY'; // ⚠️ يجب استبدالها بمفتاح API الحقيقي
+      const String baseUrl = 'https://maps.googleapis.com/maps/api/distancematrix/json';
+      
+      final String origins = '$originLat,$originLng';
+      final String destinations = '$destLat,$destLng';
+      
+      final String url = '$baseUrl?origins=$origins&destinations=$destinations&language=ar&key=$apiKey';
+      
+      final response = await http.get(Uri.parse(url));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        if (data['status'] == 'OK' && data['rows'].isNotEmpty) {
+          final element = data['rows'][0]['elements'][0];
+          
+          if (element['status'] == 'OK') {
+            final distance = element['distance']['value'] / 1000.0; // تحويل من متر إلى كيلومتر
+            final duration = element['duration']['text']; // النص باللغة العربية
+            
+            return {
+              'distance': distance,
+              'duration': duration,
+              'success': true,
+            };
+          }
+        }
+      }
+      
+      // في حالة الفشل، استخدم حساب المسافة التقريبي
+      final distance = haversineDistanceKm(
+        lat1: originLat,
+        lon1: originLng,
+        lat2: destLat,
+        lon2: destLng,
+      );
+      
+      // تقدير الوقت بناءً على متوسط السرعة (40 كم/ساعة)
+      final estimatedMinutes = (distance / 40.0 * 60).round();
+      final duration = '${estimatedMinutes} دقيقة';
+      
+      return {
+        'distance': distance,
+        'duration': duration,
+        'success': false, // يشير إلى أنه تقدير وليس من Google API
+      };
+    } catch (e) {
+      print('خطأ في حساب المسافة والوقت: $e');
+      
+      // في حالة الفشل، استخدم حساب المسافة التقريبي
+      final distance = haversineDistanceKm(
+        lat1: originLat,
+        lon1: originLng,
+        lat2: destLat,
+        lon2: destLng,
+      );
+      
+      final estimatedMinutes = (distance / 40.0 * 60).round();
+      final duration = '${estimatedMinutes} دقيقة';
+      
+      return {
+        'distance': distance,
+        'duration': duration,
+        'success': false,
+      };
+    }
+  }
+
+  // ✅ تحديث طلب الطوارئ بالعناوين والمسافة والوقت المقدر
+  Future<void> updateRequestWithLocationData({
+    required String requestId,
+    required GeoPoint patientLocation,
+    required GeoPoint doctorLocation,
+  }) async {
+    try {
+      // تحويل إحداثيات المريض إلى عنوان عربي
+      final patientAddress = await _getArabicAddressFromCoordinates(
+        patientLocation.latitude,
+        patientLocation.longitude,
+      );
+      
+      // تحويل إحداثيات الطبيب إلى عنوان عربي
+      final doctorAddress = await _getArabicAddressFromCoordinates(
+        doctorLocation.latitude,
+        doctorLocation.longitude,
+      );
+      
+      // حساب المسافة والوقت المقدر
+      final distanceData = await _calculateDistanceAndDuration(
+        originLat: patientLocation.latitude,
+        originLng: patientLocation.longitude,
+        destLat: doctorLocation.latitude,
+        destLng: doctorLocation.longitude,
+      );
+      
+      // تحديث الطلب في Firestore
+      await _firestore.collection(requestsCollection).doc(requestId).update({
+        'patientAddress': patientAddress,
+        'doctorAddress': doctorAddress,
+        'distance': distanceData['distance'],
+        'duration': distanceData['duration'],
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      
+      print('تم تحديث الطلب بالعناوين والمسافة بنجاح');
+    } catch (e) {
+      print('خطأ في تحديث بيانات الموقع: $e');
+      // لا نرمي خطأ هنا لتجنب تعطيل التطبيق
+    }
+  }
+
+  // ✅ تحديث طلب موجود بالعناوين والمسافة (للاستخدام مع الطلبات الموجودة)
+  Future<void> enrichRequestWithLocationData(String requestId) async {
+    try {
+      final requestDoc = await _firestore.collection(requestsCollection).doc(requestId).get();
+      if (!requestDoc.exists) return;
+      
+      final requestData = requestDoc.data()!;
+      final patientLocation = requestData['patientLocation'] as GeoPoint?;
+      final doctorId = requestData['doctorId'] as String?;
+      
+      if (patientLocation == null || doctorId == null) return;
+      
+      // جلب موقع الطبيب
+      final doctorDoc = await _firestore.collection('users').doc(doctorId).get();
+      if (!doctorDoc.exists) return;
+      
+      final doctorData = doctorDoc.data()!;
+      final doctorLocation = doctorData['location'] as GeoPoint?;
+      
+      if (doctorLocation == null) return;
+      
+      // تحديث الطلب بالبيانات الجديدة
+      await updateRequestWithLocationData(
+        requestId: requestId,
+        patientLocation: patientLocation,
+        doctorLocation: doctorLocation,
+      );
+    } catch (e) {
+      print('خطأ في إثراء الطلب ببيانات الموقع: $e');
+    }
+  }
+
+  // ✅ مثال على كيفية استخدام الميزات الجديدة في الواجهات
+  // يمكن استخدام هذه الدالة في شاشات عرض تفاصيل الطلب
+  Widget buildLocationInfoWidget(RequestModel request) {
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'معلومات الموقع',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            
+            // عنوان المريض
+            if (request.patientAddress != null && request.patientAddress!.isNotEmpty)
+              _buildInfoRow('عنوان المريض:', request.patientAddress!),
+            
+            // عنوان الطبيب
+            if (request.doctorAddress != null && request.doctorAddress!.isNotEmpty)
+              _buildInfoRow('عنوان الطبيب:', request.doctorAddress!),
+            
+            // المسافة والوقت المقدر
+            if (request.distance != null && request.duration != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.directions_car, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Text('المسافة: ${request.distance!.toStringAsFixed(1)} كم'),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.access_time, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Text('الوقت المقدر: ${request.duration}'),
+                ],
+              ),
+            ],
+            
+            // رسالة في حالة عدم توفر البيانات
+            if ((request.patientAddress == null || request.patientAddress!.isEmpty) &&
+                (request.doctorAddress == null || request.doctorAddress!.isEmpty))
+              const Text(
+                'جاري تحميل معلومات الموقع...',
+                style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              // style: const TextStyle(color: Colors.grey[700]),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

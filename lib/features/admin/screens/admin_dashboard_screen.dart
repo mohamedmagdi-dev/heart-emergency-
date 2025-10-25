@@ -1718,6 +1718,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../services/fcm_service.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/rating_service.dart';
+import '../../../services/earnings_service.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -1732,6 +1733,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   final FirestoreService _firestoreService = FirestoreService();
   final FCMService _fcmService = FCMService();
   final RatingService _ratingService = RatingService();
+  final EarningsService _earningsService = EarningsService();
   late TabController _tabController;
 
   @override
@@ -1910,6 +1912,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         children: [
           _buildStatsCards(),
           const SizedBox(height: 20),
+          _buildCommissionsSection(),
+          const SizedBox(height: 20),
           _buildRecentActivity(),
           const SizedBox(height: 20),
           // _buildPricesListSection(),
@@ -2025,6 +2029,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     .where((t) => t.status == TransactionStatus.success)
                     .fold<double>(0, (sum, t) => sum + t.commission);
 
+                // Calculate commissions from completed requests
+                final completedRequests = requests
+                    .where((r) => r.status == RequestStatus.completed)
+                    .toList();
+                final totalCommissionsFromRequests = completedRequests
+                    .fold<double>(0, (sum, r) {
+                      final price = r.finalPrice ?? r.price ?? 0.0;
+                      return sum + (price * 0.12); // 12% commission
+                    });
+
                 // Count priced requests
                 final pricedRequests = requests
                     .where((r) => r.price != null && r.price! > 0)
@@ -2075,9 +2089,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         ),
                         _buildStatCard(
                           title: 'إجمالي العمولات',
-                          value: totalRevenue.toStringAsFixed(2),
+                          value: '${totalCommissionsFromRequests.toStringAsFixed(2)} EGP',
                           icon: Icons.monetization_on,
                           color: Colors.purple,
+                          subtitle: '${completedRequests.length} طلب مكتمل',
                         ),
                         // الكارد الجديدة للأسعار
                         _buildPricesCard(pricedRequests, totalPrices),
@@ -3145,6 +3160,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         );
       }
 
+      // Send Firestore notification
+      await _firestoreService.sendNotification(
+        userId: doctor.uid,
+        title: verified ? 'تم تحقق حسابك' : 'تم إلغاء تحقق حسابك',
+        body: verified
+            ? 'تم تحقق حسابك بنجاح. يمكنك الآن استقبال طلبات الطوارئ.'
+            : 'تم إلغاء تحقق حسابك. يرجى مراجعة الإدارة.',
+        type: 'doctor_verification',
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3978,5 +4003,292 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
 
   void _openPricesScreen() {
     context.push('/admin/prices');
+  }
+
+  Widget _buildCommissionsSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.monetization_on, color: Colors.purple, size: 24),
+              const SizedBox(width: 8),
+              const Text(
+                'إجمالي العمولات',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: () {
+                  // Refresh commissions data
+                  setState(() {});
+                },
+                icon: const Icon(Icons.refresh, color: Colors.grey),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          StreamBuilder<List<RequestModel>>(
+            stream: _firestoreService.getAllRequests(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: const Text(
+                    'خطأ في تحميل بيانات العمولات',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                );
+              }
+
+              final requests = snapshot.data ?? [];
+              final completedRequests = requests
+                  .where((r) => r.status == RequestStatus.completed)
+                  .toList();
+
+              if (completedRequests.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: const Column(
+                    children: [
+                      Icon(Icons.monetization_on, size: 48, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text(
+                        'لا توجد عمولات حتى الآن',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // Calculate total commissions
+              final totalCommissions = completedRequests.fold<double>(0, (sum, r) {
+                final price = r.finalPrice ?? r.price ?? 0.0;
+                return sum + (price * 0.12); // 12% commission
+              });
+
+              final totalRevenue = completedRequests.fold<double>(0, (sum, r) {
+                return sum + (r.finalPrice ?? r.price ?? 0.0);
+              });
+
+              return Column(
+                children: [
+                  // Summary cards
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCommissionSummaryCard(
+                          title: 'إجمالي العمولات',
+                          value: '${totalCommissions.toStringAsFixed(2)} EGP',
+                          icon: Icons.monetization_on,
+                          color: Colors.purple,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildCommissionSummaryCard(
+                          title: 'إجمالي الإيرادات',
+                          value: '${totalRevenue.toStringAsFixed(2)} EGP',
+                          icon: Icons.account_balance_wallet,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCommissionSummaryCard(
+                          title: 'الطلبات المكتملة',
+                          value: '${completedRequests.length}',
+                          icon: Icons.check_circle,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildCommissionSummaryCard(
+                          title: 'معدل العمولة',
+                          value: '12%',
+                          icon: Icons.percent,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Recent completed requests
+                  const Text(
+                    'الطلبات المكتملة الأخيرة',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: completedRequests.take(5).length,
+                    itemBuilder: (context, index) {
+                      final request = completedRequests[index];
+                      final price = request.finalPrice ?? request.price ?? 0.0;
+                      final commission = price * 0.12;
+                      
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    request.symptoms.isNotEmpty 
+                                        ? request.symptoms 
+                                        : 'طلب طوارئ',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    _formatDateTime(request.completedAt ?? request.updatedAt),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${commission.toStringAsFixed(2)} EGP',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purple,
+                                  ),
+                                ),
+                                Text(
+                                  'عمولة',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommissionSummaryCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              color: color.withOpacity(0.8),
+              fontSize: 12,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 }

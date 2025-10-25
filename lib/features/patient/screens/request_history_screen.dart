@@ -1,6 +1,8 @@
 // Request History Screen for Patients
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/models/rating_model.dart';
@@ -26,6 +28,68 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
   bool _isLoading = true;
   String? _error;
   String _selectedFilter = 'all';
+
+  Future<String> _getAddressFromLatLng(double lat, double lng) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+
+        // علشان تظهر العنوان بالعربي في مصر
+        String address = '';
+
+        if (place.street != null && place.street!.isNotEmpty) {
+          address += place.street!;
+        }
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) {
+          if (address.isNotEmpty) address += '، ';
+          address += place.subLocality!;
+        }
+        if (place.locality != null && place.locality!.isNotEmpty) {
+          if (address.isNotEmpty) address += '، ';
+          address += place.locality!;
+        }
+        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) {
+          if (address.isNotEmpty) address += '، ';
+          address += place.administrativeArea!;
+        }
+
+        return address.isNotEmpty ? address : 'عنوان غير معروف';
+      }
+      return 'عنوان غير معروف';
+    } catch (e) {
+      print('خطأ في جلب العنوان: $e');
+      return 'تعذر جلب العنوان';
+    }
+  }
+
+  // دالة علشان تخزن العنوان في الفايرستور
+  Future<void> _cachePatientAddress(RequestModel request) async {
+    try {
+      // لو العنوان موجود خلاص، متعملش حاجة
+      if (request.patientAddress != null && request.patientAddress!.isNotEmpty) {
+        return;
+      }
+
+      // جيب العنوان من الإحداثيات
+      String address = await _getAddressFromLatLng(
+        request.patientLocation.latitude,
+        request.patientLocation.longitude,
+      );
+
+      // خزّن العنوان في الفايرستور
+      await FirebaseFirestore.instance
+          .collection('requests')
+          .doc(request.id)
+          .update({
+        'patientAddress': address,
+      });
+    } catch (e) {
+      print('خطأ في تخزين العنوان: $e');
+    }
+  }
+
 
   @override
   void initState() {
@@ -345,17 +409,49 @@ class _RequestHistoryScreenState extends ConsumerState<RequestHistoryScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                // Row(
+                //   children: [
+                //     const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                //     const SizedBox(width: 4),
+                //     Expanded(
+                //       child: Text(
+                //         'خط العرض: ${request.patientLocation.latitude.toStringAsFixed(4)}, خط الطول: ${request.patientLocation.longitude.toStringAsFixed(4)}',
+                //         style: const TextStyle(
+                //           color: Colors.grey,
+                //           fontSize: 14,
+                //         ),
+                //       ),
+                //     ),
+                //   ],
+                // ),
+                // Location - العنوان
                 Row(
                   children: [
                     const Icon(Icons.location_on, size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: Text(
-                        'خط العرض: ${request.patientLocation.latitude.toStringAsFixed(4)}, خط الطول: ${request.patientLocation.longitude.toStringAsFixed(4)}',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 14,
+                      child: FutureBuilder<String>(
+                        future: _getAddressFromLatLng(
+                          request.patientLocation.latitude,
+                          request.patientLocation.longitude,
                         ),
+                        builder: (context, snapshot) {
+                          final address = snapshot.data ?? 'جاري جلب العنوان...';
+
+                          // خزّن العنوان في الخلفية علشان المرة الجاية
+                          if (snapshot.hasData && address != 'جاري جلب العنوان...') {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _cachePatientAddress(request);
+                            });
+                          }
+
+                          return Text(
+                            address,
+                            style: const TextStyle(color: Colors.grey, fontSize: 14),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        },
                       ),
                     ),
                   ],

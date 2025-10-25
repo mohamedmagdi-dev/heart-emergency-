@@ -1,14 +1,13 @@
 // Patient Dashboard with real Firestore integration
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../data/models/rating_model.dart';
 import '../../../data/models/request_model.dart';
 import '../../../data/models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/firestore_service.dart';
-import '../../../services/rating_service.dart';
 import '../../../services/request_service.dart';
 import '../../notifications/notification_request_service.dart';
 class PatientDashboardScreen extends ConsumerStatefulWidget {
@@ -25,6 +24,189 @@ class _PatientDashboardScreenState
   final RequestService _requestService = RequestService();
   final NotificationRequestService _notificationService =
       NotificationRequestService();
+
+  // ✅ عرض تفاصيل الإشعارات في مودال
+  Future<void> _showNotificationDetails(String userId) async {
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.7,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    'تفاصيل الإشعارات',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: _notificationService.getUserNotifications(userId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text('خطأ في تحميل الإشعارات: ${snapshot.error}'),
+                      );
+                    }
+                    
+                    final notifications = snapshot.data?.docs ?? [];
+                    
+                    if (notifications.isEmpty) {
+                      return const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.notifications_none, size: 64, color: Colors.grey),
+                            SizedBox(height: 16),
+                            Text('لا توجد إشعارات', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                          ],
+                        ),
+                      );
+                    }
+                    
+                    return ListView.builder(
+                      itemCount: notifications.length,
+                      itemBuilder: (context, index) {
+                        final notification = notifications[index];
+                        final data = notification.data() as Map<String, dynamic>;
+                        final title = data['title'] ?? '';
+                        final body = data['body'] ?? '';
+                        final isRead = data['read'] ?? false;
+                        final createdAt = (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+                        
+                        return GestureDetector(
+                          onTap: () async {
+                            // ✅ تحديد الإشعار كمقروء عند النقر عليه
+                            if (!isRead) {
+                              await _notificationService.markAsRead(notification.id);
+                            }
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isRead ? Colors.grey[50] : Colors.blue[50],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isRead ? Colors.grey[300]! : Colors.blue[200]!,
+                              ),
+                            ),
+                            child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.emergency,
+                                    color: isRead ? Colors.grey : Colors.blue,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      title,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isRead ? Colors.grey[700] : Colors.blue[700],
+                                      ),
+                                    ),
+                                  ),
+                                  if (!isRead)
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.blue,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                body,
+                                style: TextStyle(
+                                  color: isRead ? Colors.grey[600] : Colors.grey[800],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _formatDateTime(createdAt),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  // ✅ عرض اسم الطبيب إذا كان متوفراً
+                                  if (data['doctorName'] != null)
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.person, size: 14, color: Colors.grey),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'د. ${data['doctorName']}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          )
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ تنسيق التاريخ والوقت
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 0) {
+      return 'منذ ${difference.inDays} يوم';
+    } else if (difference.inHours > 0) {
+      return 'منذ ${difference.inHours} ساعة';
+    } else if (difference.inMinutes > 0) {
+      return 'منذ ${difference.inMinutes} دقيقة';
+    } else {
+      return 'الآن';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +261,7 @@ class _PatientDashboardScreenState
                   const SizedBox(height: 16),
                   _buildQuickActions(),
                   const SizedBox(height: 16),
+                  // ✅ تم إزالة قسم عروض الأسعار كما هو مطلوب
                   _buildRecentRequests(user.uid),
                   const SizedBox(height: 16),
                   _buildSettingsCard(user),
@@ -209,6 +392,172 @@ class _PatientDashboardScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPriceNotificationsSection(String patientId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'عروض الأسعار',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: () => context.push('/patient/notifications', extra: patientId),
+              child: const Text('عرض الكل'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        StreamBuilder<List<RequestModel>>(
+          stream: _firestoreService.getPatientRequests(patientId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text('خطأ في تحميل العروض: ${snapshot.error}'),
+              );
+            }
+
+            final requests = snapshot.data ?? [];
+            final priceSetRequests = requests.where((r) => r.status == RequestStatus.price_set).toList();
+
+            if (priceSetRequests.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(Icons.price_check, size: 48, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      'لا توجد عروض أسعار جديدة',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: priceSetRequests.take(2).length, // Show only 2 recent price offers
+              itemBuilder: (context, index) {
+                final request = priceSetRequests[index];
+                return _buildPriceOfferCard(request);
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceOfferCard(RequestModel request) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.purple.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.purple.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.price_check, size: 16, color: Colors.purple),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'عرض سعر جديد',
+                      style: TextStyle(
+                        color: Colors.purple,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _formatDateTime(request.createdAt),
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.attach_money, size: 16, color: Colors.green),
+              const SizedBox(width: 4),
+              Text(
+                'السعر المقترح: ${request.price?.toStringAsFixed(2) ?? 'غير محدد'} ${request.currency ?? 'EGP'}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: Colors.green,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+            ),
+            child: const Text(
+              'في انتظار رد الطبيب',
+              style: TextStyle(
+                color: Colors.blue,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -440,16 +789,21 @@ class _PatientDashboardScreenState
         statusText = 'مرفوض';
         statusIcon = Icons.cancel;
         break;
+      // case RequestStatus.rejected_by_doctor:
+      //   statusColor = Colors.red;
+      //   statusText = 'مرفوض من الطبيب';
+      //   statusIcon = Icons.cancel;
+      //   break;
       case RequestStatus.completed:
         statusColor = Colors.green;
         statusText = 'مكتمل';
         statusIcon = Icons.check_circle_outline;
         break;
       case RequestStatus.price_set:
-        // TODO: Handle this case.
         statusColor = Colors.purple;
         statusText = 'تم تحديد السعر';
         statusIcon = Icons.price_check;
+        break;
       }
 
     return Container(
@@ -516,37 +870,143 @@ class _PatientDashboardScreenState
               ),
             ],
           ),
-          if (request.status == RequestStatus.completed &&
-              request.doctorId != null) ...[
+          // if (request.status == RequestStatus.completed &&
+          //     request.doctorId != null) ...[
+          //   const SizedBox(height: 12),
+          //   StreamBuilder<List<RatingModel>>(
+          //     stream: RatingService().getRatingsByRequestId(request.id),
+          //     builder: (context, snapshot) {
+          //       final myId = ref
+          //           .read(currentUserDataProvider)
+          //           .maybeWhen(data: (u) => u?.uid, orElse: () => null);
+          //       final hasPatientRated = (snapshot.data ?? []).any(
+          //         (r) => r.fromUserId == myId,
+          //       );
+          //       if (hasPatientRated || request.isRated == true) {
+          //         return Container(
+          //           width: double.infinity,
+          //           padding: const EdgeInsets.symmetric(vertical: 14),
+          //           decoration: BoxDecoration(
+          //             color: Colors.green.withOpacity(0.1),
+          //             borderRadius: BorderRadius.circular(12),
+          //           ),
+          //           child: const Center(
+          //             child: Text(
+          //               'تم التقييم',
+          //               style: TextStyle(
+          //                 color: Colors.green,
+          //                 fontWeight: FontWeight.w600,
+          //               ),
+          //             ),
+          //           ),
+          //         );
+          //       }
+          //       return SizedBox(
+          //         width: double.infinity,
+          //         child: ElevatedButton.icon(
+          //           onPressed: () => _rateDoctor(request),
+          //           icon: const Icon(Icons.star),
+          //           label: const Text('تقييم الطبيب'),
+          //           style: ElevatedButton.styleFrom(
+          //             backgroundColor: Colors.amber[600],
+          //             foregroundColor: Colors.white,
+          //           ),
+          //         ),
+          //       );
+          //     },
+          //   ),
+          // ],
+          // if (request.status == RequestStatus.completed && request.doctorId != null) ...[
+          //   const SizedBox(height: 12),
+          //   StreamBuilder<List<RatingModel>>(
+          //     stream: RatingService().getRatingsByRequestId(request.id),
+          //     builder: (context, snapshot) {
+          //       final myId = ref.read(currentUserDataProvider).maybeWhen(
+          //           data: (u) => u?.uid,
+          //           orElse: () => null
+          //       );
+          //
+          //       // هنا بنشوف إذا المريض ده هو اللي عمل التقييم
+          //       final hasPatientRated = (snapshot.data ?? []).any(
+          //             (r) => r.fromUserId == myId,
+          //       );
+          //
+          //       if (hasPatientRated || request.isRated == true) {
+          //         return Container(
+          //           width: double.infinity,
+          //           padding: const EdgeInsets.symmetric(vertical: 14),
+          //           decoration: BoxDecoration(
+          //             color: Colors.green.withOpacity(0.1),
+          //             borderRadius: BorderRadius.circular(12),
+          //           ),
+          //           child: const Center(
+          //             child: Text(
+          //               'تم التقييم ✅',
+          //               style: TextStyle(
+          //                 color: Colors.green,
+          //                 fontWeight: FontWeight.w600,
+          //               ),
+          //             ),
+          //           ),
+          //         );
+          //       }
+          //
+          //       return SizedBox(
+          //         width: double.infinity,
+          //         child: ElevatedButton.icon(
+          //           onPressed: () => _rateDoctor(request),
+          //           icon: const Icon(Icons.star),
+          //           label: const Text('تقييم الطبيب'),
+          //           style: ElevatedButton.styleFrom(
+          //             backgroundColor: Colors.amber[600],
+          //             foregroundColor: Colors.white,
+          //           ),
+          //         ),
+          //       );
+          //     },
+          //   ),
+          // ],
+          if (request.status == RequestStatus.completed && request.doctorId != null) ...[
             const SizedBox(height: 12),
-            StreamBuilder<List<RatingModel>>(
-              stream: RatingService().getRatingsByRequestId(request.id),
+            FutureBuilder<bool>(
+              future: _checkIfUserRatedRequest(request.id),
               builder: (context, snapshot) {
-                final myId = ref
-                    .read(currentUserDataProvider)
-                    .maybeWhen(data: (u) => u?.uid, orElse: () => null);
-                final hasPatientRated = (snapshot.data ?? []).any(
-                  (r) => r.fromUserId == myId,
-                );
-                if (hasPatientRated || request.isRated == true) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    height: 50,
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  );
+                }
+
+                if (snapshot.hasData && snapshot.data == true) {
                   return Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green),
                     ),
                     child: const Center(
-                      child: Text(
-                        'تم التقييم',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'تم التقييم',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
                 }
+
                 return SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -566,6 +1026,30 @@ class _PatientDashboardScreenState
       ),
     );
   }
+
+
+  Future<bool> _checkIfUserRatedRequest(String requestId) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return false;
+
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('ratings')
+          .where('requestId', isEqualTo: requestId)
+          .where('fromUserId', isEqualTo: currentUser.uid)
+          .limit(1)
+          .get();
+
+      print('🔍 Checking rating for request: $requestId, user: ${currentUser.uid}');
+      print('📊 Found ${querySnapshot.docs.length} ratings');
+
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      print('❌ Error checking rating: $e');
+      return false;
+    }
+  }
+
 
   Widget _buildSettingsCard(UserModel user) {
     return Container(
@@ -602,8 +1086,7 @@ class _PatientDashboardScreenState
           _buildSettingItem(
             icon: Icons.notifications,
             title: 'الإشعارات',
-            onTap: () =>
-                context.push('/patient/notifications', extra: user.uid),
+            onTap: () => _showNotificationDetails(user.uid), // ✅ استخدام المودال بدلاً من التنقل
             trailing: StreamBuilder<QuerySnapshot>(
               // stream: _notificationService.getUserNotifications(user.uid),
               stream: _notificationService.getUnreadUserNotifications(user.uid),
@@ -807,18 +1290,18 @@ class _PatientDashboardScreenState
     }
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return 'منذ ${difference.inDays} يوم';
-    } else if (difference.inHours > 0) {
-      return 'منذ ${difference.inHours} ساعة';
-    } else if (difference.inMinutes > 0) {
-      return 'منذ ${difference.inMinutes} دقيقة';
-    } else {
-      return 'الآن';
-    }
-  }
+  // String _formatDateTime(DateTime dateTime) {
+  //   final now = DateTime.now();
+  //   final difference = now.difference(dateTime);
+  //
+  //   if (difference.inDays > 0) {
+  //     return 'منذ ${difference.inDays} يوم';
+  //   } else if (difference.inHours > 0) {
+  //     return 'منذ ${difference.inHours} ساعة';
+  //   } else if (difference.inMinutes > 0) {
+  //     return 'منذ ${difference.inMinutes} دقيقة';
+  //   } else {
+  //     return 'الآن';
+  //   }
+  // }
 }

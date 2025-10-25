@@ -172,8 +172,8 @@
 // }
 // Request model for emergency medical requests
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-enum RequestStatus { pending, price_set, accepted, rejected, completed } // ✅ أضف price_set
+//
+enum RequestStatus { pending, price_set, accepted, rejected,  completed }
 
 extension RequestStatusExtension on RequestStatus {
   String get name {
@@ -186,6 +186,8 @@ extension RequestStatusExtension on RequestStatus {
         return 'accepted';
       case RequestStatus.rejected:
         return 'rejected';
+      // case RequestStatus.rejected_by_doctor:
+      //   return 'rejected_by_doctor';
       case RequestStatus.completed:
         return 'completed';
     }
@@ -201,6 +203,8 @@ extension RequestStatusExtension on RequestStatus {
         return RequestStatus.accepted;
       case 'rejected':
         return RequestStatus.rejected;
+      // case 'rejected_by_doctor':
+      //   return RequestStatus.rejected_by_doctor;
       case 'completed':
         return RequestStatus.completed;
       default:
@@ -208,6 +212,7 @@ extension RequestStatusExtension on RequestStatus {
     }
   }
 }
+
 
 class RequestModel {
   final String id;
@@ -230,6 +235,14 @@ class RequestModel {
   final bool? isRated; // Marked true after patient rates the doctor
   final String? currency; // ✅ أضف العملة
   final DateTime? priceSetAt; // ✅ أضف وقت تحديد السعر
+  
+  // ✅ إضافة حقول العناوين والمسافة والوقت المقدر
+  final String? doctorAddress; // عنوان الطبيب باللغة العربية
+  final double? distance; // المسافة بالكيلومتر
+  final String? duration; // الوقت المقدر للسفر
+
+
+
   // Timestamps
   final DateTime? acceptedAt;
   final DateTime? completedAt;
@@ -254,6 +267,9 @@ class RequestModel {
     this.isRated,
     this.currency, // ✅ أضف دي
     this.priceSetAt, // ✅ أضف دي
+    this.doctorAddress, // ✅ عنوان الطبيب
+    this.distance, // ✅ المسافة
+    this.duration, // ✅ الوقت المقدر
     this.acceptedAt,
     this.completedAt,
   });
@@ -279,6 +295,9 @@ class RequestModel {
       isRated: map['isRated'] as bool?,
       currency: map['currency'] as String?, // ✅ أضف دي
       priceSetAt: (map['priceSetAt'] as Timestamp?)?.toDate(), // ✅ أضف دي
+      doctorAddress: map['doctorAddress'] as String?, // ✅ عنوان الطبيب
+      distance: (map['distance'] as num?)?.toDouble(), // ✅ المسافة
+      duration: map['duration'] as String?, // ✅ الوقت المقدر
       acceptedAt: (map['acceptedAt'] as Timestamp?)?.toDate(),
       completedAt: (map['completedAt'] as Timestamp?)?.toDate(),
     );
@@ -305,6 +324,9 @@ class RequestModel {
       if (isRated != null) 'isRated': isRated,
       if (currency != null) 'currency': currency, // ✅ أضف دي
       if (priceSetAt != null) 'priceSetAt': Timestamp.fromDate(priceSetAt!), // ✅ أضف دي
+      if (doctorAddress != null) 'doctorAddress': doctorAddress, // ✅ عنوان الطبيب
+      if (distance != null) 'distance': distance, // ✅ المسافة
+      if (duration != null) 'duration': duration, // ✅ الوقت المقدر
       if (acceptedAt != null) 'acceptedAt': Timestamp.fromDate(acceptedAt!),
       if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt!),
     };
@@ -330,6 +352,9 @@ class RequestModel {
     bool? isRated,
     String? currency, // ✅ أضف دي
     DateTime? priceSetAt, // ✅ أضف دي
+    String? doctorAddress, // ✅ عنوان الطبيب
+    double? distance, // ✅ المسافة
+    String? duration, // ✅ الوقت المقدر
     DateTime? acceptedAt,
     DateTime? completedAt,
   }) {
@@ -353,6 +378,9 @@ class RequestModel {
       isRated: isRated ?? this.isRated,
       currency: currency ?? this.currency, // ✅ أضف دي
       priceSetAt: priceSetAt ?? this.priceSetAt, // ✅ أضف دي
+      doctorAddress: doctorAddress ?? this.doctorAddress, // ✅ عنوان الطبيب
+      distance: distance ?? this.distance, // ✅ المسافة
+      duration: duration ?? this.duration, // ✅ الوقت المقدر
       acceptedAt: acceptedAt ?? this.acceptedAt,
       completedAt: completedAt ?? this.completedAt,
     );
